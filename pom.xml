@@ -24,7 +24,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring.integration.version>4.3.8.RELEASE</spring.integration.version>
-        <org.mapstruct.version>1.1.0.Final</org.mapstruct.version>
+        <org.mapstruct.version>1.4.1.Final</org.mapstruct.version>
+        <org.lombok-mapstruct-binding.version>1.4.1.Final</org.lombok-mapstruct-binding.version>
+        <lombok.version>1.18.16</lombok.version>
         <mapstruct.defaultComponentModel>spring</mapstruct.defaultComponentModel>
         <spring.boot.version>1.5.15.RELEASE</spring.boot.version>
         <spring.boot.admin.version>1.5.7</spring.boot.admin.version>
@@ -137,11 +139,6 @@
             <version>0.6.3-SNAPSHOT</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct</artifactId> <!-- use mapstruct-jdk8 for Java 8 or higher -->
-            <version>${org.mapstruct.version}</version>
-        </dependency>
 
 
         <!--mongodb-->
@@ -229,6 +226,19 @@
             <scope>runtime</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId> <!-- use mapstruct-jdk8 for Java 8 or higher -->
+            <version>${org.mapstruct.version}</version>
+        </dependency>
  <!--       <dependency>
             <groupId>org.springframework.integration</groupId>
             <artifactId>spring-integration-xml</artifactId>
@@ -299,10 +309,21 @@
                     <target>1.8</target>
                     <annotationProcessorPaths>
                         <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                        <path>
                             <groupId>org.mapstruct</groupId>
                             <artifactId>mapstruct-processor</artifactId>
                             <version>${org.mapstruct.version}</version>
                         </path>
+
+<!--                        <path>-->
+<!--                            <groupId>org.projectlombok</groupId>-->
+<!--                            <artifactId>lombok-mapstruct-binding</artifactId>-->
+<!--                            <version>${org.lombok-mapstruct-binding.version}</version>-->
+<!--                        </path>-->
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
@@ -365,10 +386,22 @@
                             <target>1.8</target>
                             <annotationProcessorPaths>
                                 <path>
+                                    <groupId>org.projectlombok</groupId>
+                                    <artifactId>lombok</artifactId>
+                                    <version>${lombok.version}</version>
+                                </path>
+                                <path>
                                     <groupId>org.mapstruct</groupId>
                                     <artifactId>mapstruct-processor</artifactId>
                                     <version>${org.mapstruct.version}</version>
                                 </path>
+
+<!--                                <path>-->
+<!--                                    <groupId>org.projectlombok</groupId>-->
+<!--                                    <artifactId>lombok-mapstruct-binding</artifactId>-->
+<!--                                    <version>${org.lombok-mapstruct-binding.version}</version>-->
+<!--                                </path>-->
+
                             </annotationProcessorPaths>
                         </configuration>
                     </plugin>
@@ -402,10 +435,22 @@
                             <target>1.8</target>
                             <annotationProcessorPaths>
                                 <path>
+                                    <groupId>org.projectlombok</groupId>
+                                    <artifactId>lombok</artifactId>
+                                    <version>${lombok.version}</version>
+                                </path>
+                                <path>
                                     <groupId>org.mapstruct</groupId>
                                     <artifactId>mapstruct-processor</artifactId>
                                     <version>${org.mapstruct.version}</version>
                                 </path>
+
+<!--                                <path>-->
+<!--                                    <groupId>org.projectlombok</groupId>-->
+<!--                                    <artifactId>lombok-mapstruct-binding</artifactId>-->
+<!--                                    <version>${org.lombok-mapstruct-binding.version}</version>-->
+<!--                                </path>-->
+
                             </annotationProcessorPaths>
                         </configuration>
                     </plugin>
@@ -439,10 +484,22 @@
                             <target>1.8</target>
                             <annotationProcessorPaths>
                                 <path>
+                                    <groupId>org.projectlombok</groupId>
+                                    <artifactId>lombok</artifactId>
+                                    <version>${lombok.version}</version>
+                                </path>
+                                <path>
                                     <groupId>org.mapstruct</groupId>
                                     <artifactId>mapstruct-processor</artifactId>
                                     <version>${org.mapstruct.version}</version>
                                 </path>
+
+<!--                                <path>-->
+<!--                                    <groupId>org.projectlombok</groupId>-->
+<!--                                    <artifactId>lombok-mapstruct-binding</artifactId>-->
+<!--                                    <version>${org.lombok-mapstruct-binding.version}</version>-->
+<!--                                </path>-->
+
                             </annotationProcessorPaths>
                         </configuration>
                     </plugin>
@@ -500,10 +557,22 @@
                             <target>1.8</target>
                             <annotationProcessorPaths>
                                 <path>
+                                    <groupId>org.projectlombok</groupId>
+                                    <artifactId>lombok</artifactId>
+                                    <version>${lombok.version}</version>
+                                </path>
+                                <path>
                                     <groupId>org.mapstruct</groupId>
                                     <artifactId>mapstruct-processor</artifactId>
                                     <version>${org.mapstruct.version}</version>
                                 </path>
+
+<!--                                <path>-->
+<!--                                    <groupId>org.projectlombok</groupId>-->
+<!--                                    <artifactId>lombok-mapstruct-binding</artifactId>-->
+<!--                                    <version>${org.lombok-mapstruct-binding.version}</version>-->
+<!--                                </path>-->
+
                             </annotationProcessorPaths>
                         </configuration>
                     </plugin>

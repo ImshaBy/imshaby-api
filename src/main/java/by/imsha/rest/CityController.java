@@ -20,6 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Locale;
 
 /*
@@ -62,6 +63,10 @@ public class CityController extends AbstractRestHandler {
             throw new InvalidLocaleException("Invalid lang specified (please specify ISO 639-1/ISO 639-2 lang code : " + lang);
         }
         LocalizedCity localizedCity = new LocalizedCity(lang, id, cityInfo.getName());
+        // hack to support backward compatibility
+        if(origin.getLocalizedInfo() == null){
+            origin.setLocalizedInfo(new HashMap<>());
+        }
         origin.getLocalizedInfo().put(lang, localizedCity);
 
         City updatedCity = this.cityService.updateCity(origin);

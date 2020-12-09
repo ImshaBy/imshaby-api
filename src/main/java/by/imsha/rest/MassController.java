@@ -1,6 +1,5 @@
 package by.imsha.rest;
 
-import by.imsha.domain.City;
 import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
 import by.imsha.domain.dto.MassSchedule;
@@ -8,11 +7,11 @@ import by.imsha.domain.dto.UpdateEntitiesInfo;
 import by.imsha.domain.dto.UpdateEntityInfo;
 import by.imsha.domain.dto.UpdateMassInfo;
 import by.imsha.exception.InvalidDateIntervalException;
-import by.imsha.exception.ResourceNotFoundException;
 import by.imsha.service.CityService;
 import by.imsha.service.MassService;
 import by.imsha.service.ParishService;
 import by.imsha.service.ScheduleFactory;
+import by.imsha.utils.ServiceUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -30,10 +29,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -179,8 +174,8 @@ public class MassController extends AbstractRestHandler {
                                                      @RequestParam(name = "to", required = false) String toDateStr) {
         Mass mass = this.massService.getMass(id);
         checkResourceFound(mass);
-        LocalDate fromDate = formatDateString(fromDateStr);
-        LocalDate toDate = toDateStr == null ? null : formatDateString(toDateStr);
+        LocalDate fromDate = ServiceUtils.formatDateString(fromDateStr);
+        LocalDate toDate = toDateStr == null ? null : ServiceUtils.formatDateString(toDateStr);
         if (toDate != null && fromDate.isAfter(toDate)) {
             throw new InvalidDateIntervalException(String.format("Invalid date interval bounds (from: %s, to: %s), " +
                     "the from-date should be equal or less than to-date!", fromDateStr, toDateStr));
@@ -228,19 +223,7 @@ public class MassController extends AbstractRestHandler {
         if(StringUtils.isNotEmpty(parishId)){
             masses = this.massService.getMassByParish(parishId);
         }else{
-            if(StringUtils.isEmpty(cityId)){
-                if(log.isWarnEnabled()){
-                    log.warn("Looking for default city..");
-                }
-                City defaultCity = cityService.defaultCity();
-                if(defaultCity == null){
-                    throw new ResourceNotFoundException(String.format("No default city (name = %s) founded", cityService.getDefaultCityName()));
-                }
-                cityId = defaultCity.getId();
-                if(log.isWarnEnabled()){
-                    log.warn(String.format("Default city with id = %s is found.", cityId));
-                }
-            }
+            cityId = cityService.getCityIdOrDefault(cityId);
             masses = this.massService.getMassByCity(cityId); // TODO filter by date as well
         }
 
@@ -248,7 +231,7 @@ public class MassController extends AbstractRestHandler {
             masses = massService.filterOutOnlyOnline(masses);
         }
 
-        LocalDate date = formatDateString(day);
+        LocalDate date = ServiceUtils.formatDateString(day);
 
         MassSchedule massHolder = scheduleFactory.build(masses, date);
 
@@ -263,21 +246,9 @@ public class MassController extends AbstractRestHandler {
         return massResource;
     }
 
-    private LocalDate formatDateString(String dateStr) {
-        LocalDate date = null;
-        if(dateStr != null){
-            try{
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateFormat);
-                date = LocalDate.parse(dateStr, formatter);
-            }catch (DateTimeParseException ex){
-                log.warn(String.format("Date format is incorrect. Date - %s,format - %s ", dateStr, dateFormat));
-            }
-        }
-        if(date == null){
-            date = LocalDateTime.now(ZoneId.of("Europe/Minsk")).toLocalDate();
-        }
-        return date;
-    }
+
+
+
 
     @ApiOperation(value = "Filter masses using query language")
     @RequestMapping(value = "",

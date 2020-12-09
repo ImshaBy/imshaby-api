@@ -4,8 +4,10 @@ package by.imsha.service;
 import by.imsha.domain.Parish;
 import by.imsha.domain.dto.MassParishInfo;
 import by.imsha.domain.dto.ParishInfo;
+import by.imsha.domain.dto.ParishKeyUpdateInfo;
 import by.imsha.domain.dto.mapper.MassParishInfoMapper;
 import by.imsha.domain.dto.mapper.ParishInfoMapper;
+import by.imsha.domain.dto.mapper.ParishKeyUpdateInfoMapper;
 import by.imsha.repository.ParishRepository;
 import by.imsha.utils.ServiceUtils;
 import com.github.rutledgepaulv.qbuilders.builders.GeneralQueryBuilder;
@@ -38,6 +40,11 @@ public class ParishService {
     public static MassParishInfo extractMassParishInfo(String parishId){
         Parish parish = INSTANCE.getParish(parishId);
         return MassParishInfoMapper.MAPPER.toMassParishInfo(parish);
+    }
+
+    public static ParishKeyUpdateInfo extractParishKeyUpdateInfo(String parishId){
+        Parish parish = INSTANCE.getParish(parishId);
+        return ParishKeyUpdateInfoMapper.MAPPER.toParishKeyUpdateInfo(parish);
     }
 
 

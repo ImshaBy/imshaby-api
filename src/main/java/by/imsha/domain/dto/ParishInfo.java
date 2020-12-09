@@ -18,6 +18,7 @@ public class ParishInfo implements Serializable {
     private Integer updatePeriodInDays;
     private String supportPhone;
     private String email;
+    private String key;
     private String phone;
     private String lastModifiedEmail;
     private String website;
@@ -38,6 +39,7 @@ public class ParishInfo implements Serializable {
                 .append(imgPath, that.imgPath)
                 .append(gps, that.gps)
                 .append(address, that.address)
+                .append(key, that.key)
                 .append(supportPhone, that.supportPhone)
                 .append(email, that.email)
                 .append(phone, that.phone)
@@ -57,6 +59,7 @@ public class ParishInfo implements Serializable {
                 .append(supportPhone)
                 .append(email)
                 .append(phone)
+                .append(key)
                 .append(lastModifiedEmail)
                 .append(website)
                 .toHashCode();
@@ -72,6 +75,7 @@ public class ParishInfo implements Serializable {
                 .append("updatePeriodInDays", updatePeriodInDays)
                 .append("supportPhone", supportPhone)
                 .append("email", email)
+                .append("key", key)
                 .append("phone", phone)
                 .append("lastModifiedEmail", lastModifiedEmail)
                 .append("website", website)
@@ -160,6 +164,14 @@ public class ParishInfo implements Serializable {
 
     public Integer getUpdatePeriodInDays() {
         return updatePeriodInDays;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
     }
 
     public void setUpdatePeriodInDays(Integer updatePeriodInDays) {

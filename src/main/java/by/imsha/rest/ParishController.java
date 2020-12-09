@@ -3,13 +3,13 @@ package by.imsha.rest;
 import by.imsha.domain.LocalizedParish;
 import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
-import by.imsha.domain.dto.CascadeUpdateEntityInfo;
-import by.imsha.domain.dto.LocalizedParishInfo;
-import by.imsha.domain.dto.ParishInfo;
-import by.imsha.domain.dto.UpdateEntityInfo;
+import by.imsha.domain.dto.*;
 import by.imsha.exception.InvalidLocaleException;
+import by.imsha.service.CityService;
 import by.imsha.service.MassService;
 import by.imsha.service.ParishService;
+import by.imsha.service.ScheduleFactory;
+import by.imsha.utils.ServiceUtils;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.LocaleUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,9 +20,12 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
@@ -43,6 +46,12 @@ public class ParishController extends AbstractRestHandler {
 
     @Autowired
     private MassService massService;
+
+    @Autowired
+    private CityService cityService;
+
+    @Autowired
+    private ScheduleFactory scheduleFactory;
 
     @ApiOperation(value = "Create parish")
     @RequestMapping(value = "",
@@ -154,6 +163,34 @@ public class ParishController extends AbstractRestHandler {
     }
 
 
+    @RequestMapping(value = "/week/expired",
+            method = RequestMethod.GET,
+            produces = {"application/json"})
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public Set<ParishKeyUpdateInfo> retrieveParishKeysWithExpiredMasses(@CookieValue(value = "cityId", required = false) String cityId,
+                                                          @RequestParam(value = "date", required = false) String day,
+            HttpServletRequest request, HttpServletResponse response) {
+
+        cityId = cityService.getCityIdOrDefault(cityId);
+        List<Mass> masses = this.massService.getMassByCity(cityId); // TODO filter by date as well
+        LocalDate date = ServiceUtils.formatDateString(day);
+
+        MassSchedule massHolder = scheduleFactory.build(masses, date);
+
+        List<MassInfo> weekMasses = massHolder.getMassesByDay().values().stream()
+                .flatMap(timeMassValuesMap -> timeMassValuesMap.values().stream()
+                                .flatMap(List::stream))
+                .collect(Collectors.toList());
+
+        Set<ParishKeyUpdateInfo> parishKeys = weekMasses.stream()
+                .filter(massInfo -> massInfo.isNeedUpdate())
+                .map(massInfo -> ParishService.extractParishKeyUpdateInfo(massInfo.getParish().getParishId()))
+                .collect(Collectors.toSet());
+        return parishKeys;
+    }
+
+
     @ApiOperation(value = "Filter parish by query language")
     @RequestMapping(value = "",
             method = RequestMethod.GET,
@@ -167,6 +204,7 @@ public class ParishController extends AbstractRestHandler {
                                        @RequestParam(value = "sort", required = false, defaultValue = "+name") String sorting,
                                        HttpServletRequest request, HttpServletResponse response) {
 //        parishService.search(filter);
+        log.info(filter);
         return parishService.search(filter, Integer.parseInt(page), Integer.parseInt(perPage), sorting);
     }
 

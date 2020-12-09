@@ -1,10 +1,11 @@
 package by.imsha.utils;
 
-import by.imsha.domain.LocalizedBaseInfo;
 import com.github.rutledgepaulv.qbuilders.builders.GeneralQueryBuilder;
 import com.github.rutledgepaulv.qbuilders.conditions.Condition;
 import com.github.rutledgepaulv.qbuilders.visitors.MongoVisitor;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -18,8 +19,6 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 
 import static by.imsha.utils.Constants.LIMIT;
@@ -34,6 +33,8 @@ public class ServiceUtils {
     private static String langParamName = "lang";
 
     private static String timeFormat = "dd-MM-yyyy HH:mm";
+
+    private static final Logger log = LoggerFactory.getLogger(ServiceUtils.class);
 
 
     public static String[] parseSortValue(String sort){
@@ -141,6 +142,22 @@ public class ServiceUtils {
         }
 
         return date.toEpochSecond(ZoneOffset.UTC);
+    }
+
+    public static LocalDate formatDateString(String dateStr) {
+        LocalDate date = null;
+        if(dateStr != null){
+            try{
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateFormat);
+                date = LocalDate.parse(dateStr, formatter);
+            }catch (DateTimeParseException ex){
+                log.warn(String.format("Date format is incorrect. Date - %s,format - %s ", dateStr, dateFormat));
+            }
+        }
+        if(date == null){
+            date = LocalDateTime.now(ZoneId.of("Europe/Minsk")).toLocalDate();
+        }
+        return date;
     }
 
     /**

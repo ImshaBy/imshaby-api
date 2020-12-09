@@ -48,6 +48,8 @@ public class Parish {
 //    @NotNull
     private Coordinate gps;
 
+    private String key;
+
     private Integer updatePeriodInDays = 14;
 
     private Map<String, LocalizedBaseInfo> localizedInfo = new HashMap<>();
@@ -143,6 +145,7 @@ public class Parish {
         Parish parish = (Parish) o;
 
         if (!cityId.equals(parish.cityId)) return false;
+        if (!key.equals(parish.key)) return false;
         if (!email.equals(parish.email)) return false;
         if (!gps.equals(parish.gps)) return false;
         if (!id.equals(parish.id)) return false;
@@ -160,6 +163,7 @@ public class Parish {
         result = 31 * result + (address != null ? address.hashCode() : 0);
         result = 31 * result + (gps != null ? gps.hashCode() : 0);
         result = 31 * result + (cityId != null ? cityId.hashCode() : 0);
+        result = 31 * result + (key != null ? key.hashCode() : 0);
         result = 31 * result + (phone != null ? phone.hashCode() : 0);
         result = 31 * result + (email != null ? email.hashCode() : 0);
         result = 31 * result + (imgPath != null ? imgPath.hashCode() : 0);
@@ -288,5 +292,13 @@ public class Parish {
 
     public void setBroadcastUrl(String broadcastUrl) {
         this.broadcastUrl = broadcastUrl;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
     }
 }

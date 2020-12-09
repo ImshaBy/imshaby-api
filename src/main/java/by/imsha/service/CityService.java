@@ -2,7 +2,11 @@ package by.imsha.service;
 
 
 import by.imsha.domain.City;
+import by.imsha.exception.ResourceNotFoundException;
 import by.imsha.repository.CityRepository;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.metrics.CounterService;
@@ -11,8 +15,6 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 @Service
@@ -43,6 +45,22 @@ public class CityService {
         return cityRepository.findByName(getDefaultCityName());
     }
 
+    public String getCityIdOrDefault(String cityId) {
+        if(StringUtils.isEmpty(cityId)){
+            if(log.isWarnEnabled()){
+                log.warn("Looking for default city..");
+            }
+            City defaultCity = defaultCity();
+            if(defaultCity == null){
+                throw new ResourceNotFoundException(String.format("No default city (name = %s) founded", getDefaultCityName()));
+            }
+            cityId = defaultCity.getId();
+            if(log.isWarnEnabled()){
+                log.warn(String.format("Default city with id = %s is found.", cityId));
+            }
+        }
+        return cityId;
+    }
 
     @CacheEvict(cacheNames = "cityCache", condition = "#result != null")
     public void removeCity(String id) {
