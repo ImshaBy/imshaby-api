@@ -3,6 +3,8 @@ package by.imsha.domain;
 import by.imsha.utils.ServiceUtils;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -10,7 +12,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import javax.validation.constraints.NotNull;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -20,6 +21,8 @@ import java.util.Map;
  */
 @Document
 @ApiModel
+@Getter
+@Setter
 public class City {
 
     @Id
@@ -34,9 +37,6 @@ public class City {
     @ApiModelProperty(value = "key <*> is language code")
     private Map<String, LocalizedBaseInfo> localizedInfo = new HashMap<>();
 
-    public String getName() {
-        return this.name;
-    }
 
     public String getLocalizedName() {
         LocalizedBaseInfo localizedBaseInfo = getLocalizedInfo().get(ServiceUtils.fetchUserLangFromHttpRequest());
@@ -47,31 +47,13 @@ public class City {
         return calculatedName;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     public City(String name) {
         this.name = name;
     }
 
     public City() {
-    }
-
-    public Map<String, LocalizedBaseInfo> getLocalizedInfo() {
-        return localizedInfo;
-    }
-
-    public void setLocalizedInfo(Map<String, LocalizedBaseInfo> localizedInfo) {
-        this.localizedInfo = localizedInfo;
     }
 
     @Override

@@ -2,6 +2,7 @@ package by.imsha.domain;
 
 import by.imsha.utils.CoordinateTools;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Getter;
 
 import java.text.DecimalFormat;
 
@@ -10,11 +11,12 @@ import java.text.DecimalFormat;
  *
  *
  */
+@Getter
 public class Coordinate implements Comparable<Coordinate>{
 
     // declare private class level variables
-    private float latitude;
-    private float longitude;
+    private Float latitude;
+    private Float longitude;
 
     @JsonIgnore
     private final static DecimalFormat format = new DecimalFormat("##.######");
@@ -39,27 +41,17 @@ public class Coordinate implements Comparable<Coordinate>{
     public Coordinate() {
     }
 
-    /*
-         * get and set methods
-         */
-    public float getLatitude() {
-        return latitude;
-    }
 
-    public float getLongitude() {
-        return longitude;
-    }
-
-    public void setLatitude(float latitude) {
-        if(CoordinateTools.isValidLatitude(latitude) == true) {
+    public void setLatitude(Float latitude) {
+        if(latitude!= null && CoordinateTools.isValidLatitude(latitude) == true) {
             this.latitude = latitude;
         } else {
             throw new IllegalArgumentException("The parameter did not pass validation as defined by the CoordinateTools class");
         }
     }
 
-    public void setLongitude(float longitude) {
-        if(CoordinateTools.isValidLongitude(longitude) == true) {
+    public void setLongitude(Float longitude) {
+        if(longitude != null && CoordinateTools.isValidLongitude(longitude) == true) {
             this.longitude = longitude;
         } else {
             throw new IllegalArgumentException("The parameter did not pass validation as defined by the CoordinateTools class");
@@ -79,10 +71,6 @@ public class Coordinate implements Comparable<Coordinate>{
         return format.format(latitude) + ", " + format.format(longitude);
     }
 
-  /*
-   * methods required for ordering in collections
-   * http://java.sun.com/docs/books/tutorial/collections/interfaces/order.html
-   */
 
     /**
      * A method to determine if one event is the same as another

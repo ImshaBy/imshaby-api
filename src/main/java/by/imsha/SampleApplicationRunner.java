@@ -5,19 +5,8 @@ import by.imsha.domain.dto.MassInfo;
 import by.imsha.domain.dto.mapper.MassInfoMapper;
 import by.imsha.repository.CityRepository;
 import by.imsha.repository.MassRepository;
-import by.imsha.repository.factory.QuerableMongoRepositoryFactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.context.annotation.PropertySources;
-import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
-
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 /*
 @SpringBootApplication
@@ -45,7 +34,7 @@ public class SampleApplicationRunner implements CommandLineRunner {
         // save a couple of customers
         Mass mass = new Mass();
         mass.setDays(new int[]{1,3,4});
-        mass.setDuration(60 * 60);
+        mass.setDuration(60 * 60l);
         mass.setLangCode("BY");
         mass.setCityId("580bb971f9efb566767eee77");
         mass.setParishId("574360fcccbd5297c86047fd");

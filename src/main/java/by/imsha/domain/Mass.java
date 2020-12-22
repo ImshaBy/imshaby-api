@@ -8,6 +8,7 @@ import by.imsha.utils.Constants;
 import by.imsha.utils.ServiceUtils;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import lombok.Data;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -33,6 +34,7 @@ import java.util.Map;
         value = {@CompoundIndex(name = "unique_mass_index_with_dates", def = "{'time': 1, 'days': 1, 'singleStartTimestamp':1, 'parishId':1, 'startDate':1, 'endDate':1}", unique = true)}
 
 )
+@Data
 public class Mass {
 
     @Id
@@ -122,14 +124,6 @@ public class Mass {
     }
 
 
-    public String getCityId() {
-        return cityId;
-    }
-
-    public void setCityId(String cityId) {
-        this.cityId = cityId;
-    }
-
 
     public Mass(String langCode, String cityId, long duration, String parishId, String time, long start, int[] days) {
         this.langCode = langCode;
@@ -147,92 +141,11 @@ public class Mass {
         localizedInfo = new HashMap<>(mass.localizedInfo);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Mass)) return false;
-
-        Mass mass = (Mass) o;
-
-        if (duration != mass.duration) return false;
-        if (singleStartTimestamp != mass.singleStartTimestamp) return false;
-        if (!Arrays.equals(days, mass.days)) return false;
-        if (!langCode.equals(mass.langCode)) return false;
-        if (!parishId.equals(mass.parishId)) return false;
-        if (time != null ? !time.equals(mass.time) : mass.time != null) return false;
-
-        return true;
-    }
 
 
-    @Override
-    public int hashCode() {
-        int result = langCode != null ? langCode.hashCode() : 0;
-        result = 31 * result + (int) (duration ^ (duration >>> 32));
-        result = 31 * result + (time != null ? time.hashCode() : 0);
-        result = 31 * result + (days != null ? Arrays.hashCode(days) : 0);
-        result = 31 * result + (parishId != null ? parishId.hashCode() : 0);
-        result = 31 * result + (int) (singleStartTimestamp ^ (singleStartTimestamp >>> 32));
-        return result;
-    }
-
-    @Override
-    public String toString() {
-        return "Mass{" +
-                "id='" + id + '\'' +
-                ", cityId='" + cityId + '\'' +
-                ", langCode='" + langCode + '\'' +
-                ", duration=" + duration +
-                ", time='" + time + '\'' +
-                ", days=" + Arrays.toString(days) +
-                ", parishId='" + parishId + '\'' +
-                ", deleted=" + deleted +
-                ", notes='" + notes + '\'' +
-                ", singleStartTimestamp=" + singleStartTimestamp +
-                ", lastModifiedDate=" + lastModifiedDate +
-                '}';
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getLangCode() {
-        return langCode;
-    }
-
-    public void setLangCode(String langCode) {
-        this.langCode = langCode;
-    }
 
 
-    public long getDuration() {
-        return duration;
-    }
 
-    public void setDuration(long duration) {
-        this.duration = duration;
-    }
-
-    public String getParishId() {
-        return parishId;
-    }
-
-    public void setParishId(String parishId) {
-        this.parishId = parishId;
-    }
-
-    public boolean isDeleted() {
-        return deleted;
-    }
-
-    public void setDeleted(boolean deleted) {
-        this.deleted = deleted;
-    }
 
     public String getNotes() {
         String lang = ServiceUtils.fetchUserLangFromHttpRequest();
@@ -244,65 +157,5 @@ public class Mass {
             calculatedNotes = notes;
         }
         return calculatedNotes;
-    }
-
-    public void setNotes(String notes) {
-        this.notes = notes;
-    }
-
-    public boolean isOnline() {
-        return online;
-    }
-
-    public void setOnline(boolean online) {
-        this.online = online;
-    }
-
-    public String getTime() {
-        return time;
-    }
-
-    public void setTime(String time) {
-        this.time = time;
-    }
-
-    public long getSingleStartTimestamp() {
-        return singleStartTimestamp;
-    }
-
-    public void setSingleStartTimestamp(long singleStartTimestamp) {
-        this.singleStartTimestamp = singleStartTimestamp;
-    }
-
-    public int[] getDays() {
-        return days;
-    }
-
-    public void setDays(int[] days) {
-        this.days = days;
-    }
-
-    public LocalDateTime getLastModifiedDate() {
-        return lastModifiedDate;
-    }
-
-    public void setLastModifiedDate(LocalDateTime lastModifiedDate) {
-        this.lastModifiedDate = lastModifiedDate;
-    }
-
-    public LocalDate getStartDate() {
-        return startDate;
-    }
-
-    public void setStartDate(LocalDate startDate) {
-        this.startDate = startDate;
-    }
-
-    public LocalDate getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(LocalDate endDate) {
-        this.endDate = endDate;
     }
 }

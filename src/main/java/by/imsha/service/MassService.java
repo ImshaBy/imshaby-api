@@ -148,7 +148,7 @@ public class MassService {
     }
 
     public List<Mass> filterOutOnlyOnline(List<Mass> masses){
-        return masses.stream().filter(mass -> mass.isOnline())
+        return masses.stream().filter(mass -> mass.getOnline())
                 .collect(Collectors.toList());
     }
 
