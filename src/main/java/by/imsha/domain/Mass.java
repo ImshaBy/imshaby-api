@@ -51,7 +51,7 @@ public class Mass {
 
     //    @ApiObjectField(description = "Duration of mass in ms, default value = 3600 (1 hour)",  required = false)
 //    @NotNull
-    private long duration = 3600;
+    private Long duration = 3600l;
 
 //    @ApiObjectField(description = "Time of regular mass, that is defined throw time and days.", required = false)
 //    @JsonFormat(pattern = "KK:mm")
@@ -65,7 +65,7 @@ public class Mass {
     @Indexed
     private int[] days;
 
-    private boolean online;
+    private Boolean online;
 
 
     @NotNull
