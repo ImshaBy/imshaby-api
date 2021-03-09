@@ -2,10 +2,7 @@ package by.imsha.rest;
 
 import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
-import by.imsha.domain.dto.MassSchedule;
-import by.imsha.domain.dto.UpdateEntitiesInfo;
-import by.imsha.domain.dto.UpdateEntityInfo;
-import by.imsha.domain.dto.UpdateMassInfo;
+import by.imsha.domain.dto.*;
 import by.imsha.exception.InvalidDateIntervalException;
 import by.imsha.service.CityService;
 import by.imsha.service.MassService;
@@ -216,8 +213,8 @@ public class MassController extends AbstractRestHandler {
             produces = {"application/json", "application/xml"})
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public Resource<MassSchedule> retrieveMassesByCity(@CookieValue(value = "cityId", required = false) String cityId,@RequestParam(value = "date", required = false) String day,
-                                                       @RequestParam(value = "parishId", required = false) String parishId, @RequestParam(value = "online", defaultValue = "false") String online){
+    public Resource<MassSchedule> weekMasses(@CookieValue(value = "cityId", required = false) String cityId, @RequestParam(value = "date", required = false) String day,
+                                             @RequestParam(value = "parishId", required = false) String parishId, @RequestParam(value = "online", defaultValue = "false") String online){
 
         List<Mass> masses = null;
         if(StringUtils.isNotEmpty(parishId)){
@@ -236,6 +233,10 @@ public class MassController extends AbstractRestHandler {
         MassSchedule massHolder = scheduleFactory.build(masses, date);
 
         massHolder.createSchedule();
+
+        MassNav massFilters = massService.buildMassNavigation(massHolder);
+
+        massHolder.setNav(massFilters);
 
         if(log.isDebugEnabled()){
             log.debug(String.format("%s masses found: %s. Scheduler is built.", masses.size(), masses));

@@ -1,7 +1,8 @@
 package by.imsha.service;
 
+import by.imsha.domain.City;
 import by.imsha.domain.Mass;
-import by.imsha.domain.dto.UpdateMassInfo;
+import by.imsha.domain.dto.*;
 import by.imsha.domain.dto.mapper.MassInfoMapper;
 import by.imsha.repository.MassRepository;
 import by.imsha.utils.ServiceUtils;
@@ -25,11 +26,11 @@ import org.springframework.util.CollectionUtils;
 import javax.annotation.PostConstruct;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.time.LocalTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import static by.imsha.utils.Constants.LIMIT;
-import static by.imsha.utils.Constants.PAGE;
+import static by.imsha.utils.Constants.*;
 
 /**
  * @author Alena Misan
@@ -52,6 +53,9 @@ public class MassService {
 
     @Autowired
     private MassRepository massRepository;
+
+    @Autowired
+    private CityService cityService;
 
     @Caching(evict = {
             @CacheEvict(cacheNames = "massCache", key = "'massesByCity:' + #p0.cityId"),
@@ -241,6 +245,62 @@ public class MassService {
             }
         }
         return oldestMass;
+    }
+
+
+    public MassNav buildMassNavigation(MassSchedule massSchedule){
+        MassNav nav = new MassNav();
+        Collection<Map<LocalTime, List<MassInfo>>> massInfosByTime = massSchedule.getMassesByDay().values();
+
+        Set<MassFilterValue> massFilterValues =  massInfosByTime.stream()
+                .flatMap(x -> x.values().stream())
+                .flatMap(y -> y.stream())
+                .map(massInfo -> {
+                    MassFilterValue parishFilterValue = MassFilterValue.builder()
+                            .type(MassFilterType.PARISH)
+                            .name(massInfo.getParish().getName())
+                            .value(massInfo.getParish().getParishId())
+                            .build();
+
+                    MassFilterValue onlineFilterValue = MassFilterValue.builder()
+                            .type(MassFilterType.ONLINE)
+                            .name(ONLINE_FILTER)
+                            .value(massInfo.getOnline().toString())
+                            .build();
+
+                    MassFilterValue langFilterValue = MassFilterValue.builder()
+                            .type(MassFilterType.LANG)
+                            .name(massInfo.getLangCode())
+                            .value(massInfo.getLangCode())
+                            .build();
+                    return  Arrays.asList(parishFilterValue, onlineFilterValue, langFilterValue);
+                })
+                .flatMap(filterValues -> filterValues.stream())
+                .collect(Collectors.toSet());
+
+            // TODO to consider contry or other region (no need to return all cities in the system)
+
+        List<City> cities = cityService.getAllCities();
+        List<MassFilterValue> cityFilterValues = cities.stream()
+                .map(city -> MassFilterValue.builder()
+                        .name(city.getName())
+                        .value(city.getId())
+                        .type(MassFilterType.CITY)
+                        .build())
+                .collect(Collectors.toList());
+        massFilterValues.addAll(cityFilterValues);
+
+        TreeMap<String, Set<MassFilterValue>> guidedMap = new TreeMap();
+        massFilterValues.forEach(
+                massFilterValue -> guidedMap.computeIfAbsent(massFilterValue.getType().getName(), value -> new HashSet<MassFilterValue>())
+                                    .add(massFilterValue)
+        );
+        nav.setGuided(guidedMap);
+
+//        massSchedule.setNav(nav);
+//        massInfosByTime.stream()
+//        return ;
+        return nav;
     }
 
     public static LocalDateTime getOldestModifiedMassTimeForParish(String parishId){
