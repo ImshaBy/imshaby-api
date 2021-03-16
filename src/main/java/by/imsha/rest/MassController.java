@@ -27,6 +27,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -214,18 +215,29 @@ public class MassController extends AbstractRestHandler {
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     public Resource<MassSchedule> weekMasses(@CookieValue(value = "cityId", required = false) String cityId, @RequestParam(value = "date", required = false) String day,
-                                             @RequestParam(value = "parishId", required = false) String parishId, @RequestParam(value = "online", defaultValue = "false") String online){
+                                             @RequestParam(value = "parishId", required = false) String parishId, @RequestParam(value = "online", defaultValue = "false") String online,
+                                             @RequestParam(value = "massLang", required = false) String massLang){
 
-        List<Mass> masses = null;
+        List<Mass> masses;
         if(StringUtils.isNotEmpty(parishId)){
-            masses = this.massService.getMassByParish(parishId);
+            Parish parish = parishService.getParish(parishId);
+            if(parish != null){
+                cityId = parish.getCityId();
+                masses = this.massService.getMassByParish(parishId);
+            }else{
+                masses = Collections.emptyList();
+            }
         }else{
             cityId = cityService.getCityIdOrDefault(cityId);
             masses = this.massService.getMassByCity(cityId); // TODO filter by date as well
         }
 
-        if(Boolean.valueOf(online)){
+        if(Boolean.parseBoolean(online)){
             masses = massService.filterOutOnlyOnline(masses);
+        }
+
+        if(StringUtils.isNotEmpty(massLang)){
+            masses = massService.filterByMassLang(masses, massLang);
         }
 
         LocalDate date = ServiceUtils.formatDateString(day);
@@ -233,8 +245,12 @@ public class MassController extends AbstractRestHandler {
         MassSchedule massHolder = scheduleFactory.build(masses, date);
 
         massHolder.createSchedule();
-
-        MassNav massFilters = massService.buildMassNavigation(massHolder);
+        MassNav massFilters;
+        if(masses.isEmpty()){
+            massFilters = MassNav.EMPTY_NAV;
+        }else{
+            massFilters = massService.buildMassNavigation(massHolder, cityId, parishId, online, massLang);
+        }
 
         massHolder.setNav(massFilters);
 

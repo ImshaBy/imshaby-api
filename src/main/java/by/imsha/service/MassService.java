@@ -156,6 +156,11 @@ public class MassService {
                 .collect(Collectors.toList());
     }
 
+    public List<Mass> filterByMassLang(List<Mass> masses, String massLang){
+        return masses.stream().filter(mass -> mass.getLangCode().equals(massLang))
+            .collect(Collectors.toList());
+    }
+
 
     @Caching(evict = {
             @CacheEvict(cacheNames = "massCache", key = "#p1.id"),
@@ -248,7 +253,8 @@ public class MassService {
     }
 
 
-    public MassNav buildMassNavigation(MassSchedule massSchedule){
+    public MassNav buildMassNavigation(MassSchedule massSchedule, String cityId,
+                                       String parishId, String online, String massLang){
         MassNav nav = new MassNav();
         Collection<Map<LocalTime, List<MassInfo>>> massInfosByTime = massSchedule.getMassesByDay().values();
 
@@ -296,10 +302,24 @@ public class MassService {
                                     .add(massFilterValue)
         );
         nav.setGuided(guidedMap);
-
-//        massSchedule.setNav(nav);
-//        massInfosByTime.stream()
-//        return ;
+        TreeMap<String, MassFilterValue> selectedMap = new TreeMap();
+        if(StringUtils.isNotEmpty(cityId)){
+            selectedMap.put(MassFilterType.CITY.getName(), MassFilterValue.builder().type(MassFilterType.CITY)
+                .name(MassFilterType.CITY.getName()).value(cityId).build());
+        }
+        if(StringUtils.isNotEmpty(parishId)){
+            selectedMap.put(MassFilterType.PARISH.getName(), MassFilterValue.builder().type(MassFilterType.PARISH)
+                .name(MassFilterType.PARISH.getName()).value(parishId).build());
+        }
+        if(StringUtils.isNotEmpty(online)){
+            selectedMap.put(MassFilterType.ONLINE.getName(), MassFilterValue.builder().type(MassFilterType.ONLINE)
+                .name(MassFilterType.ONLINE.getName()).value(online).build());
+        }
+        if(StringUtils.isNotEmpty(massLang)){
+            selectedMap.put(MassFilterType.LANG.getName(), MassFilterValue.builder().type(MassFilterType.LANG)
+                .name(MassFilterType.LANG.getName()).value(massLang).build());
+        }
+        nav.setSelected(selectedMap);
         return nav;
     }
 
