@@ -16,6 +16,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 
 @Service
 public class CityService {
@@ -40,22 +42,22 @@ public class CityService {
         return cityRepository.save(city);
     }
 
-    @Cacheable(cacheNames = "cityCache", key="'default'", unless = "#result != null")
-    public City defaultCity(){
+    @Cacheable(cacheNames = "cityCache", key = "'default'", unless = "#result != null")
+    public City defaultCity() {
         return cityRepository.findByName(getDefaultCityName());
     }
 
     public String getCityIdOrDefault(String cityId) {
-        if(StringUtils.isEmpty(cityId)){
-            if(log.isWarnEnabled()){
+        if (StringUtils.isEmpty(cityId)) {
+            if (log.isWarnEnabled()) {
                 log.warn("Looking for default city..");
             }
             City defaultCity = defaultCity();
-            if(defaultCity == null){
+            if (defaultCity == null) {
                 throw new ResourceNotFoundException(String.format("No default city (name = %s) founded", getDefaultCityName()));
             }
             cityId = defaultCity.getId();
-            if(log.isWarnEnabled()){
+            if (log.isWarnEnabled()) {
                 log.warn(String.format("Default city with id = %s is found.", cityId));
             }
         }
@@ -74,7 +76,7 @@ public class CityService {
 
 
     @Cacheable(cacheNames = "cityCache")
-    public City retrieveCity(String id){
+    public City retrieveCity(String id) {
         return cityRepository.findById(id);
     }
 
@@ -87,4 +89,8 @@ public class CityService {
         return pageOfHotels;
     }
 
+    @Cacheable(cacheNames = "cityCache", key = "'allCities'", unless = "#result != null")
+    public List<City> getAllCities() {
+        return cityRepository.findAll();
+    }
 }

@@ -8,6 +8,7 @@ import by.imsha.domain.dto.UpdateEntityInfo;
 import by.imsha.domain.dto.mapper.CityMapper;
 import by.imsha.exception.InvalidLocaleException;
 import by.imsha.service.CityService;
+import by.imsha.utils.Constants;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.LocaleUtils;
@@ -81,9 +82,9 @@ public class CityController extends AbstractRestHandler {
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     public Page<City> getAllCity(@ApiParam(value = "The page number (zero-based)")
-                                      @RequestParam(value = "page",  defaultValue = DEFAULT_PAGE_NUM) int page,
+                                      @RequestParam(value = "page",  defaultValue = Constants.DEFAULT_PAGE_NUM) int page,
                                       @ApiParam(value = "Tha page size" )
-                                      @RequestParam(value = "size", defaultValue = DEFAULT_PAGE_SIZE) int size,
+                                      @RequestParam(value = "size", defaultValue = Constants.DEFAULT_PAGE_SIZE) int size,
                                       HttpServletRequest request, HttpServletResponse response) {
         Enumeration<String> headerNames = request.getHeaderNames();
         while (headerNames.hasMoreElements()){
