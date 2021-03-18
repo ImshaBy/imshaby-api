@@ -21,7 +21,7 @@ public class MassInfo implements Serializable{
     private Integer duration;
     private String info;
     private int[] days;
-    private Boolean online;
+    private boolean online;
     //@JsonIgnore
     @JsonSerialize(using = LocalDateSerializer.class)
     private LocalDate endDate;
