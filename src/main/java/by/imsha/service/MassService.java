@@ -271,7 +271,7 @@ public class MassService {
                     MassFilterValue onlineFilterValue = MassFilterValue.builder()
                             .type(MassFilterType.ONLINE)
                             .name(ONLINE_FILTER)
-                            .value(massInfo.getOnline().toString())
+                            .value(String.valueOf(massInfo.isOnline()))
                             .build();
 
                     MassFilterValue langFilterValue = MassFilterValue.builder()
