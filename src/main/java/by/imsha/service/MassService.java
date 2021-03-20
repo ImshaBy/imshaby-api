@@ -157,7 +157,7 @@ public class MassService {
     }
 
     public List<Mass> filterByMassLang(List<Mass> masses, String massLang){
-        return masses.stream().filter(mass -> mass.getLangCode().equals(massLang))
+        return masses.stream().filter(mass -> StringUtils.equals(mass.getLangCode(), massLang))
             .collect(Collectors.toList());
     }
 
