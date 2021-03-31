@@ -1,15 +1,13 @@
 package by.imsha.domain;
 
 import by.imsha.utils.ServiceUtils;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,7 +18,6 @@ import java.util.Map;
  *
  */
 @Document
-@ApiModel
 @Getter
 @Setter
 public class City {
@@ -28,13 +25,14 @@ public class City {
     @Id
     private String id;
 
+    private String key;
+
     @NotNull
     @NotEmpty
     @Indexed(unique = true)
     private String name;
 
 //    @JsonIgnore
-    @ApiModelProperty(value = "key <*> is language code")
     private Map<String, LocalizedBaseInfo> localizedInfo = new HashMap<>();
 
 

@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.util.List;
+import java.util.Optional;
 
 import static by.imsha.utils.Constants.LIMIT;
 import static by.imsha.utils.Constants.PAGE;
@@ -38,12 +39,12 @@ public class ParishService {
     }
 
     public static MassParishInfo extractMassParishInfo(String parishId){
-        Parish parish = INSTANCE.getParish(parishId);
+        Parish parish = INSTANCE.getParish(parishId).get();
         return MassParishInfoMapper.MAPPER.toMassParishInfo(parish);
     }
 
     public static ParishKeyUpdateInfo extractParishKeyUpdateInfo(String parishId){
-        Parish parish = INSTANCE.getParish(parishId);
+        Parish parish = INSTANCE.getParish(parishId).get();
         return ParishKeyUpdateInfoMapper.MAPPER.toParishKeyUpdateInfo(parish);
     }
 
@@ -62,14 +63,14 @@ public class ParishService {
     }
 
     public List<Parish> createParishesWithList(List<Parish> parishes){
-        return parishRepository.save(parishes);
+        return parishRepository.saveAll(parishes);
     }
 
     public Parish getParishByUser(String userId){
         return parishRepository.findByUserId(userId);
     }
 
-    public Parish getParish(String id){
+    public Optional<Parish> getParish(String id){
         return parishRepository.findById(id);
     }
 
@@ -110,7 +111,7 @@ public class ParishService {
     //TODO enable for production env
 //    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public void removeParish(String id){
-        parishRepository.delete(id);
+        parishRepository.deleteParishById(id);
     }
 
 

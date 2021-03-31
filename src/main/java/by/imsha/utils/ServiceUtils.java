@@ -110,23 +110,26 @@ public class ServiceUtils {
     }
 
     public static String fetchUserLangFromHttpRequest(){
-        HttpServletRequest httpServletRequest = ServiceUtils.getCurrentHttpRequest().get();
-        String paramLang = httpServletRequest.getParameter(langParamName);
-        if(StringUtils.isEmpty(paramLang)){
-            //it's ok to determine lang as part of locale as fallback user language
-            paramLang = RequestContextUtils.getLocale(httpServletRequest).getLanguage();
+        Optional<HttpServletRequest> httpServletRequest = ServiceUtils.getCurrentHttpRequest();
+        if(httpServletRequest.isPresent()){
+            String paramLang = httpServletRequest.get().getParameter(langParamName);
+            if(StringUtils.isEmpty(paramLang)){
+                //it's ok to determine lang as part of locale as fallback user language
+                paramLang = RequestContextUtils.getLocale(httpServletRequest.get()).getLanguage();
+            }
+            return paramLang;
         }
-        return paramLang;
+        return Constants.DEFAULT_LANG;
     }
     public static Query buildMongoQuery(String sort, int page, int limitPerPage, Condition<GeneralQueryBuilder> condition, MongoVisitor mongoVisitor) {
         Criteria criteria = condition.query(mongoVisitor);
         Query query = new Query();
         query.addCriteria(criteria);
-        query.with(new PageRequest(page, limitPerPage));
+        query.with(PageRequest.of(page, limitPerPage));
         String[] sortValue = ServiceUtils.parseSortValue(sort);
         if(sortValue != null){
             Sort.Direction direction = sortValue[1].equals("+") ? Sort.Direction.ASC : Sort.Direction.DESC;
-            query.with(new Sort(direction, sortValue[0]));
+            query.with(Sort.by(direction, sortValue[0]));
         }
         return query;
     }
@@ -173,6 +176,10 @@ public class ServiceUtils {
             result = Math.abs(ChronoUnit.DAYS.between(nowTime.toLocalDate(), pLastModifiedDate.toLocalDate().minusDays(1))) > pUpdatePeriodInDays;
         }
         return result;
+    }
+
+    public static long hourDiff(LocalDateTime localDateTimeFrom, LocalDateTime localDateTimeTo){
+        return Math.abs(ChronoUnit.HOURS.between(localDateTimeFrom, localDateTimeTo));
     }
 
 

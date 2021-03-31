@@ -23,7 +23,8 @@ public class CachingConfig {
                 .addCaches(
                         b -> b.name("parishCache").entryCapacity(100).expireAfterWrite(14, TimeUnit.DAYS),
                         b -> b.name("cityCache").entryCapacity(10),
-                        b -> b.name("massCache").expireAfterWrite(14, TimeUnit.DAYS)
+                        b -> b.name("massCache").expireAfterWrite(14, TimeUnit.DAYS),
+                        b -> b.name("webhookCache").entryCapacity(100)
                 );
     }
 

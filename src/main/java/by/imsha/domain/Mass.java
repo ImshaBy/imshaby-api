@@ -6,6 +6,7 @@ import by.imsha.rest.serializers.LocalDateSerializer;
 import by.imsha.service.MassService;
 import by.imsha.utils.Constants;
 import by.imsha.utils.ServiceUtils;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Data;
@@ -76,6 +77,7 @@ public class Mass {
     private String parishId;
 
     private boolean deleted = false;
+
     private String notes;
 
     private Map<String, LocalizedMass> localizedInfo = new HashMap<>();

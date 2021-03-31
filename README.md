@@ -3,6 +3,7 @@
 
 # imshaby-api
 
+https://next.stoplight.io/childRon/imshaby/version%2F1.3/api-docs-new.oas2.yml?edit=/paths/~1api~1mass~1week/get&domain=imshaby.docs.stoplight.io
 
 Git process:
 

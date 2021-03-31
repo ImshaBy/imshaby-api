@@ -2,16 +2,14 @@ package by.imsha.domain.dto.mapper;
 
 import by.imsha.domain.City;
 import by.imsha.domain.dto.CityInfo;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.Mappings;
+import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 
 /**
  * @author Alena Misan
  */
-@Mapper
+@Mapper( nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS ,
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface CityMapper {
     CityMapper MAPPER = Mappers.getMapper(CityMapper.class);
 

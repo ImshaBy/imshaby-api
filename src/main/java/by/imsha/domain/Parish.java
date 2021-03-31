@@ -4,7 +4,6 @@ import by.imsha.rest.serializers.CustomLocalDateTimeSerializer;
 import by.imsha.service.MassService;
 import by.imsha.utils.ServiceUtils;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import io.swagger.annotations.ApiModel;
 import lombok.Data;
 import org.hibernate.validator.constraints.Email;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -23,7 +22,6 @@ import java.util.Map;
  */
 //@ApiObject(show = true, name = "Parish", description = "Parish object json structure.")
 @Document
-@ApiModel
 @Data
 public class Parish {
 

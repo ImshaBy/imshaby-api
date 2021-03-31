@@ -1,8 +1,8 @@
 package by.imsha.rest.serializers;
 
 import by.imsha.utils.ServiceUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -23,7 +23,7 @@ public class CustomLocalDateTimeSerializerTest {
     private DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(pattern);
     private CustomLocalDateTimeSerializer customTimeSerializer;
 
-    @Before
+    @BeforeAll
     public void setUp(){
         customTimeSerializer = new CustomLocalDateTimeSerializer();
     }

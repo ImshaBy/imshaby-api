@@ -10,10 +10,9 @@ import by.imsha.service.MassService;
 import by.imsha.service.ParishService;
 import by.imsha.service.ScheduleFactory;
 import by.imsha.utils.ServiceUtils;
-import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.LocaleUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.hateoas.Resource;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,14 +20,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
 
 /**
  * Parish services
@@ -53,7 +47,6 @@ public class ParishController extends AbstractRestHandler {
     @Autowired
     private ScheduleFactory scheduleFactory;
 
-    @ApiOperation(value = "Create parish")
     @RequestMapping(value = "",
             method = RequestMethod.POST,
             consumes = {"application/json"},
@@ -63,31 +56,28 @@ public class ParishController extends AbstractRestHandler {
         return parishService.createParish(parish);
     }
 
-    @ApiOperation(value = "Get parish details")
     @RequestMapping(value = "/{parishId}",
             method = RequestMethod.GET,
             produces = {"application/json"})
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public Resource<Parish> retrieveParish(@PathVariable("parishId") String id,
-                                           HttpServletRequest request, HttpServletResponse response) {
-        Parish parish = parishService.getParish(id);
+    public EntityModel<Parish> retrieveParish(@PathVariable("parishId") String id,
+                                              HttpServletRequest request, HttpServletResponse response) {
+        Optional<Parish> parish = parishService.getParish(id);
         checkResourceFound(parish);
-        Resource<Parish> parishResource = new Resource<Parish>(parish);
-        parishResource.add(linkTo(methodOn(ParishController.class).retrieveParish(id, request, response)).withSelfRel());
+        EntityModel<Parish> parishResource = EntityModel.of(parish.get());
         return parishResource;
     }
 
-    @ApiOperation(value = "Update parish")
     @RequestMapping(value = "/{parishId}",
             method = RequestMethod.PUT,
             consumes = {"application/json"},
             produces = {"application/json"})
     @ResponseStatus(HttpStatus.OK)
     public UpdateEntityInfo updateParish(@PathVariable("parishId") String id, @RequestBody ParishInfo parishInfo) {
-        Parish parishToUpdate = this.parishService.getParish(id);
+        Optional<Parish> parishToUpdate = this.parishService.getParish(id);
         checkResourceFound(parishToUpdate);
-        Parish updatedParish = this.parishService.updateParish(parishInfo, parishToUpdate );
+        Parish updatedParish = this.parishService.updateParish(parishInfo, parishToUpdate.get() );
         return new UpdateEntityInfo(updatedParish.getId(), UpdateEntityInfo.STATUS.UPDATED);
     }
 
@@ -98,7 +88,7 @@ public class ParishController extends AbstractRestHandler {
     @ResponseStatus(HttpStatus.OK)
     public UpdateEntityInfo createLocalizedParish(@PathVariable("parishId") String id, @PathVariable("lc") String lang,
                                                   @RequestBody LocalizedParishInfo localizedParishInfo){
-        Parish parishToUpdate = this.parishService.getParish(id);
+        Optional<Parish> parishToUpdate = this.parishService.getParish(id);
         checkResourceFound(parishToUpdate);
         Locale localeObj = new Locale(lang);
         if(!LocaleUtils.isAvailableLocale(localeObj)){
@@ -107,21 +97,20 @@ public class ParishController extends AbstractRestHandler {
         LocalizedParish localizedParish = new LocalizedParish(lang, id);
         localizedParish.setAddress(localizedParishInfo.getAddress());
         localizedParish.setName(localizedParishInfo.getName());
-        parishToUpdate.getLocalizedInfo().put(lang, localizedParish);
-        Parish updatedParish = this.parishService.updateParish(parishToUpdate);
+        parishToUpdate.get().getLocalizedInfo().put(lang, localizedParish);
+        Parish updatedParish = this.parishService.updateParish(parishToUpdate.get());
         return new UpdateEntityInfo(updatedParish.getId(), UpdateEntityInfo.STATUS.UPDATED);
     }
 
 
 
-    @ApiOperation(value = "Remove parish")
     @RequestMapping(value = "/{parishId}",
             method = RequestMethod.DELETE,
             produces = {"application/json"})
     @ResponseStatus(HttpStatus.OK)
     public UpdateEntityInfo removeParish(@PathVariable("parishId") String id, @RequestParam(value = "cascade", defaultValue = "false") Boolean cascade, HttpServletRequest request,
                                          HttpServletResponse response) {
-        Parish parish = this.parishService.getParish(id);
+        Optional<Parish> parish = this.parishService.getParish(id);
         checkResourceFound(parish);
         UpdateEntityInfo updateEntityInfo;
 
@@ -132,7 +121,6 @@ public class ParishController extends AbstractRestHandler {
             List<Mass> parishMasses = massService.getMassByParish(id);
             List<String> massIds = new ArrayList<>();
             for (Mass parishMass : parishMasses) {
-                checkResourceFound(parishMass);
                 massIds.add(parishMass.getId());
                 massService.removeMass(parishMass);
                 massEntityInfos.add(new UpdateEntityInfo(parishMass.getId(), UpdateEntityInfo.STATUS.DELETED));
@@ -154,11 +142,10 @@ public class ParishController extends AbstractRestHandler {
             produces = {"application/json"})
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public Resource<Parish> retrieveParishByUser(@PathVariable("userId") String userId, HttpServletRequest request, HttpServletResponse response) {
+    public EntityModel<Parish> retrieveParishByUser(@PathVariable("userId") String userId, HttpServletRequest request, HttpServletResponse response) {
         Parish parishByUser = this.parishService.getParishByUser(userId);
-        checkResourceFound(parishByUser);
-        Resource<Parish> parishResource = new Resource<Parish>(parishByUser);
-        parishResource.add(linkTo(methodOn(ParishController.class).retrieveParishByUser(userId, request, response)).withSelfRel());
+        checkResourceFound(Optional.ofNullable(parishByUser));
+        EntityModel<Parish> parishResource = EntityModel.of(parishByUser);
         return parishResource;
     }
 
@@ -191,7 +178,6 @@ public class ParishController extends AbstractRestHandler {
     }
 
 
-    @ApiOperation(value = "Filter parish by query language")
     @RequestMapping(value = "",
             method = RequestMethod.GET,
             consumes = {"application/json"},

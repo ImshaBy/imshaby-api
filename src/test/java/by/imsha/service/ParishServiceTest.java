@@ -7,8 +7,9 @@ import by.imsha.domain.Parish;
 import static org.hamcrest.MatcherAssert.*;
 
 import static org.hamcrest.CoreMatchers.*;
-import org.junit.Before;
-import org.junit.Test;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import java.util.List;
@@ -30,7 +31,7 @@ public class ParishServiceTest {
 
     List<Parish> parishes;
 
-    @Before
+    @BeforeAll
     public void setUp(){
 //        parishes.add(p1);
     }

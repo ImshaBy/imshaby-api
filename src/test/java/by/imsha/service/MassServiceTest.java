@@ -1,8 +1,8 @@
 package by.imsha.service;
 
 import by.imsha.domain.Mass;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -12,7 +12,7 @@ public class MassServiceTest {
 
     private MassService massService;
 
-    @Before
+    @BeforeAll
     public void setUp() {
         // todo: check how to initiate service in test for Spring
         massService = new MassService();

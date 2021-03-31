@@ -1,10 +1,8 @@
 package by.imsha.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.swagger.annotations.ApiModel;
 import lombok.Data;
 
-@ApiModel
 @Data
 public class LocalizedBaseInfo {
     @JsonIgnore

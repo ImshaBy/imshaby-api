@@ -1,7 +1,5 @@
 package by.imsha.domain.dto;
 
-import io.swagger.annotations.ApiModelProperty;
-
 import java.io.Serializable;
 
 /**
@@ -12,8 +10,6 @@ public class UpdateEntityInfo implements Serializable {
         UPDATED, DELETED, CREATED, ERROR
     }
     private String id;
-
-    @ApiModelProperty(allowableValues = "UPDATED, DELETED, CREATED, ERROR")
     private String status;
 
     public UpdateEntityInfo(String id, STATUS status) {

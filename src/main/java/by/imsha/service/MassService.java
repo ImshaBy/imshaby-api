@@ -67,7 +67,7 @@ public class MassService {
     }
 
     public List<Mass> createMassesWithList(List<Mass> masses){
-        return massRepository.save(masses);
+        return massRepository.saveAll(masses);
     }
 
     public static boolean isMassTimeConfigIsValid(Mass mass) {
@@ -123,8 +123,8 @@ public class MassService {
     }
 
     @Cacheable(cacheNames = "massCache")
-    public Mass getMass(String id){
-        return massRepository.findOne(id);
+    public Optional<Mass> getMass(String id){
+        return massRepository.findById(id);
     }
 
     public List<Mass> search(String filter){
@@ -190,7 +190,7 @@ public class MassService {
             @CacheEvict(cacheNames = "massCache", key = "'oldestMass:' + #p0.parishId")
     })
     public void removeMass(Mass mass){
-        massRepository.delete(mass.getId());
+        massRepository.delete(mass);
     }
 
     @Caching(evict = {
@@ -234,6 +234,11 @@ public class MassService {
         return Triple.of(updatedMassId, createdMassId, removedMassId);
     }
 
+    //TODO flush massCache by mass id
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "massCache", key = "'massesByParish:' + #p0.parishId"),
+            @CacheEvict(cacheNames = "massCache", key = "'oldestMass:' + #p0.parishId")
+    })
     public List<Mass> removeMasses(String parishId){
         return massRepository.deleteByParishId(parishId);
     }
