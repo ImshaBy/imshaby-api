@@ -10,10 +10,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class MassServiceTest {
 
-    private MassService massService;
+    private static MassService massService;
 
     @BeforeAll
-    public void setUp() {
+    public static void setUp() {
         // todo: check how to initiate service in test for Spring
         massService = new MassService();
     }

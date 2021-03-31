@@ -21,10 +21,10 @@ public class CustomLocalDateTimeSerializerTest {
 
     private final String pattern = "dd-MM-yyyy HH:mm:ss";
     private DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(pattern);
-    private CustomLocalDateTimeSerializer customTimeSerializer;
+    private static CustomLocalDateTimeSerializer customTimeSerializer;
 
     @BeforeAll
-    public void setUp(){
+    public static void setUp(){
         customTimeSerializer = new CustomLocalDateTimeSerializer();
     }
 

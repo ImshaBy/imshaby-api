@@ -25,50 +25,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class ParishTest {
 
-    private final WebClient webClient = WebClient.builder()
-            .baseUrl("http://localhost:3000").build();
-
-
-    private Mono<Ping> hitWebHook(String url) {
-        return webClient.get()
-                .uri("ping1")
-                .retrieve()
-                .bodyToMono(Ping.class);
-    }
-
-    @Test
-    public void testFlux(){
-
-        List<EntityWebhook> citiesHooks = new ArrayList<>();
-        citiesHooks.add(EntityWebhook.builder().type(EntityWebHookType.CITY.getType()).key("minsk").url("http://localhost/ping1").build());
-        citiesHooks.add(EntityWebhook.builder().type(EntityWebHookType.CITY.getType()).key("minsk2").url("http://localhost/ping1").build());
-
-       Flux.fromIterable(citiesHooks)
-                .parallel()
-                .runOn(Schedulers.boundedElastic())
-                .flatMap(it -> hitWebHook(it.getUrl()))
-                .ordered((u1, u2) -> u2.getName().hashCode() - u1.getName().hashCode())
-               .blockLast();
-//                .subscribe(value -> System.out.println("value = " + value));
-
-
-
-//        System.out.println("ping = " + ping);
-    }
-
-
-    @Test
-    public void testMono(){
-        System.out.println("webClient = " + webClient);
-        Mono<Ping> monoPing = webClient.get()
-                .uri("ping1")
-                .retrieve()
-                .bodyToMono(Ping.class);
-
-        Ping ping = monoPing.block();
-        System.out.println("ping = " + ping);
-    }
-
     @Test
     public void testNeedUpdate(){
         Parish parish = new Parish();
