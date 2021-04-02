@@ -1,6 +1,7 @@
 package by.imsha.domain;
 
 import by.imsha.utils.ServiceUtils;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
@@ -20,6 +21,7 @@ import java.util.Map;
 @Document
 @Getter
 @Setter
+@Builder
 public class City {
 
     @Id

@@ -41,7 +41,7 @@ public class CityController extends AbstractRestHandler {
     @ResponseStatus(HttpStatus.CREATED)
     public City createCity( @Valid @RequestBody CityInfo city,
                                  HttpServletRequest request, HttpServletResponse response) {
-        City createdCity = this.cityService.createCity(new City(city.getName()));
+        City createdCity = this.cityService.createCity(City.builder().name(city.getName()).key(city.getKey()).build());
         return createdCity;
     }
 
