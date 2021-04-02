@@ -53,7 +53,9 @@ public class WebHookListener implements AfterSaveCallback<Mass> {
         boolean needToFireEvent = parishLastModifiedTimeEvent != null
                 ? ServiceUtils.hourDiff(parishLastModifiedTimeEvent, massLastModifiedTime) > 1
                 : true;
-
+        log.warn("parishLastModifiedTimeEvent = " + parishLastModifiedTimeEvent);
+        log.warn("massLastModifiedTime = " + massLastModifiedTime);
+        log.warn("needToFireEvent = " + needToFireEvent);
         if(needToFireEvent){
             List<EntityWebhook> citiesHooks = webhookService.retrieveCityHooks(mass);
             List<EntityWebhook> parishHooks = webhookService.retrieveParishHooks(mass);
