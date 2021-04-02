@@ -13,10 +13,5 @@ import org.mapstruct.factory.Mappers;
 public interface CityMapper {
     CityMapper MAPPER = Mappers.getMapper(CityMapper.class);
 
-    @Mappings({
-            @Mapping(source = "name", target = "name")
-    })
-    City toCity(CityInfo cityInfo);
-
     void updateCityFromDTO(CityInfo cityInfo, @MappingTarget City city);
 }
