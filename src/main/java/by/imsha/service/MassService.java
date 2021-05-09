@@ -24,9 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -97,6 +96,74 @@ public class MassService {
             validScheduledMass = StringUtils.isNotBlank(time);
         }
         return validScheduledMass;
+    }
+
+    public static boolean isScheduleMassDaysInDatePeriod(Mass mass) {
+        if (isMassTimeConfigIsValid(mass) && isScheduleMassDaysIsCorrect(mass) && isScheduleMassTimeIsCorrect(mass)
+            && mass.getSingleStartTimestamp() == 0) {
+            LocalDate startDate = mass.getStartDate();
+            LocalDate endDate = mass.getEndDate();
+            if (endDate == null) {
+                return true;
+            }
+            if (ChronoUnit.WEEKS.between(startDate, endDate) >= 1) {
+                return true;
+            }
+            int startDay = startDate.getDayOfWeek().getValue();
+            int endDay = endDate.getDayOfWeek().getValue();
+            for (int day : mass.getDays()) {
+                if (startDay <= endDay && (day < startDay || day > endDay)
+                    || day > endDay && day < startDay) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public static boolean isUniqueMassTime(Mass mass) {
+        if (isMassTimeConfigIsValid(mass) && isScheduleMassDaysIsCorrect(mass) && isScheduleMassTimeIsCorrect(mass)) {
+            boolean[] commDays = new boolean[7], daysToCheck = new boolean[7];
+            int startDayOfWeek;
+            LocalDate commStartDate, commEndDate, endDate1, endDate2;
+            Mass massToCheck = mass.asPeriodic();
+            Arrays.stream(massToCheck.getDays()).forEach(day -> daysToCheck[day - 1] = true);
+            List<Mass> masses = INSTANCE.getMassByParish(mass.getParishId());
+            for (Mass massP : masses) {
+                if (massP.getId().equals(mass.getId())) {
+                    continue;
+                }
+                massP = massP.asPeriodic();
+                if (!massP.getTime().equals(massToCheck.getTime())) {
+                    continue;
+                }
+                if (massP.getStartDate().isAfter(massToCheck.getStartDate())) {
+                    commStartDate = massP.getStartDate();
+                } else {
+                    commStartDate = massToCheck.getStartDate();
+                }
+                endDate1 = massP.getEndDate() == null ? commStartDate.plusWeeks(1) : massP.getEndDate();
+                endDate2 = massToCheck.getEndDate() == null ? commStartDate.plusWeeks(1) : massToCheck.getEndDate();
+                if (endDate1.isBefore(endDate2)) {
+                    commEndDate = endDate1;
+                } else {
+                    commEndDate = endDate2;
+                }
+                if (commStartDate.isAfter(commEndDate)) {
+                    continue;
+                }
+                Arrays.fill(commDays, false);
+                Arrays.stream(massP.getDays()).forEach(day -> commDays[day - 1] = daysToCheck[day - 1]);
+                for (int day = 0; (commStartDate.isBefore(commEndDate) || commStartDate.isEqual(commEndDate))
+                    && day < ChronoUnit.WEEKS.getDuration().toDays(); day++) {
+                    if (commDays[commStartDate.getDayOfWeek().getValue() - 1]) {
+                        return false;
+                    }
+                    commStartDate = commStartDate.plusDays(1);
+                }
+            }
+        }
+        return true;
     }
 
     @Cacheable(cacheNames = "massCache", key = "'massesByParish:' + #parishId")

@@ -6,11 +6,9 @@ import by.imsha.rest.serializers.LocalDateSerializer;
 import by.imsha.service.MassService;
 import by.imsha.utils.Constants;
 import by.imsha.utils.ServiceUtils;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Data;
-import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
@@ -19,10 +17,13 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import javax.validation.constraints.AssertTrue;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -125,7 +126,15 @@ public class Mass {
         return MassService.isScheduleMassTimeIsCorrect(this);
     }
 
+    @AssertTrue(message = "Week days of mass are out of start/end dates.")
+    private boolean isScheduleMassDaysInDatePeriod() {
+        return MassService.isScheduleMassDaysInDatePeriod(this);
+    }
 
+    @AssertTrue(message = "Mass time shouldn't be overlapped with time/date from other predefined masses.")
+    private boolean isUniqueMassTime() {
+        return MassService.isUniqueMassTime(this);
+    }
 
     public Mass(String langCode, String cityId, long duration, String parishId, String time, long start, int[] days) {
         this.langCode = langCode;
@@ -134,20 +143,15 @@ public class Mass {
         this.parishId = parishId;
         this.time = time;
         this.singleStartTimestamp = start;
-        this.days = days;
+        if (days != null) {
+            this.days = Arrays.copyOf(days, days.length);
+        }
     }
 
     public Mass(Mass mass) {
-        this(mass.langCode, mass.cityId, mass.duration, mass.parishId, mass.time, mass.singleStartTimestamp,
-                Arrays.copyOf(mass.days, mass.days.length));
+        this(mass.langCode, mass.cityId, mass.duration, mass.parishId, mass.time, mass.singleStartTimestamp, mass.days);
         localizedInfo = new HashMap<>(mass.localizedInfo);
     }
-
-
-
-
-
-
 
     public String getNotes() {
         String lang = ServiceUtils.fetchUserLangFromHttpRequest();
@@ -159,5 +163,20 @@ public class Mass {
             calculatedNotes = notes;
         }
         return calculatedNotes;
+    }
+
+    public Mass asPeriodic() {
+        if (singleStartTimestamp == 0) {
+            return this;
+        }
+        Mass periodicMass = new Mass(this);
+        LocalDateTime localDateTime = Instant.ofEpochSecond(singleStartTimestamp)
+            .atZone(ZoneId.of("Europe/Minsk")).toLocalDateTime();
+        periodicMass.time = localDateTime.toLocalTime().toString();
+        periodicMass.days = new int[1];
+        periodicMass.days[0] = localDateTime.getDayOfWeek().getValue();
+        periodicMass.startDate = periodicMass.endDate = localDateTime.toLocalDate();
+        periodicMass.singleStartTimestamp = 0;
+        return periodicMass;
     }
 }
