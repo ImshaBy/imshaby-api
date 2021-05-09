@@ -124,7 +124,6 @@ public class MassService {
     public static boolean isUniqueMassTime(Mass mass) {
         if (isMassTimeConfigIsValid(mass) && isScheduleMassDaysIsCorrect(mass) && isScheduleMassTimeIsCorrect(mass)) {
             boolean[] commDays = new boolean[7], daysToCheck = new boolean[7];
-            int startDayOfWeek;
             LocalDate commStartDate, commEndDate, endDate1, endDate2;
             Mass massToCheck = mass.asPeriodic();
             Arrays.stream(massToCheck.getDays()).forEach(day -> daysToCheck[day - 1] = true);
