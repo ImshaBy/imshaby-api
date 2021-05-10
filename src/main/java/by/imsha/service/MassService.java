@@ -45,6 +45,8 @@ public class MassService {
 
     private static MassService INSTANCE;
 
+    private static final int WEEK_DAYS_COUNT = (int) ChronoUnit.WEEKS.getDuration().toDays();
+
     @PostConstruct
     public void initInstance(){
         INSTANCE = this;
@@ -101,29 +103,48 @@ public class MassService {
     public static boolean isScheduleMassDaysInDatePeriod(Mass mass) {
         if (isMassTimeConfigIsValid(mass) && isScheduleMassDaysIsCorrect(mass) && isScheduleMassTimeIsCorrect(mass)
             && mass.getSingleStartTimestamp() == 0) {
-            LocalDate startDate = mass.getStartDate();
-            LocalDate endDate = mass.getEndDate();
-            if (endDate == null) {
-                return true;
-            }
-            if (ChronoUnit.WEEKS.between(startDate, endDate) >= 1) {
-                return true;
-            }
-            int startDay = startDate.getDayOfWeek().getValue();
-            int endDay = endDate.getDayOfWeek().getValue();
-            for (int day : mass.getDays()) {
-                if (startDay <= endDay && (day < startDay || day > endDay)
-                    || day > endDay && day < startDay) {
-                    return false;
-                }
-            }
+            return mass.getDays().length == buildValidWeekDaysInDatePeriod(mass).length;
         }
         return true;
     }
 
+    private static int[] buildValidWeekDaysInDatePeriod(Mass mass) {
+        LocalDate startDate = mass.getStartDate();
+        LocalDate endDate = mass.getEndDate();
+        int[] baseDays = mass.getDays();
+        if (endDate == null) {
+            return baseDays;
+        }
+        if (ChronoUnit.WEEKS.between(startDate, endDate) >= 1) {
+            return baseDays;
+        }
+        int startDay = startDate.getDayOfWeek().getValue();
+        int endDay = endDate.getDayOfWeek().getValue();
+        boolean[] invalidWeekDays = new boolean[WEEK_DAYS_COUNT];
+        int invalidDaysCount = 0;
+        for (int day : baseDays) {
+            if (startDay <= endDay && (day < startDay || day > endDay)
+                || day > endDay && day < startDay) {
+                invalidWeekDays[day] = true;
+                invalidDaysCount++;
+            }
+        }
+        if (invalidDaysCount == 0) {
+            return baseDays;
+        }
+        int[] validWeekDays = new int[baseDays.length - invalidDaysCount];
+        int i = 0;
+        for (int day : baseDays) {
+            if (!invalidWeekDays[day]) {
+                validWeekDays[i++] = day;
+            }
+        }
+        return validWeekDays;
+    }
+
     public static boolean isUniqueMassTime(Mass mass) {
         if (isMassTimeConfigIsValid(mass) && isScheduleMassDaysIsCorrect(mass) && isScheduleMassTimeIsCorrect(mass)) {
-            boolean[] commDays = new boolean[7], daysToCheck = new boolean[7];
+            boolean[] commDays = new boolean[WEEK_DAYS_COUNT], daysToCheck = new boolean[WEEK_DAYS_COUNT];
             LocalDate commStartDate, commEndDate, endDate1, endDate2;
             Mass massToCheck = mass.asPeriodic();
             Arrays.stream(massToCheck.getDays()).forEach(day -> daysToCheck[day - 1] = true);
@@ -154,7 +175,7 @@ public class MassService {
                 Arrays.fill(commDays, false);
                 Arrays.stream(massP.getDays()).forEach(day -> commDays[day - 1] = daysToCheck[day - 1]);
                 for (int day = 0; (commStartDate.isBefore(commEndDate) || commStartDate.isEqual(commEndDate))
-                    && day < ChronoUnit.WEEKS.getDuration().toDays(); day++) {
+                    && day < WEEK_DAYS_COUNT; day++) {
                     if (commDays[commStartDate.getDayOfWeek().getValue() - 1]) {
                         return false;
                     }
@@ -268,37 +289,54 @@ public class MassService {
     public Triple<String, String, String> removeMass(Mass baseMass, LocalDate fromDate, LocalDate toDate){
         LocalDate baseStartDate = baseMass.getStartDate();
         LocalDate baseEndDate = baseMass.getEndDate();
-        boolean updated = false;
+        boolean updated = false, remove = false;
         Mass massToSave = baseMass;
+        int[] validWeekDays, baseDays = baseMass.getDays();
         String updatedMassId = null, createdMassId = null, removedMassId = null;
         if ((baseStartDate == null || fromDate.isAfter(baseStartDate))
                 && (baseEndDate == null || !baseEndDate.isBefore(fromDate))) {
             massToSave.setEndDate(fromDate.minusDays(1));
-            massRepository.save(massToSave);
-            updatedMassId = massToSave.getId();
-            updated = true;
+            validWeekDays = buildValidWeekDaysInDatePeriod(massToSave);
+            if (validWeekDays.length > 0) {
+                massToSave.setDays(validWeekDays);
+                massRepository.save(massToSave);
+                updatedMassId = massToSave.getId();
+                updated = true;
+            } else {
+                remove = true;
+            }
         }
         if (toDate != null && (baseEndDate == null || baseEndDate.isAfter(toDate))
                 && (baseStartDate == null || !baseStartDate.isAfter(toDate))) {
             if (updated) {
                 massToSave = new Mass(baseMass);
+                massToSave.setDays(baseDays);
+            } else {
+                remove = false;
             }
             massToSave.setStartDate(toDate.plusDays(1));
             massToSave.setEndDate(baseEndDate);
-            massToSave = massRepository.save(massToSave);
-            if (updated) {
-                createdMassId = massToSave.getId();
-            } else {
-                updatedMassId = massToSave.getId();
+            validWeekDays = buildValidWeekDaysInDatePeriod(massToSave);
+            if (validWeekDays.length > 0) {
+                massToSave.setDays(validWeekDays);
+                massToSave = massRepository.save(massToSave);
+                if (updated) {
+                    createdMassId = massToSave.getId();
+                } else {
+                    updatedMassId = massToSave.getId();
+                }
+            } else if (massToSave.getId() != null) {
+                remove = true;
             }
         }
-        if (baseStartDate != null && !fromDate.isAfter(baseStartDate)
+        if (remove || baseStartDate != null && !fromDate.isAfter(baseStartDate)
                 && (toDate == null || baseEndDate != null && !toDate.isBefore(baseEndDate))) {
             removeMass(baseMass);
             removedMassId = baseMass.getId();
         }
         return Triple.of(updatedMassId, createdMassId, removedMassId);
     }
+
 
     //TODO flush massCache by mass id
     @Caching(evict = {
@@ -367,13 +405,13 @@ public class MassService {
                 .collect(Collectors.toList());
         massFilterValues.addAll(cityFilterValues);
 
-        TreeMap<String, Set<MassFilterValue>> guidedMap = new TreeMap();
+        TreeMap<String, Set<MassFilterValue>> guidedMap = new TreeMap<>();
         massFilterValues.forEach(
                 massFilterValue -> guidedMap.computeIfAbsent(massFilterValue.getType().getName(), value -> new HashSet<MassFilterValue>())
                                     .add(massFilterValue)
         );
         nav.setGuided(guidedMap);
-        TreeMap<String, MassFilterValue> selectedMap = new TreeMap();
+        TreeMap<String, MassFilterValue> selectedMap = new TreeMap<>();
         if(StringUtils.isNotEmpty(cityId)){
             selectedMap.put(MassFilterType.CITY.getName(), MassFilterValue.builder().type(MassFilterType.CITY)
                 .name(MassFilterType.CITY.getName()).value(cityId).build());

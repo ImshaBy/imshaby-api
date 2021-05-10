@@ -136,7 +136,9 @@ public class Mass {
         return MassService.isUniqueMassTime(this);
     }
 
-    public Mass(String langCode, String cityId, long duration, String parishId, String time, long start, int[] days) {
+    public Mass(String langCode, String cityId, long duration, String parishId, String time, long start, int[] days,
+                LocalDate startDate, LocalDate endDate, Boolean online, String notes, boolean deleted,
+                Map<String, LocalizedMass> localizedInfo) {
         this.langCode = langCode;
         this.cityId = cityId;
         this.duration = duration;
@@ -146,11 +148,17 @@ public class Mass {
         if (days != null) {
             this.days = Arrays.copyOf(days, days.length);
         }
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.online = online;
+        this.notes = notes;
+        this.deleted = deleted;
+        this.localizedInfo = new HashMap<>(localizedInfo);
     }
 
     public Mass(Mass mass) {
-        this(mass.langCode, mass.cityId, mass.duration, mass.parishId, mass.time, mass.singleStartTimestamp, mass.days);
-        localizedInfo = new HashMap<>(mass.localizedInfo);
+        this(mass.langCode, mass.cityId, mass.duration, mass.parishId, mass.time, mass.singleStartTimestamp, mass.days,
+            mass.startDate, mass.endDate, mass.online, mass.notes, mass.deleted, mass.localizedInfo);
     }
 
     public String getNotes() {
