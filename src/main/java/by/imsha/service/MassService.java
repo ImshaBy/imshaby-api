@@ -125,7 +125,7 @@ public class MassService {
         for (int day : baseDays) {
             if (startDay <= endDay && (day < startDay || day > endDay)
                 || day > endDay && day < startDay) {
-                invalidWeekDays[day] = true;
+                invalidWeekDays[day - 1] = true;
                 invalidDaysCount++;
             }
         }
@@ -135,7 +135,7 @@ public class MassService {
         int[] validWeekDays = new int[baseDays.length - invalidDaysCount];
         int i = 0;
         for (int day : baseDays) {
-            if (!invalidWeekDays[day]) {
+            if (!invalidWeekDays[day - 1]) {
                 validWeekDays[i++] = day;
             }
         }
