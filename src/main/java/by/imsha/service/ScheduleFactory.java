@@ -29,7 +29,7 @@ public class ScheduleFactory {
         for (Mass mass : masses) {
             long singleStartTimestamp = mass.getSingleStartTimestamp();
             // TODO get ZONE from parish : to support
-            LocalDateTime singleStartTime = singleStartTimestamp > 0 ? ServiceUtils.timestampToLocalDate(singleStartTimestamp, ZoneId.of("Europe/Minsk")) : null;
+            LocalDateTime singleStartTime = singleStartTimestamp > 0 ? ServiceUtils.timestampToLocalDate(singleStartTimestamp, ServiceUtils.BEL_ZONE_ID) : null;
 
 
             if (mass.getParishId() == null) {

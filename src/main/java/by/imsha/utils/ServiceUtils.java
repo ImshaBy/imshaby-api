@@ -34,6 +34,8 @@ public class ServiceUtils {
 
     private static String timeFormat = "dd-MM-yyyy HH:mm";
 
+    public static final ZoneId BEL_ZONE_ID = ZoneId.of("Europe/Minsk");
+
     private static final Logger log = LoggerFactory.getLogger(ServiceUtils.class);
 
 
@@ -59,6 +61,10 @@ public class ServiceUtils {
         return ZonedDateTime.ofInstant ( Instant.ofEpochSecond ( timestamp ) , zoneId ).toLocalDateTime();
     }
 
+    public static LocalDateTime timestampToLocalDate(long timestamp){
+        return timestampToLocalDate(timestamp, BEL_ZONE_ID);
+    }
+
     public static long dateToUTCTimestamp(String day) throws DateTimeParseException{
         LocalDate date = null;
         if(day != null){
@@ -72,7 +78,7 @@ public class ServiceUtils {
 
         return date.atStartOfDay().toEpochSecond(ZoneOffset.UTC);
     }
-  
+
     public static ZonedDateTime localDateTimeToZoneDateTime(LocalDateTime localDateTime, ZoneId fromZone, ZoneId toZone) {
         ZonedDateTime date = ZonedDateTime.of(localDateTime, fromZone);
         return date.withZoneSameInstant(toZone);
@@ -158,7 +164,7 @@ public class ServiceUtils {
             }
         }
         if(date == null){
-            date = LocalDateTime.now(ZoneId.of("Europe/Minsk")).toLocalDate();
+            date = LocalDateTime.now(BEL_ZONE_ID).toLocalDate();
         }
         return date;
     }
@@ -169,7 +175,7 @@ public class ServiceUtils {
     public static boolean needUpdateFromNow(LocalDateTime pLastModifiedDate, int pUpdatePeriodInDays) {
         LocalDateTime now = LocalDateTime.now();
         boolean result;
-        ZonedDateTime nowTime = ServiceUtils.localDateTimeToZoneDateTime(now, ZoneId.systemDefault(), ZoneId.of("Europe/Minsk"));
+        ZonedDateTime nowTime = ServiceUtils.localDateTimeToZoneDateTime(now, ZoneId.systemDefault(), BEL_ZONE_ID);
         if(pLastModifiedDate == null){
             result = true;
         }else{

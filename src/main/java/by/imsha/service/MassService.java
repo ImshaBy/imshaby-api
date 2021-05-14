@@ -74,13 +74,12 @@ public class MassService {
     public static boolean isMassTimeConfigIsValid(Mass mass) {
         long singleStartTimestamp = mass.getSingleStartTimestamp();
         String time = mass.getTime();
-        boolean timeIsNotNull = StringUtils.isNotBlank(time) && singleStartTimestamp == 0;
-        boolean singleTimestampIsNotNull = singleStartTimestamp != 0 && StringUtils.isBlank(time);
+        boolean timeIsNotNull = singleStartTimestamp == 0 && StringUtils.isNotBlank(time);
+        boolean singleTimestampIsNotNull = singleStartTimestamp > 0 && StringUtils.isBlank(time);
         return timeIsNotNull || singleTimestampIsNotNull;
     }
 
-
-    public static boolean isScheduleMassDaysIsCorrect(Mass mass) {
+    public static boolean isScheduleMassDaysIsNotEmpty(Mass mass) {
         String time = mass.getTime();
         int[] days = mass.getDays();
         boolean validScheduledMass = true;
@@ -90,7 +89,24 @@ public class MassService {
         return validScheduledMass;
     }
 
-    public static boolean isScheduleMassTimeIsCorrect(Mass mass) {
+    public static boolean isScheduleMassDaysAreCorrect(Mass mass) {
+        if (isScheduleMassDaysIsNotEmpty(mass)) {
+            for (int day : mass.getDays()) {
+                if (day < 1 || day > WEEK_DAYS_COUNT) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public static boolean isScheduleMassStartEndDatesAreCorrect(Mass mass) {
+        LocalDate startDate = mass.getStartDate();
+        LocalDate endDate = mass.getEndDate();
+        return startDate == null || endDate == null || !startDate.isAfter(endDate);
+    }
+
+    public static boolean isScheduleMassTimeIsNotBlank(Mass mass) {
         String time = mass.getTime();
         int[] days = mass.getDays();
         boolean validScheduledMass = true;
@@ -101,8 +117,8 @@ public class MassService {
     }
 
     public static boolean isScheduleMassDaysInDatePeriod(Mass mass) {
-        if (isMassTimeConfigIsValid(mass) && isScheduleMassDaysIsCorrect(mass) && isScheduleMassTimeIsCorrect(mass)
-            && mass.getSingleStartTimestamp() == 0) {
+        if (StringUtils.isNotBlank(mass.getTime()) && isMassTimeConfigIsValid(mass) && isScheduleMassDaysIsNotEmpty(mass)
+            && isScheduleMassDaysAreCorrect(mass) && isScheduleMassStartEndDatesAreCorrect(mass)) {
             return mass.getDays().length == buildValidWeekDaysInDatePeriod(mass).length;
         }
         return true;
@@ -112,7 +128,7 @@ public class MassService {
         LocalDate startDate = mass.getStartDate();
         LocalDate endDate = mass.getEndDate();
         int[] baseDays = mass.getDays();
-        if (endDate == null) {
+        if (startDate == null || endDate == null) {
             return baseDays;
         }
         if (ChronoUnit.WEEKS.between(startDate, endDate) >= 1) {
@@ -143,9 +159,11 @@ public class MassService {
     }
 
     public static boolean isUniqueMassTime(Mass mass) {
-        if (isMassTimeConfigIsValid(mass) && isScheduleMassDaysIsCorrect(mass) && isScheduleMassTimeIsCorrect(mass)) {
+        if (isMassTimeConfigIsValid(mass) && isScheduleMassTimeIsNotBlank(mass)
+            && isScheduleMassDaysIsNotEmpty(mass) && isScheduleMassDaysAreCorrect(mass)
+            && isScheduleMassStartEndDatesAreCorrect(mass) && isScheduleMassDaysInDatePeriod(mass)) {
             boolean[] commDays = new boolean[WEEK_DAYS_COUNT], daysToCheck = new boolean[WEEK_DAYS_COUNT];
-            LocalDate commStartDate, commEndDate, endDate1, endDate2;
+            LocalDate commStartDate, commEndDate, date1, date2;
             Mass massToCheck = mass.asPeriodic();
             Arrays.stream(massToCheck.getDays()).forEach(day -> daysToCheck[day - 1] = true);
             List<Mass> masses = INSTANCE.getMassByParish(mass.getParishId());
@@ -157,17 +175,19 @@ public class MassService {
                 if (!massP.getTime().equals(massToCheck.getTime())) {
                     continue;
                 }
-                if (massP.getStartDate().isAfter(massToCheck.getStartDate())) {
-                    commStartDate = massP.getStartDate();
+                date1 = massP.getStartDate() == null ? ServiceUtils.timestampToLocalDate(0L).toLocalDate() : massP.getStartDate();
+                date2 = massToCheck.getStartDate() == null ? ServiceUtils.timestampToLocalDate(0L).toLocalDate() : massToCheck.getStartDate();
+                if (date1.isAfter(date2)) {
+                    commStartDate = date1;
                 } else {
-                    commStartDate = massToCheck.getStartDate();
+                    commStartDate = date2;
                 }
-                endDate1 = massP.getEndDate() == null ? commStartDate.plusWeeks(1) : massP.getEndDate();
-                endDate2 = massToCheck.getEndDate() == null ? commStartDate.plusWeeks(1) : massToCheck.getEndDate();
-                if (endDate1.isBefore(endDate2)) {
-                    commEndDate = endDate1;
+                date1 = massP.getEndDate() == null ? commStartDate.plusWeeks(1) : massP.getEndDate();
+                date2 = massToCheck.getEndDate() == null ? commStartDate.plusWeeks(1) : massToCheck.getEndDate();
+                if (date1.isBefore(date2)) {
+                    commEndDate = date1;
                 } else {
-                    commEndDate = endDate2;
+                    commEndDate = date2;
                 }
                 if (commStartDate.isAfter(commEndDate)) {
                     continue;

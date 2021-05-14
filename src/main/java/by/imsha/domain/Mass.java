@@ -20,10 +20,8 @@ import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -116,23 +114,33 @@ public class Mass {
         return MassService.isMassTimeConfigIsValid(this);
     }
 
-    @AssertTrue(message = "Please specify 'days' for scheduled mass (you already specified field 'time').")
+    @AssertTrue(message = "Please specify not empty 'days' for scheduled mass (you already specified field 'time').")
     private boolean isValidScheduledMassEmptyDays() {
-        return MassService.isScheduleMassDaysIsCorrect(this);
+        return MassService.isScheduleMassDaysIsNotEmpty(this);
+    }
+
+    @AssertTrue(message = "Please specify correct 'days' (value is between 1 and 7) for scheduled mass.")
+    private boolean isValidScheduledMassIncorrectDays() {
+        return MassService.isScheduleMassDaysAreCorrect(this);
+    }
+
+    @AssertTrue(message = "Please specify correct start/end dates (startDate shouldn't be after endDate) for scheduled mass.")
+    private boolean isValidScheduledMassIncorrectStartEndDates() {
+        return MassService.isScheduleMassStartEndDatesAreCorrect(this);
+    }
+
+    @AssertTrue(message = "Week days of mass are out of start/end dates.")
+    private boolean isScheduleMassDaysNotInDatePeriod() {
+        return MassService.isScheduleMassDaysInDatePeriod(this);
     }
 
     @AssertTrue(message = "Please specify 'time' for scheduled mass (you already specified field 'days').")
     private boolean isValidScheduledMassEmptyTime() {
-        return MassService.isScheduleMassTimeIsCorrect(this);
-    }
-
-    @AssertTrue(message = "Week days of mass are out of start/end dates.")
-    private boolean isScheduleMassDaysInDatePeriod() {
-        return MassService.isScheduleMassDaysInDatePeriod(this);
+        return MassService.isScheduleMassTimeIsNotBlank(this);
     }
 
     @AssertTrue(message = "Mass time shouldn't be overlapped with time/date from other predefined masses.")
-    private boolean isUniqueMassTime() {
+    private boolean isDuplicatedMassTime() {
         return MassService.isUniqueMassTime(this);
     }
 
@@ -178,8 +186,7 @@ public class Mass {
             return this;
         }
         Mass periodicMass = new Mass(this);
-        LocalDateTime localDateTime = Instant.ofEpochSecond(singleStartTimestamp)
-            .atZone(ZoneId.of("Europe/Minsk")).toLocalDateTime();
+        LocalDateTime localDateTime = ServiceUtils.timestampToLocalDate(singleStartTimestamp);
         periodicMass.time = localDateTime.toLocalTime().toString();
         periodicMass.days = new int[1];
         periodicMass.days[0] = localDateTime.getDayOfWeek().getValue();
