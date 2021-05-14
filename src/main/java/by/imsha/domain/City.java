@@ -2,6 +2,7 @@ package by.imsha.domain;
 
 import by.imsha.utils.ServiceUtils;
 import lombok.Builder;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
@@ -19,14 +20,14 @@ import java.util.Map;
  *
  */
 @Document
-@Getter
-@Setter
+@Data
 @Builder
 public class City {
 
     @Id
     private String id;
 
+    @Indexed(unique = true)
     private String key;
 
     @NotNull
@@ -35,6 +36,7 @@ public class City {
     private String name;
 
 //    @JsonIgnore
+    @Builder.Default
     private Map<String, LocalizedBaseInfo> localizedInfo = new HashMap<>();
 
 

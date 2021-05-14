@@ -48,6 +48,7 @@ public class Parish {
 //    @NotNull
     private Coordinate gps;
 
+    @Indexed(unique=true)
     private String key;
 
     private Integer updatePeriodInDays = 14;
@@ -106,7 +107,6 @@ public class Parish {
     //    @ApiObjectField(description = "Parish email.", required = true)
     @Email
     @NotNull
-    @Indexed(unique=true)
     private String email;
 
     @Email
