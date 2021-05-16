@@ -71,6 +71,11 @@ public class MassService {
         return massRepository.saveAll(masses);
     }
 
+    public static boolean isPeriodicMass(Mass mass) {
+        long singleStartTimestamp = mass.getSingleStartTimestamp();
+        return singleStartTimestamp == 0;
+    }
+
     public static boolean isMassTimeConfigIsValid(Mass mass) {
         long singleStartTimestamp = mass.getSingleStartTimestamp();
         String time = mass.getTime();
@@ -80,17 +85,16 @@ public class MassService {
     }
 
     public static boolean isScheduleMassDaysIsNotEmpty(Mass mass) {
-        String time = mass.getTime();
         int[] days = mass.getDays();
         boolean validScheduledMass = true;
-        if (StringUtils.isNotBlank(time)) {
+        if (isPeriodicMass(mass)) {
             validScheduledMass = ArrayUtils.isNotEmpty(days);
         }
         return validScheduledMass;
     }
 
     public static boolean isScheduleMassDaysAreCorrect(Mass mass) {
-        if (isScheduleMassDaysIsNotEmpty(mass)) {
+        if (isPeriodicMass(mass) && isScheduleMassDaysIsNotEmpty(mass)) {
             for (int day : mass.getDays()) {
                 if (day < 1 || day > WEEK_DAYS_COUNT) {
                     return false;
@@ -101,23 +105,25 @@ public class MassService {
     }
 
     public static boolean isScheduleMassStartEndDatesAreCorrect(Mass mass) {
-        LocalDate startDate = mass.getStartDate();
-        LocalDate endDate = mass.getEndDate();
-        return startDate == null || endDate == null || !startDate.isAfter(endDate);
+        if (isPeriodicMass(mass)) {
+            LocalDate startDate = mass.getStartDate();
+            LocalDate endDate = mass.getEndDate();
+            return startDate == null || endDate == null || !startDate.isAfter(endDate);
+        }
+        return true;
     }
 
     public static boolean isScheduleMassTimeIsNotBlank(Mass mass) {
         String time = mass.getTime();
-        int[] days = mass.getDays();
         boolean validScheduledMass = true;
-        if (ArrayUtils.isNotEmpty(days)) {
+        if (isPeriodicMass(mass)) {
             validScheduledMass = StringUtils.isNotBlank(time);
         }
         return validScheduledMass;
     }
 
     public static boolean isScheduleMassDaysInDatePeriod(Mass mass) {
-        if (StringUtils.isNotBlank(mass.getTime()) && isMassTimeConfigIsValid(mass) && isScheduleMassDaysIsNotEmpty(mass)
+        if (isPeriodicMass(mass) && isMassTimeConfigIsValid(mass) && isScheduleMassDaysIsNotEmpty(mass)
             && isScheduleMassDaysAreCorrect(mass) && isScheduleMassStartEndDatesAreCorrect(mass)) {
             return mass.getDays().length == buildValidWeekDaysInDatePeriod(mass).length;
         }
