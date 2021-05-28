@@ -11,6 +11,7 @@ import com.github.rutledgepaulv.qbuilders.conditions.Condition;
 import com.github.rutledgepaulv.qbuilders.visitors.MongoVisitor;
 import com.github.rutledgepaulv.rqe.pipes.QueryConversionPipeline;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
@@ -265,7 +266,7 @@ public class MassService {
     }
 
     public List<Mass> filterOutOnlyOnline(List<Mass> masses){
-        return masses.stream().filter(mass -> mass.getOnline())
+        return masses.stream().filter(mass -> BooleanUtils.toBoolean(mass.getOnline()))
                 .collect(Collectors.toList());
     }
 
