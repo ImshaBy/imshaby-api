@@ -425,7 +425,7 @@ public class MassService {
         List<City> cities = cityService.getAllCities();
         List<MassFilterValue> cityFilterValues = cities.stream()
                 .map(city -> MassFilterValue.builder()
-                        .name(city.getName())
+                        .name(city.getLocalizedName())
                         .value(city.getId())
                         .type(MassFilterType.CITY)
                         .build())
