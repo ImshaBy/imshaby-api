@@ -1,8 +1,12 @@
 package by.imsha.service;
 
 import by.imsha.domain.Mass;
+import by.imsha.utils.Constants;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -11,6 +15,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class MassServiceTest {
 
     private static MassService massService;
+
+//    public static String DATE_FORMAT = "MM/dd/yyyy";
+
+
+    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern(Constants.DATE_FORMAT);
+
 
     @BeforeAll
     public static void setUp() {
@@ -49,10 +59,37 @@ public class MassServiceTest {
                 MassService.isMassTimeConfigIsValid(massTOCheck), is(equalTo(true)));
     }
 
+
     @Test
-    public void should() {
+    public void shouldNotPeriodicMassBeInDateRangeWithWrongEndDate() {
+        Mass massTOCheck = new Mass();
+        massTOCheck.setTime("09:00");
+        massTOCheck.setEndDate(LocalDate.parse("10/04/2021", formatter));
+        massTOCheck.setDays(new int[]{3});
 
+        assertThat("Incorrect periodic mass date range specified, please correct start & end dates",
+                MassService.isScheduleMassDaysInDatePeriod(massTOCheck), is(equalTo(false)));
 
+    }
+
+    @Test
+    public void shouldPeriodicMassBeInDateRange() {
+        Mass massTOCheck = new Mass();
+        massTOCheck.setTime("09:00");
+        massTOCheck.setDays(new int[]{3});
+        assertThat("Incorrect periodic mass date range specified, please correct start & end dates",
+                MassService.isScheduleMassDaysInDatePeriod(massTOCheck), is(equalTo(true)));
+
+    }
+
+    @Test
+    public void shouldPeriodicMassBeInDateRangeNotFullDate() {
+        Mass massTOCheck = new Mass();
+        massTOCheck.setTime("09:00");
+        massTOCheck.setEndDate(LocalDate.parse("10/04/2021", formatter));
+        massTOCheck.setDays(new int[]{1});
+        assertThat("Incorrect periodic mass date range specified, please correct start & end dates",
+                MassService.isScheduleMassDaysInDatePeriod(massTOCheck), is(equalTo(true)));
     }
 
 

@@ -93,6 +93,14 @@ public class MassService {
         }
         return validScheduledMass;
     }
+    public static boolean isCorrectEndDateForPeriodicMass(Mass mass) {
+        int[] days = mass.getDays();
+        boolean validScheduledMass = true;
+        if (isPeriodicMass(mass)) {
+            validScheduledMass = ArrayUtils.isNotEmpty(days);
+        }
+        return validScheduledMass;
+    }
 
     public static boolean isScheduleMassDaysAreCorrect(Mass mass) {
         if (isPeriodicMass(mass) && isScheduleMassDaysIsNotEmpty(mass)) {
@@ -135,9 +143,13 @@ public class MassService {
         LocalDate startDate = mass.getStartDate();
         LocalDate endDate = mass.getEndDate();
         int[] baseDays = mass.getDays();
+        if(startDate == null && endDate != null){
+            startDate = LocalDate.now();
+        }
         if (startDate == null || endDate == null) {
             return baseDays;
         }
+
         if (ChronoUnit.WEEKS.between(startDate, endDate) >= 1) {
             return baseDays;
         }
