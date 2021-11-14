@@ -69,6 +69,7 @@ public class Mass {
 
     private Boolean online;
 
+    private Boolean rorate;
 
     @NotNull
     @NotEmpty
@@ -145,7 +146,7 @@ public class Mass {
     }
 
     public Mass(String langCode, String cityId, long duration, String parishId, String time, long start, int[] days,
-                LocalDate startDate, LocalDate endDate, Boolean online, String notes, boolean deleted,
+                LocalDate startDate, LocalDate endDate, Boolean online, Boolean rorate, String notes, boolean deleted,
                 Map<String, LocalizedMass> localizedInfo) {
         this.langCode = langCode;
         this.cityId = cityId;
@@ -159,6 +160,7 @@ public class Mass {
         this.startDate = startDate;
         this.endDate = endDate;
         this.online = online;
+        this.rorate = rorate;
         this.notes = notes;
         this.deleted = deleted;
         this.localizedInfo = new HashMap<>(localizedInfo);
@@ -166,7 +168,7 @@ public class Mass {
 
     public Mass(Mass mass) {
         this(mass.langCode, mass.cityId, mass.duration, mass.parishId, mass.time, mass.singleStartTimestamp, mass.days,
-            mass.startDate, mass.endDate, mass.online, mass.notes, mass.deleted, mass.localizedInfo);
+            mass.startDate, mass.endDate, mass.online, mass.rorate, mass.notes, mass.deleted, mass.localizedInfo);
     }
 
     public String getNotes() {
