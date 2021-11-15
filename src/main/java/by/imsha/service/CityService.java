@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.actuate.metrics.CounterService;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -17,6 +16,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 
 @Service
@@ -35,8 +35,6 @@ public class CityService {
     private CityRepository cityRepository;
 
 
-    @Autowired
-    CounterService counterService;
 
     public City createCity(City city) {
         return cityRepository.save(city);
@@ -66,7 +64,7 @@ public class CityService {
 
     @CacheEvict(cacheNames = "cityCache", condition = "#result != null")
     public void removeCity(String id) {
-        cityRepository.delete(id);
+        cityRepository.deleteById(id);
     }
 
     @CacheEvict(cacheNames = "cityCache", key = "#p0.id", condition = "#result != null")
@@ -76,16 +74,13 @@ public class CityService {
 
 
     @Cacheable(cacheNames = "cityCache")
-    public City retrieveCity(String id) {
+    public Optional<City> retrieveCity(String id) {
         return cityRepository.findById(id);
     }
 
     public Page<City> getAllCities(Integer page, Integer size) {
-        Page pageOfHotels = cityRepository.findAll(new PageRequest(page, size));
-        // example of adding to the /metrics
-        if (size > 50) {
-            counterService.increment("by.imsha.service.CityService.getAllCities.largePayload");
-        }
+        Page pageOfHotels = cityRepository.findAll(
+                PageRequest.of(page, size));
         return pageOfHotels;
     }
 

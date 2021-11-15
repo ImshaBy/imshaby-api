@@ -3,10 +3,7 @@ package by.imsha.repository;
 import by.imsha.domain.Parish;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.querydsl.QueryDslPredicateExecutor;
-
-import java.util.List;
+import java.util.Optional;
 
 /**
  *
@@ -19,10 +16,11 @@ public interface ParishRepository extends QuerableMongoRepository<Parish, String
 
 
     @CacheEvict(cacheNames = "parishCache")
-    void delete(String id);
+    void deleteParishById(String id);
+
 
     @Cacheable(cacheNames = "parishCache")
-    Parish findById(String id);
+    Optional<Parish> findById(String id);
 
     Parish findByUserId(String userId);
 }

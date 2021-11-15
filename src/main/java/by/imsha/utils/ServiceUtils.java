@@ -34,6 +34,8 @@ public class ServiceUtils {
 
     private static String timeFormat = "dd-MM-yyyy HH:mm";
 
+    public static final ZoneId BEL_ZONE_ID = ZoneId.of("Europe/Minsk");
+
     private static final Logger log = LoggerFactory.getLogger(ServiceUtils.class);
 
 
@@ -59,6 +61,10 @@ public class ServiceUtils {
         return ZonedDateTime.ofInstant ( Instant.ofEpochSecond ( timestamp ) , zoneId ).toLocalDateTime();
     }
 
+    public static LocalDateTime timestampToLocalDate(long timestamp){
+        return timestampToLocalDate(timestamp, BEL_ZONE_ID);
+    }
+
     public static long dateToUTCTimestamp(String day) throws DateTimeParseException{
         LocalDate date = null;
         if(day != null){
@@ -72,7 +78,7 @@ public class ServiceUtils {
 
         return date.atStartOfDay().toEpochSecond(ZoneOffset.UTC);
     }
-  
+
     public static ZonedDateTime localDateTimeToZoneDateTime(LocalDateTime localDateTime, ZoneId fromZone, ZoneId toZone) {
         ZonedDateTime date = ZonedDateTime.of(localDateTime, fromZone);
         return date.withZoneSameInstant(toZone);
@@ -110,23 +116,26 @@ public class ServiceUtils {
     }
 
     public static String fetchUserLangFromHttpRequest(){
-        HttpServletRequest httpServletRequest = ServiceUtils.getCurrentHttpRequest().get();
-        String paramLang = httpServletRequest.getParameter(langParamName);
-        if(StringUtils.isEmpty(paramLang)){
-            //it's ok to determine lang as part of locale as fallback user language
-            paramLang = RequestContextUtils.getLocale(httpServletRequest).getLanguage();
+        Optional<HttpServletRequest> httpServletRequest = ServiceUtils.getCurrentHttpRequest();
+        if(httpServletRequest.isPresent()){
+            String paramLang = httpServletRequest.get().getParameter(langParamName);
+            if(StringUtils.isEmpty(paramLang)){
+                //it's ok to determine lang as part of locale as fallback user language
+                paramLang = RequestContextUtils.getLocale(httpServletRequest.get()).getLanguage();
+            }
+            return paramLang;
         }
-        return paramLang;
+        return Constants.DEFAULT_LANG;
     }
     public static Query buildMongoQuery(String sort, int page, int limitPerPage, Condition<GeneralQueryBuilder> condition, MongoVisitor mongoVisitor) {
         Criteria criteria = condition.query(mongoVisitor);
         Query query = new Query();
         query.addCriteria(criteria);
-        query.with(new PageRequest(page, limitPerPage));
+        query.with(PageRequest.of(page, limitPerPage));
         String[] sortValue = ServiceUtils.parseSortValue(sort);
         if(sortValue != null){
             Sort.Direction direction = sortValue[1].equals("+") ? Sort.Direction.ASC : Sort.Direction.DESC;
-            query.with(new Sort(direction, sortValue[0]));
+            query.with(Sort.by(direction, sortValue[0]));
         }
         return query;
     }
@@ -155,7 +164,7 @@ public class ServiceUtils {
             }
         }
         if(date == null){
-            date = LocalDateTime.now(ZoneId.of("Europe/Minsk")).toLocalDate();
+            date = LocalDateTime.now(BEL_ZONE_ID).toLocalDate();
         }
         return date;
     }
@@ -166,13 +175,17 @@ public class ServiceUtils {
     public static boolean needUpdateFromNow(LocalDateTime pLastModifiedDate, int pUpdatePeriodInDays) {
         LocalDateTime now = LocalDateTime.now();
         boolean result;
-        ZonedDateTime nowTime = ServiceUtils.localDateTimeToZoneDateTime(now, ZoneId.systemDefault(), ZoneId.of("Europe/Minsk"));
+        ZonedDateTime nowTime = ServiceUtils.localDateTimeToZoneDateTime(now, ZoneId.systemDefault(), BEL_ZONE_ID);
         if(pLastModifiedDate == null){
             result = true;
         }else{
             result = Math.abs(ChronoUnit.DAYS.between(nowTime.toLocalDate(), pLastModifiedDate.toLocalDate().minusDays(1))) > pUpdatePeriodInDays;
         }
         return result;
+    }
+
+    public static long hourDiff(LocalDateTime localDateTimeFrom, LocalDateTime localDateTimeTo){
+        return Math.abs(ChronoUnit.HOURS.between(localDateTimeFrom, localDateTimeTo));
     }
 
 

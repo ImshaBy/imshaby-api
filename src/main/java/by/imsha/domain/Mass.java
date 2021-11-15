@@ -9,7 +9,6 @@ import by.imsha.utils.ServiceUtils;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Data;
-import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
@@ -18,6 +17,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import javax.validation.constraints.AssertTrue;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import java.time.LocalDate;
@@ -69,6 +69,7 @@ public class Mass {
 
     private Boolean online;
 
+    private Boolean rorate;
 
     @NotNull
     @NotEmpty
@@ -76,6 +77,7 @@ public class Mass {
     private String parishId;
 
     private boolean deleted = false;
+
     private String notes;
 
     private Map<String, LocalizedMass> localizedInfo = new HashMap<>();
@@ -113,39 +115,61 @@ public class Mass {
         return MassService.isMassTimeConfigIsValid(this);
     }
 
-    @AssertTrue(message = "Please specify 'days' for scheduled mass (you already specified field 'time').")
+    @AssertTrue(message = "Please specify not empty 'days' for scheduled mass (you already specified field 'time').")
     private boolean isValidScheduledMassEmptyDays() {
-        return MassService.isScheduleMassDaysIsCorrect(this);
+        return MassService.isScheduleMassDaysIsNotEmpty(this);
+    }
+
+    @AssertTrue(message = "Please specify correct 'days' (value is between 1 and 7) for scheduled mass.")
+    private boolean isValidScheduledMassIncorrectDays() {
+        return MassService.isScheduleMassDaysAreCorrect(this);
+    }
+
+    @AssertTrue(message = "Please specify correct start/end dates (startDate shouldn't be after endDate) for scheduled mass.")
+    private boolean isValidScheduledMassIncorrectStartEndDates() {
+        return MassService.isScheduleMassStartEndDatesAreCorrect(this);
+    }
+
+    @AssertTrue(message = "Week days of mass are out of start/end dates.")
+    private boolean isScheduleMassDaysNotInDatePeriod() {
+        return MassService.isScheduleMassDaysInDatePeriod(this);
     }
 
     @AssertTrue(message = "Please specify 'time' for scheduled mass (you already specified field 'days').")
     private boolean isValidScheduledMassEmptyTime() {
-        return MassService.isScheduleMassTimeIsCorrect(this);
+        return MassService.isScheduleMassTimeIsNotBlank(this);
     }
 
+    @AssertTrue(message = "Mass time shouldn't be overlapped with time/date from other predefined masses.")
+    private boolean isDuplicatedMassTime() {
+        return MassService.isUniqueMassTime(this);
+    }
 
-
-    public Mass(String langCode, String cityId, long duration, String parishId, String time, long start, int[] days) {
+    public Mass(String langCode, String cityId, long duration, String parishId, String time, long start, int[] days,
+                LocalDate startDate, LocalDate endDate, Boolean online, Boolean rorate, String notes, boolean deleted,
+                Map<String, LocalizedMass> localizedInfo) {
         this.langCode = langCode;
         this.cityId = cityId;
         this.duration = duration;
         this.parishId = parishId;
         this.time = time;
         this.singleStartTimestamp = start;
-        this.days = days;
+        if (days != null) {
+            this.days = Arrays.copyOf(days, days.length);
+        }
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.online = online;
+        this.rorate = rorate;
+        this.notes = notes;
+        this.deleted = deleted;
+        this.localizedInfo = new HashMap<>(localizedInfo);
     }
 
     public Mass(Mass mass) {
-        this(mass.langCode, mass.cityId, mass.duration, mass.parishId, mass.time, mass.singleStartTimestamp,
-                Arrays.copyOf(mass.days, mass.days.length));
-        localizedInfo = new HashMap<>(mass.localizedInfo);
+        this(mass.langCode, mass.cityId, mass.duration, mass.parishId, mass.time, mass.singleStartTimestamp, mass.days,
+            mass.startDate, mass.endDate, mass.online, mass.rorate, mass.notes, mass.deleted, mass.localizedInfo);
     }
-
-
-
-
-
-
 
     public String getNotes() {
         String lang = ServiceUtils.fetchUserLangFromHttpRequest();
@@ -157,5 +181,19 @@ public class Mass {
             calculatedNotes = notes;
         }
         return calculatedNotes;
+    }
+
+    public Mass asPeriodic() {
+        if (singleStartTimestamp == 0) {
+            return this;
+        }
+        Mass periodicMass = new Mass(this);
+        LocalDateTime localDateTime = ServiceUtils.timestampToLocalDate(singleStartTimestamp);
+        periodicMass.time = localDateTime.toLocalTime().toString();
+        periodicMass.days = new int[1];
+        periodicMass.days[0] = localDateTime.getDayOfWeek().getValue();
+        periodicMass.startDate = periodicMass.endDate = localDateTime.toLocalDate();
+        periodicMass.singleStartTimestamp = 0;
+        return periodicMass;
     }
 }

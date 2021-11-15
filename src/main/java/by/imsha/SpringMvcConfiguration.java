@@ -12,7 +12,7 @@ import java.util.Locale;
 
 @EnableAutoConfiguration
 @Configuration
-public class SpringMvcConfiguration  extends WebMvcConfigurerAdapter {
+public class SpringMvcConfiguration {
 
 
     @Value("${imsha.lang.cookie}")

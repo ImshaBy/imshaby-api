@@ -83,6 +83,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         http.authorizeRequests()
                 .antMatchers(HttpMethod.GET, "/api/mass/week").permitAll()
+                .antMatchers(HttpMethod.GET, "/hook/parish").permitAll()
+                .antMatchers(HttpMethod.GET, "/hook/mass").permitAll()
                 .anyRequest().authenticated();
          }
             http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);

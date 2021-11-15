@@ -18,6 +18,7 @@ public class UpdateMassInfo implements Serializable{
     private String notes;
     private int[] days;
     private Boolean online;
+    private Boolean rorate;
     //@JsonIgnore
     @JsonSerialize(using = LocalDateSerializer.class)
     private LocalDate endDate;

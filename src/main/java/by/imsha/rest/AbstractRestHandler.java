@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.context.request.WebRequest;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.Optional;
 
 /**
  * This class is meant to be extended by all REST resource "controllers".
@@ -76,11 +77,11 @@ public abstract class AbstractRestHandler implements ApplicationEventPublisherAw
     }
 
     //todo: replace with exception mapping
-    public static <T> T checkResourceFound(final T resource) {
-        if (resource == null) {
+    public static <T> T checkResourceFound(final Optional<T> resource) {
+        if(!resource.isPresent()){
             throw new ResourceNotFoundException("resource not found");
         }
-        return resource;
+        return resource.get();
     }
 
 }

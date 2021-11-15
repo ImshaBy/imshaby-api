@@ -4,7 +4,6 @@ import by.imsha.rest.serializers.CustomLocalDateTimeSerializer;
 import by.imsha.service.MassService;
 import by.imsha.utils.ServiceUtils;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import io.swagger.annotations.ApiModel;
 import lombok.Data;
 import org.hibernate.validator.constraints.Email;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -23,7 +22,6 @@ import java.util.Map;
  */
 //@ApiObject(show = true, name = "Parish", description = "Parish object json structure.")
 @Document
-@ApiModel
 @Data
 public class Parish {
 
@@ -43,6 +41,8 @@ public class Parish {
     @NotEmpty
     private String name;
 
+    private String shortName;
+
     //    @ApiObjectField(description = "Address string of parish (only street and house number).", required = false)
     private String address;
 
@@ -50,6 +50,7 @@ public class Parish {
 //    @NotNull
     private Coordinate gps;
 
+    @Indexed(unique=true)
     private String key;
 
     private Integer updatePeriodInDays = 14;
@@ -108,7 +109,6 @@ public class Parish {
     //    @ApiObjectField(description = "Parish email.", required = true)
     @Email
     @NotNull
-    @Indexed(unique=true)
     private String email;
 
     @Email
@@ -127,6 +127,15 @@ public class Parish {
             calculatedName = ((LocalizedParish) localizedBaseInfo).getName();
         }
         return calculatedName;
+    }
+
+    public String getShortName() {
+        LocalizedBaseInfo localizedBaseInfo = getLocalizedInfo().get(ServiceUtils.fetchUserLangFromHttpRequest());
+        String calculatedShortName = shortName;
+        if(localizedBaseInfo != null){
+            calculatedShortName = ((LocalizedParish) localizedBaseInfo).getShortName();
+        }
+        return calculatedShortName;
     }
 
     public String getAddress() {
