@@ -41,6 +41,8 @@ public class Parish {
     @NotEmpty
     private String name;
 
+    private String shortName;
+
     //    @ApiObjectField(description = "Address string of parish (only street and house number).", required = false)
     private String address;
 
@@ -125,6 +127,15 @@ public class Parish {
             calculatedName = ((LocalizedParish) localizedBaseInfo).getName();
         }
         return calculatedName;
+    }
+
+    public String getShortName() {
+        LocalizedBaseInfo localizedBaseInfo = getLocalizedInfo().get(ServiceUtils.fetchUserLangFromHttpRequest());
+        String calculatedShortName = shortName;
+        if(localizedBaseInfo != null){
+            calculatedShortName = ((LocalizedParish) localizedBaseInfo).getShortName();
+        }
+        return calculatedShortName;
     }
 
     public String getAddress() {

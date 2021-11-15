@@ -11,6 +11,7 @@ import java.io.Serializable;
 public class ParishInfo implements Serializable {
 
     private String name;
+    private String shortName;
     private String imgPath;
     private LocationInfo gps;
     private String address;

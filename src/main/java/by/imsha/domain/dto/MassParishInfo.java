@@ -12,6 +12,7 @@ import java.io.Serializable;
 public class MassParishInfo implements Serializable {
     private String parishId;
     private String name;
+    private String shortName;
     private String imgPath;
     private LocationInfo gps;
     private String address;
@@ -21,5 +22,6 @@ public class MassParishInfo implements Serializable {
 
     @JsonIgnore
     private Integer updatePeriodInDays;
+
 
 }

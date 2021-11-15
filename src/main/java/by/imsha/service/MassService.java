@@ -25,7 +25,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
-import java.time.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -412,7 +414,8 @@ public class MassService {
                 .map(massInfo -> {
                     MassFilterValue parishFilterValue = MassFilterValue.builder()
                             .type(MassFilterType.PARISH)
-                            .name(massInfo.getParish().getName())
+                            .name(Optional.ofNullable(massInfo.getParish().getShortName())
+                                    .orElseGet(massInfo.getParish()::getName))
                             .value(massInfo.getParish().getParishId())
                             .build();
 

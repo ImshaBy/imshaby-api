@@ -104,6 +104,8 @@ public class ParishService {
         return parishRepository.save(parishToUpdate);
     }
 
+
+
     public Parish updateParish(Parish parishToUpdate){
         return parishRepository.save(parishToUpdate);
     }
