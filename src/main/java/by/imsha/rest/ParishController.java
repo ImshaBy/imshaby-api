@@ -95,12 +95,10 @@ public class ParishController extends AbstractRestHandler {
             throw new InvalidLocaleException("Invalid lang specified : " + lang);
         }
         LocalizedParish localizedParish = new LocalizedParish(lang, id);
-        Optional.ofNullable(localizedParishInfo.getAddress()).ifPresent(localizedParish::setAddress);
-        Optional.ofNullable(localizedParishInfo.getName()).ifPresent(localizedParish::setName);
-        Optional.ofNullable(localizedParishInfo.getShortName()).ifPresent(localizedParish::setShortName);
-
-        parishToUpdate.get().getLocalizedInfo().put(lang, localizedParish);
-        Parish updatedParish = this.parishService.updateParish(parishToUpdate.get());
+        localizedParish.setName(localizedParishInfo.getName());
+        localizedParish.setAddress(localizedParishInfo.getAddress());
+        localizedParish.setShortName(localizedParishInfo.getShortName());
+        Parish updatedParish = this.parishService.updateLocalizedParishInfo(localizedParish, parishToUpdate.get());
         return new UpdateEntityInfo(updatedParish.getId(), UpdateEntityInfo.STATUS.UPDATED);
     }
 

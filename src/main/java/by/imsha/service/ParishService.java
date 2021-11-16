@@ -1,6 +1,7 @@
 package by.imsha.service;
 
 
+import by.imsha.domain.LocalizedParish;
 import by.imsha.domain.Parish;
 import by.imsha.domain.dto.MassParishInfo;
 import by.imsha.domain.dto.ParishInfo;
@@ -104,10 +105,18 @@ public class ParishService {
         return parishRepository.save(parishToUpdate);
     }
 
-
-
     public Parish updateParish(Parish parishToUpdate){
         return parishRepository.save(parishToUpdate);
+    }
+
+    public Parish updateLocalizedParishInfo(LocalizedParish localizedParishInput, Parish parish){
+        LocalizedParish currentParishInfo = (LocalizedParish)parish.getLocalizedInfo().get(localizedParishInput.getLang());
+        if(currentParishInfo != null){
+            ParishInfoMapper.MAPPER.updateLocalizedParishFromDTO(localizedParishInput, currentParishInfo);
+        }else{
+            parish.getLocalizedInfo().put(localizedParishInput.getLang(), localizedParishInput);
+        }
+        return updateParish(parish);
     }
 
     //TODO enable for production env

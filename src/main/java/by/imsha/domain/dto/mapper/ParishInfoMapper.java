@@ -1,5 +1,6 @@
 package by.imsha.domain.dto.mapper;
 
+import by.imsha.domain.LocalizedParish;
 import by.imsha.domain.Parish;
 import by.imsha.domain.dto.ParishInfo;
 import org.mapstruct.*;
@@ -19,5 +20,7 @@ public interface ParishInfoMapper {
     ParishInfo toParishInfo(Parish parish);
 
     Parish updateParishFromDTO(ParishInfo parishInfo, @MappingTarget Parish parish);
+
+    LocalizedParish updateLocalizedParishFromDTO(LocalizedParish parishInfo, @MappingTarget LocalizedParish parish);
 
 }
