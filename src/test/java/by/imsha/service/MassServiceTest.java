@@ -64,11 +64,12 @@ public class MassServiceTest {
     public void shouldNotPeriodicMassBeInDateRangeWithWrongEndDate() {
         Mass massTOCheck = new Mass();
         massTOCheck.setTime("09:00");
+        massTOCheck.setStartDate(LocalDate.parse("10/03/2021", formatter));
         massTOCheck.setEndDate(LocalDate.parse("10/04/2021", formatter));
         massTOCheck.setDays(new int[]{3});
 
         assertThat("Incorrect periodic mass date range specified, please correct start & end dates",
-                MassService.isScheduleMassDaysInDatePeriod(massTOCheck), is(equalTo(true)));
+                MassService.isScheduleMassDaysInDatePeriod(massTOCheck), is(equalTo(false)));
 
     }
 
