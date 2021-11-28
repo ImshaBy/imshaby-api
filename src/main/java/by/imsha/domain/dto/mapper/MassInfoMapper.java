@@ -10,7 +10,8 @@ import org.mapstruct.factory.Mappers;
  * @author Alena Misan
  */
 @Mapper(uses = ParishInfoMapper.class,
-        nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS)
+        nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS,
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface MassInfoMapper {
     MassInfoMapper MAPPER = Mappers.getMapper(MassInfoMapper.class);
 
@@ -20,5 +21,5 @@ public interface MassInfoMapper {
     })
     MassInfo toMassInfo(Mass mass);
 
-    void updateMassFromDTO(UpdateMassInfo massInfo, @MappingTarget Mass mass);
+    Mass updateMassFromDTO(UpdateMassInfo massInfo, @MappingTarget Mass mass);
 }

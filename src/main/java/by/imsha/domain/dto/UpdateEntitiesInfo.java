@@ -1,6 +1,5 @@
 package by.imsha.domain.dto;
 
-import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -16,7 +15,6 @@ public class UpdateEntitiesInfo implements Serializable {
     }
     private List<String> entities;
 
-    @ApiModelProperty(allowableValues = "UPDATED, DELETED, ERROR")
     private String status;
 
     public UpdateEntitiesInfo(List<String> id, STATUS status) {

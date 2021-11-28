@@ -5,6 +5,8 @@ import by.imsha.domain.dto.mapper.MassInfoMapper;
 import by.imsha.rest.serializers.LocalDateSerializer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serializable;
 import java.time.DayOfWeek;
@@ -24,6 +26,10 @@ public class MassSchedule implements Serializable {
     @JsonSerialize(using=LocalDateSerializer.class)
     private LocalDate startWeekDate;
 
+    @Getter
+    @Setter
+    private MassNav nav;
+
     public MassSchedule(LocalDate startDate) {
         this.startWeekDate = startDate;
         weekMasses = new HashMap<WeekDayTimeKey, List<Mass>>();
@@ -33,7 +39,6 @@ public class MassSchedule implements Serializable {
 
     @JsonIgnore
     private Map<WeekDayTimeKey, List<Mass>> weekMasses;
-
 
     private List<MassDay> schedule;
 
@@ -64,6 +69,8 @@ public class MassSchedule implements Serializable {
        // addToWeekMasses(mass, dayOfWeek, time);
         addToMassesByDay(mass, dayOfWeek, time);
     }
+
+
 
     private void addToWeekMasses(Mass mass, DayOfWeek dayOfWeek, LocalTime time) {
         MassSchedule.WeekDayTimeKey weekTimeKey = new MassSchedule.WeekDayTimeKey(dayOfWeek, time);

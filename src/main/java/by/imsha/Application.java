@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.boot.web.support.SpringBootServletInitializer;
+import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.*;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
@@ -18,7 +18,6 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 
 @SpringBootApplication
 @ComponentScan(basePackages = {"by.imsha", "com.auth0"})
-@Import({springfox.bean.validators.configuration.BeanValidatorPluginsConfiguration.class})
 //@EnableAdminServer
 @EnableMongoRepositories(
         repositoryFactoryBeanClass = QuerableMongoRepositoryFactoryBean.class
@@ -28,7 +27,7 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
         @PropertySource("classpath:application.properties"),
         @PropertySource("classpath:auth0.properties")
 })
-public class Application extends SpringBootServletInitializer{
+public class Application extends SpringBootServletInitializer {
 
     private static final Class<Application> applicationClass = Application.class;
 
@@ -36,11 +35,8 @@ public class Application extends SpringBootServletInitializer{
         SpringApplication.run(applicationClass, args);
     }
 
-    @Override
-    protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-        return application.sources(applicationClass);
-    }
 
+/*
 
     @Bean
     public MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter() {
@@ -53,6 +49,7 @@ public class Application extends SpringBootServletInitializer{
         jsonConverter.setObjectMapper(objectMapper);
         return jsonConverter;
     }
+*/
 
 
 }

@@ -1,9 +1,10 @@
 package by.imsha.utils;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.*;
-import org.junit.Before;
-import org.junit.Test;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -14,11 +15,6 @@ import java.time.ZoneId;
  */
 
 public class ServiceUtilsTest {
-
-
-    @Before
-    public void setUp(){
-    }
 
     @Test
     public void transformTimestampToDate_03122017(){

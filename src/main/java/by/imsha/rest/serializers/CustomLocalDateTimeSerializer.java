@@ -29,7 +29,7 @@ public class CustomLocalDateTimeSerializer extends JsonSerializer<LocalDateTime>
     @Override
     public void serialize(LocalDateTime date, JsonGenerator gen, SerializerProvider provider)
             throws IOException{
-        ZonedDateTime timeString = ServiceUtils.localDateTimeToZoneDateTime(date, ZoneId.systemDefault(), ZoneId.of("Europe/Minsk"));
+        ZonedDateTime timeString = ServiceUtils.localDateTimeToZoneDateTime(date, ZoneId.systemDefault(), ServiceUtils.BEL_ZONE_ID);
         gen.writeString(timeString.format(formatter));
     }
 

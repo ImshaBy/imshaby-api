@@ -1,10 +1,11 @@
 package by.imsha.utils;
 
-import by.imsha.domain.LocalizedBaseInfo;
 import com.github.rutledgepaulv.qbuilders.builders.GeneralQueryBuilder;
 import com.github.rutledgepaulv.qbuilders.conditions.Condition;
 import com.github.rutledgepaulv.qbuilders.visitors.MongoVisitor;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -18,8 +19,6 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 
 import static by.imsha.utils.Constants.LIMIT;
@@ -34,6 +33,10 @@ public class ServiceUtils {
     private static String langParamName = "lang";
 
     private static String timeFormat = "dd-MM-yyyy HH:mm";
+
+    public static final ZoneId BEL_ZONE_ID = ZoneId.of("Europe/Minsk");
+
+    private static final Logger log = LoggerFactory.getLogger(ServiceUtils.class);
 
 
     public static String[] parseSortValue(String sort){
@@ -58,6 +61,10 @@ public class ServiceUtils {
         return ZonedDateTime.ofInstant ( Instant.ofEpochSecond ( timestamp ) , zoneId ).toLocalDateTime();
     }
 
+    public static LocalDateTime timestampToLocalDate(long timestamp){
+        return timestampToLocalDate(timestamp, BEL_ZONE_ID);
+    }
+
     public static long dateToUTCTimestamp(String day) throws DateTimeParseException{
         LocalDate date = null;
         if(day != null){
@@ -71,7 +78,7 @@ public class ServiceUtils {
 
         return date.atStartOfDay().toEpochSecond(ZoneOffset.UTC);
     }
-  
+
     public static ZonedDateTime localDateTimeToZoneDateTime(LocalDateTime localDateTime, ZoneId fromZone, ZoneId toZone) {
         ZonedDateTime date = ZonedDateTime.of(localDateTime, fromZone);
         return date.withZoneSameInstant(toZone);
@@ -109,23 +116,26 @@ public class ServiceUtils {
     }
 
     public static String fetchUserLangFromHttpRequest(){
-        HttpServletRequest httpServletRequest = ServiceUtils.getCurrentHttpRequest().get();
-        String paramLang = httpServletRequest.getParameter(langParamName);
-        if(StringUtils.isEmpty(paramLang)){
-            //it's ok to determine lang as part of locale as fallback user language
-            paramLang = RequestContextUtils.getLocale(httpServletRequest).getLanguage();
+        Optional<HttpServletRequest> httpServletRequest = ServiceUtils.getCurrentHttpRequest();
+        if(httpServletRequest.isPresent()){
+            String paramLang = httpServletRequest.get().getParameter(langParamName);
+            if(StringUtils.isEmpty(paramLang)){
+                //it's ok to determine lang as part of locale as fallback user language
+                paramLang = RequestContextUtils.getLocale(httpServletRequest.get()).getLanguage();
+            }
+            return paramLang;
         }
-        return paramLang;
+        return Constants.DEFAULT_LANG;
     }
     public static Query buildMongoQuery(String sort, int page, int limitPerPage, Condition<GeneralQueryBuilder> condition, MongoVisitor mongoVisitor) {
         Criteria criteria = condition.query(mongoVisitor);
         Query query = new Query();
         query.addCriteria(criteria);
-        query.with(new PageRequest(page, limitPerPage));
+        query.with(PageRequest.of(page, limitPerPage));
         String[] sortValue = ServiceUtils.parseSortValue(sort);
         if(sortValue != null){
             Sort.Direction direction = sortValue[1].equals("+") ? Sort.Direction.ASC : Sort.Direction.DESC;
-            query.with(new Sort(direction, sortValue[0]));
+            query.with(Sort.by(direction, sortValue[0]));
         }
         return query;
     }
@@ -143,19 +153,39 @@ public class ServiceUtils {
         return date.toEpochSecond(ZoneOffset.UTC);
     }
 
+    public static LocalDate formatDateString(String dateStr) {
+        LocalDate date = null;
+        if(dateStr != null){
+            try{
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateFormat);
+                date = LocalDate.parse(dateStr, formatter);
+            }catch (DateTimeParseException ex){
+                log.warn(String.format("Date format is incorrect. Date - %s,format - %s ", dateStr, dateFormat));
+            }
+        }
+        if(date == null){
+            date = LocalDateTime.now(BEL_ZONE_ID).toLocalDate();
+        }
+        return date;
+    }
+
     /**
      *
      * */
     public static boolean needUpdateFromNow(LocalDateTime pLastModifiedDate, int pUpdatePeriodInDays) {
         LocalDateTime now = LocalDateTime.now();
         boolean result;
-        ZonedDateTime nowTime = ServiceUtils.localDateTimeToZoneDateTime(now, ZoneId.systemDefault(), ZoneId.of("Europe/Minsk"));
+        ZonedDateTime nowTime = ServiceUtils.localDateTimeToZoneDateTime(now, ZoneId.systemDefault(), BEL_ZONE_ID);
         if(pLastModifiedDate == null){
             result = true;
         }else{
             result = Math.abs(ChronoUnit.DAYS.between(nowTime.toLocalDate(), pLastModifiedDate.toLocalDate().minusDays(1))) > pUpdatePeriodInDays;
         }
         return result;
+    }
+
+    public static long hourDiff(LocalDateTime localDateTimeFrom, LocalDateTime localDateTimeTo){
+        return Math.abs(ChronoUnit.HOURS.between(localDateTimeFrom, localDateTimeTo));
     }
 
 

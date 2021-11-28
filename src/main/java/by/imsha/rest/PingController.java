@@ -1,7 +1,6 @@
 package by.imsha.rest;
 
 import by.imsha.domain.Ping;
-import org.springframework.hateoas.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -26,12 +25,11 @@ public class PingController extends AbstractRestHandler {
             method = RequestMethod.GET,
             produces = {MediaType.APPLICATION_JSON_VALUE, "application/xml"})
     @ResponseStatus(HttpStatus.OK)
-
-    public @ResponseBody Resource<Ping> ping(HttpServletRequest request, HttpServletResponse response) {
+    public @ResponseBody Ping ping(HttpServletRequest request, HttpServletResponse response) {
         log.info("ping-o execution...");
 
         Locale locale = RequestContextUtils.getLocale(request);
-        return new Resource<Ping>(new Ping("locale: " + locale));
+        return new Ping("locale: " + locale);
     }
 
 

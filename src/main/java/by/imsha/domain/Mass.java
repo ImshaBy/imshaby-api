@@ -8,7 +8,7 @@ import by.imsha.utils.Constants;
 import by.imsha.utils.ServiceUtils;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.hibernate.validator.constraints.NotEmpty;
+import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
@@ -17,6 +17,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import javax.validation.constraints.AssertTrue;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import java.time.LocalDate;
@@ -33,6 +34,7 @@ import java.util.Map;
         value = {@CompoundIndex(name = "unique_mass_index_with_dates", def = "{'time': 1, 'days': 1, 'singleStartTimestamp':1, 'parishId':1, 'startDate':1, 'endDate':1}", unique = true)}
 
 )
+@Data
 public class Mass {
 
     @Id
@@ -51,7 +53,7 @@ public class Mass {
 
     //    @ApiObjectField(description = "Duration of mass in ms, default value = 3600 (1 hour)",  required = false)
 //    @NotNull
-    private long duration = 3600;
+    private Long duration = 3600l;
 
 //    @ApiObjectField(description = "Time of regular mass, that is defined throw time and days.", required = false)
 //    @JsonFormat(pattern = "KK:mm")
@@ -65,8 +67,9 @@ public class Mass {
     @Indexed
     private int[] days;
 
-    private boolean online;
+    private Boolean online;
 
+    private Boolean rorate;
 
     @NotNull
     @NotEmpty
@@ -74,6 +77,7 @@ public class Mass {
     private String parishId;
 
     private boolean deleted = false;
+
     private String notes;
 
     private Map<String, LocalizedMass> localizedInfo = new HashMap<>();
@@ -111,127 +115,60 @@ public class Mass {
         return MassService.isMassTimeConfigIsValid(this);
     }
 
-    @AssertTrue(message = "Please specify 'days' for scheduled mass (you already specified field 'time').")
+    @AssertTrue(message = "Please specify not empty 'days' for scheduled mass (you already specified field 'time').")
     private boolean isValidScheduledMassEmptyDays() {
-        return MassService.isScheduleMassDaysIsCorrect(this);
+        return MassService.isScheduleMassDaysIsNotEmpty(this);
+    }
+
+    @AssertTrue(message = "Please specify correct 'days' (value is between 1 and 7) for scheduled mass.")
+    private boolean isValidScheduledMassIncorrectDays() {
+        return MassService.isScheduleMassDaysAreCorrect(this);
+    }
+
+    @AssertTrue(message = "Please specify correct start/end dates (startDate shouldn't be after endDate) for scheduled mass.")
+    private boolean isValidScheduledMassIncorrectStartEndDates() {
+        return MassService.isScheduleMassStartEndDatesAreCorrect(this);
+    }
+
+    @AssertTrue(message = "Week days of mass are out of start/end dates.")
+    private boolean isScheduleMassDaysNotInDatePeriod() {
+        return MassService.isScheduleMassDaysInDatePeriod(this);
     }
 
     @AssertTrue(message = "Please specify 'time' for scheduled mass (you already specified field 'days').")
     private boolean isValidScheduledMassEmptyTime() {
-        return MassService.isScheduleMassTimeIsCorrect(this);
+        return MassService.isScheduleMassTimeIsNotBlank(this);
     }
 
-
-    public String getCityId() {
-        return cityId;
+    @AssertTrue(message = "Mass time shouldn't be overlapped with time/date from other predefined masses.")
+    private boolean isDuplicatedMassTime() {
+        return MassService.isUniqueMassTime(this);
     }
 
-    public void setCityId(String cityId) {
-        this.cityId = cityId;
-    }
-
-
-    public Mass(String langCode, String cityId, long duration, String parishId, String time, long start, int[] days) {
+    public Mass(String langCode, String cityId, long duration, String parishId, String time, long start, int[] days,
+                LocalDate startDate, LocalDate endDate, Boolean online, Boolean rorate, String notes, boolean deleted,
+                Map<String, LocalizedMass> localizedInfo) {
         this.langCode = langCode;
         this.cityId = cityId;
         this.duration = duration;
         this.parishId = parishId;
         this.time = time;
         this.singleStartTimestamp = start;
-        this.days = days;
+        if (days != null) {
+            this.days = Arrays.copyOf(days, days.length);
+        }
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.online = online;
+        this.rorate = rorate;
+        this.notes = notes;
+        this.deleted = deleted;
+        this.localizedInfo = new HashMap<>(localizedInfo);
     }
 
     public Mass(Mass mass) {
-        this(mass.langCode, mass.cityId, mass.duration, mass.parishId, mass.time, mass.singleStartTimestamp,
-                Arrays.copyOf(mass.days, mass.days.length));
-        localizedInfo = new HashMap<>(mass.localizedInfo);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Mass)) return false;
-
-        Mass mass = (Mass) o;
-
-        if (duration != mass.duration) return false;
-        if (singleStartTimestamp != mass.singleStartTimestamp) return false;
-        if (!Arrays.equals(days, mass.days)) return false;
-        if (!langCode.equals(mass.langCode)) return false;
-        if (!parishId.equals(mass.parishId)) return false;
-        if (time != null ? !time.equals(mass.time) : mass.time != null) return false;
-
-        return true;
-    }
-
-
-    @Override
-    public int hashCode() {
-        int result = langCode != null ? langCode.hashCode() : 0;
-        result = 31 * result + (int) (duration ^ (duration >>> 32));
-        result = 31 * result + (time != null ? time.hashCode() : 0);
-        result = 31 * result + (days != null ? Arrays.hashCode(days) : 0);
-        result = 31 * result + (parishId != null ? parishId.hashCode() : 0);
-        result = 31 * result + (int) (singleStartTimestamp ^ (singleStartTimestamp >>> 32));
-        return result;
-    }
-
-    @Override
-    public String toString() {
-        return "Mass{" +
-                "id='" + id + '\'' +
-                ", cityId='" + cityId + '\'' +
-                ", langCode='" + langCode + '\'' +
-                ", duration=" + duration +
-                ", time='" + time + '\'' +
-                ", days=" + Arrays.toString(days) +
-                ", parishId='" + parishId + '\'' +
-                ", deleted=" + deleted +
-                ", notes='" + notes + '\'' +
-                ", singleStartTimestamp=" + singleStartTimestamp +
-                ", lastModifiedDate=" + lastModifiedDate +
-                '}';
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getLangCode() {
-        return langCode;
-    }
-
-    public void setLangCode(String langCode) {
-        this.langCode = langCode;
-    }
-
-
-    public long getDuration() {
-        return duration;
-    }
-
-    public void setDuration(long duration) {
-        this.duration = duration;
-    }
-
-    public String getParishId() {
-        return parishId;
-    }
-
-    public void setParishId(String parishId) {
-        this.parishId = parishId;
-    }
-
-    public boolean isDeleted() {
-        return deleted;
-    }
-
-    public void setDeleted(boolean deleted) {
-        this.deleted = deleted;
+        this(mass.langCode, mass.cityId, mass.duration, mass.parishId, mass.time, mass.singleStartTimestamp, mass.days,
+            mass.startDate, mass.endDate, mass.online, mass.rorate, mass.notes, mass.deleted, mass.localizedInfo);
     }
 
     public String getNotes() {
@@ -246,63 +183,17 @@ public class Mass {
         return calculatedNotes;
     }
 
-    public void setNotes(String notes) {
-        this.notes = notes;
-    }
-
-    public boolean isOnline() {
-        return online;
-    }
-
-    public void setOnline(boolean online) {
-        this.online = online;
-    }
-
-    public String getTime() {
-        return time;
-    }
-
-    public void setTime(String time) {
-        this.time = time;
-    }
-
-    public long getSingleStartTimestamp() {
-        return singleStartTimestamp;
-    }
-
-    public void setSingleStartTimestamp(long singleStartTimestamp) {
-        this.singleStartTimestamp = singleStartTimestamp;
-    }
-
-    public int[] getDays() {
-        return days;
-    }
-
-    public void setDays(int[] days) {
-        this.days = days;
-    }
-
-    public LocalDateTime getLastModifiedDate() {
-        return lastModifiedDate;
-    }
-
-    public void setLastModifiedDate(LocalDateTime lastModifiedDate) {
-        this.lastModifiedDate = lastModifiedDate;
-    }
-
-    public LocalDate getStartDate() {
-        return startDate;
-    }
-
-    public void setStartDate(LocalDate startDate) {
-        this.startDate = startDate;
-    }
-
-    public LocalDate getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(LocalDate endDate) {
-        this.endDate = endDate;
+    public Mass asPeriodic() {
+        if (singleStartTimestamp == 0) {
+            return this;
+        }
+        Mass periodicMass = new Mass(this);
+        LocalDateTime localDateTime = ServiceUtils.timestampToLocalDate(singleStartTimestamp);
+        periodicMass.time = localDateTime.toLocalTime().toString();
+        periodicMass.days = new int[1];
+        periodicMass.days[0] = localDateTime.getDayOfWeek().getValue();
+        periodicMass.startDate = periodicMass.endDate = localDateTime.toLocalDate();
+        periodicMass.singleStartTimestamp = 0;
+        return periodicMass;
     }
 }
