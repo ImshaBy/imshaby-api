@@ -9,6 +9,7 @@ import by.imsha.utils.ServiceUtils;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Data;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
@@ -196,4 +197,5 @@ public class Mass {
         periodicMass.singleStartTimestamp = 0;
         return periodicMass;
     }
+
 }
