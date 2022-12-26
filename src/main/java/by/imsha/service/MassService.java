@@ -189,7 +189,6 @@ public class MassService {
             Arrays.stream(massToCheck.getDays()).forEach(day -> daysToCheck[day - 1] = true);
             List<Mass> masses = INSTANCE.getMassByParish(mass.getParishId());
             for (Mass massP : masses) {
-
                 if (massP.getId().equals(mass.getId())) {
                     continue;
                 }
@@ -220,8 +219,9 @@ public class MassService {
                     && day < WEEK_DAYS_COUNT; day++) {
                     if (commDays[commStartDate.getDayOfWeek().getValue() - 1]) {
                         if(logger.isErrorEnabled()){
-                            logger.error(String.format("Mass (time = %s, startDate = %s, endDate =%s, days = %s) has issues with isUniqueMassTime verification due to mass with id = %s (time = %s, startDate = %s, endDate =%s, days = %s)", mass.getTime(), mass.getStartDate(), mass.getEndDate(), Arrays.toString(mass.getDays()), massP.getId()),
-                                    massP.getTime(), massP.getStartDate(), massP.getEndDate(), Arrays.toString(massP.getDays()));
+//                            logger.error(String.format("Mass (time = %s, startDate = %s, endDate =%s, days = %s) has issues with isUniqueMassTime verification due to mass with id = %s (time = %s, startDate = %s, endDate = %s, days = %s)", mass.getTime(), mass.getStartDate(), mass.getEndDate(), Arrays.toString(mass.getDays()), massP.getId()),
+//                                    massP.getTime(), massP.getStartDate(), massP.getEndDate(), Arrays.toString(massP.getDays()));
+                            logger.error(String.format("Mass  has issues with isUniqueMassTime verification due to mass with id = %s", massP.getId()));
                         }
                         return false;
                     }
@@ -231,6 +231,8 @@ public class MassService {
         }
         return true;
     }
+
+    public static String[] getNull(){return null;};
 
     @Cacheable(cacheNames = "massCache", key = "'massesByParish:' + #parishId")
     public List<Mass> getMassByParish(String parishId){
