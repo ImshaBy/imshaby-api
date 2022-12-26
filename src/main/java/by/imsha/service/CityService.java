@@ -47,17 +47,17 @@ public class CityService {
 
     public String getCityIdOrDefault(String cityId) {
         if (StringUtils.isEmpty(cityId)) {
-            if (log.isWarnEnabled()) {
-                log.warn("Looking for default city..");
-            }
+//            if (log.isWarnEnabled()) {
+//                log.warn("Looking for default city..");
+//            }
             City defaultCity = defaultCity();
             if (defaultCity == null) {
                 throw new ResourceNotFoundException(String.format("No default city (name = %s) founded", getDefaultCityName()));
             }
             cityId = defaultCity.getId();
-            if (log.isWarnEnabled()) {
-                log.warn(String.format("Default city with id = %s is found.", cityId));
-            }
+//            if (log.isWarnEnabled()) {
+//                log.warn(String.format("Default city with id = %s is found.", cityId));
+//            }
         }
         return cityId;
     }

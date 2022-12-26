@@ -13,6 +13,7 @@ import com.github.rutledgepaulv.rqe.pipes.QueryConversionPipeline;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -189,6 +190,7 @@ public class MassService {
             Arrays.stream(massToCheck.getDays()).forEach(day -> daysToCheck[day - 1] = true);
             List<Mass> masses = INSTANCE.getMassByParish(mass.getParishId());
             for (Mass massP : masses) {
+
                 if (massP.getId().equals(mass.getId())) {
                     continue;
                 }
@@ -221,7 +223,7 @@ public class MassService {
                         if(logger.isErrorEnabled()){
 //                            logger.error(String.format("Mass (time = %s, startDate = %s, endDate =%s, days = %s) has issues with isUniqueMassTime verification due to mass with id = %s (time = %s, startDate = %s, endDate = %s, days = %s)", mass.getTime(), mass.getStartDate(), mass.getEndDate(), Arrays.toString(mass.getDays()), massP.getId()),
 //                                    massP.getTime(), massP.getStartDate(), massP.getEndDate(), Arrays.toString(massP.getDays()));
-                            logger.error(String.format("Mass  has issues with isUniqueMassTime verification due to mass with id = %s", massP.getId()));
+                            logger.error(String.format("Mass = %s has issues with isUniqueMassTime verification due to mass  = %s", massToString(mass), massToString(massP)));
                         }
                         return false;
                     }
@@ -232,7 +234,22 @@ public class MassService {
         return true;
     }
 
-    public static String[] getNull(){return null;};
+    private static String massToString(Mass mass){
+            return new ToStringBuilder(mass)
+                    .append("id", mass.getId())
+                    .append("cityId", mass.getCityId())
+                    .append("time", mass.getTime())
+                    .append("days", mass.getDays())
+                    .append("online", mass.getOnline())
+                    .append("rorate", mass.getRorate())
+                    .append("parishId", mass.getParishId())
+                    .append("deleted", mass.isDeleted())
+                    .append("notes", mass.getNotes())
+                    .append("singleStartTimestamp", mass.getSingleStartTimestamp())
+                    .append("startDate", mass.getStartDate())
+                    .append("endDate", mass.getEndDate())
+                    .toString();
+    };
 
     @Cacheable(cacheNames = "massCache", key = "'massesByParish:' + #parishId")
     public List<Mass> getMassByParish(String parishId){
