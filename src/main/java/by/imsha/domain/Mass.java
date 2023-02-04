@@ -21,6 +21,7 @@ import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -36,7 +37,7 @@ import java.util.Map;
 
 )
 @Data
-public class Mass {
+public class Mass implements Serializable {
 
     @Id
     private String id;

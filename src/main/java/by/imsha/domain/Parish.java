@@ -13,6 +13,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import javax.validation.constraints.NotNull;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,7 +24,7 @@ import java.util.Map;
 //@ApiObject(show = true, name = "Parish", description = "Parish object json structure.")
 @Document
 @Data
-public class Parish {
+public class Parish implements Serializable {
 
     @Id
     private String id;

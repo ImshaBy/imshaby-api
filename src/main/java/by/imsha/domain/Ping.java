@@ -1,9 +1,5 @@
 package by.imsha.domain;
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.data.annotation.Id;
-
-import javax.xml.bind.annotation.XmlRootElement;
 import java.io.Serializable;
 
 /**
