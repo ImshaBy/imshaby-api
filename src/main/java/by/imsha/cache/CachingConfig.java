@@ -1,8 +1,12 @@
 package by.imsha.cache;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.redisson.Redisson;
 import org.redisson.api.NameMapper;
 import org.redisson.api.RedissonClient;
+import org.redisson.codec.JsonJacksonCodec;
 import org.redisson.config.Config;
 import org.redisson.config.SslProvider;
 import org.redisson.spring.cache.CacheConfig;
@@ -24,7 +28,7 @@ import java.util.HashMap;
 public class CachingConfig {
 
     @Bean(destroyMethod = "shutdown")
-    public RedissonClient redisson() {
+    public RedissonClient redisson(ObjectMapper objectMapper) {
         Config config = new Config();
         config.useSingleServer()
                 .setClientName(null)
@@ -61,6 +65,11 @@ public class CachingConfig {
                 .setSslTruststore(null)
                 .setSslTruststorePassword(null);
 
+        config.setCodec(new JsonJacksonCodec(objectMapper.copy()
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .disable(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS)
+        ));
+
         return Redisson.create(config);
     }
 
@@ -93,7 +102,9 @@ public class CachingConfig {
         webhookCacheConfig.setTTL(0);
         config.put("webhookCache", webhookCacheConfig);
 
-        return new RedissonSpringCacheManager(redissonClient, config);
+        RedissonSpringCacheManager redissonSpringCacheManager = new RedissonSpringCacheManager(redissonClient, config);
+        redissonSpringCacheManager.setCodec(redissonClient.getConfig().getCodec());
+        return redissonSpringCacheManager;
     }
 
 }

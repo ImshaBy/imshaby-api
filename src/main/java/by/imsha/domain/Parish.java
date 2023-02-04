@@ -79,7 +79,6 @@ public class Parish implements Serializable {
     }
 
     @LastModifiedDate
-    @JsonSerialize(using = CustomLocalDateTimeSerializer.class)
     private LocalDateTime lastModifiedDate;
 
     public Parish() {

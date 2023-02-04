@@ -1,6 +1,5 @@
 package by.imsha.domain;
 
-import by.imsha.rest.serializers.CustomLocalDateTimeSerializer;
 import by.imsha.rest.serializers.LocalDateDeserializer;
 import by.imsha.rest.serializers.LocalDateSerializer;
 import by.imsha.service.MassService;
@@ -96,7 +95,6 @@ public class Mass implements Serializable {
     private long singleStartTimestamp;
 
     @LastModifiedDate
-    @JsonSerialize(using = CustomLocalDateTimeSerializer.class)
     private LocalDateTime lastModifiedDate;
 
     @JsonDeserialize(using = LocalDateDeserializer.class)
