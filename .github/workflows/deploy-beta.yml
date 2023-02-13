@@ -1,9 +1,9 @@
-#name: BETA env (beta.imsha.by)
-#
-#on:
-#  push:
-#    branches: [ master ]
-#jobs:
+name: BETA env (beta.imsha.by)
+
+on:
+  push:
+    branches: [ master ]
+# jobs:
 #  build:
 #
 #    runs-on: ubuntu-latest

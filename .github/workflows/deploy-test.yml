@@ -1,8 +1,8 @@
 name: Mixed inputs
 
 on:
-  release:
-    types: [ created ]
+  push:
+    branches: [ redisson-cache ]
   workflow_dispatch:
     inputs:
       name:
