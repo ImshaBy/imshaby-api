@@ -1,0 +1,22 @@
+name: Artillery Load Test
+
+on:
+  push:
+    branches:
+      - main_t
+
+jobs:
+  artillery:
+    runs-on: ubuntu-latest
+    env:
+      TARGET: qa
+      NEXT_PUBLIC_API_URL: https://api2.qa.imsha.by
+
+    container: artilleryio/artillery:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Execute load tests
+        run: /home/node/artillery/bin/run run perf/artillery.yml
