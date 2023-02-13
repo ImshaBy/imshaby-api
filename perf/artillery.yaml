@@ -1,12 +1,12 @@
 config:
-  plugins:
-    statsd: {
-      "host": "localhost",
-      "port": 8125,
-      "prefix": "artillery"
-    }
+#  plugins:
+#    statsd: {
+#      "host": "localhost",
+#      "port": 8125,
+#      "prefix": "artillery"
+#    }
 #    expect: {}
-  target: "https://api.imsha.by"
+#  target: "https://api.imsha.by"
   http:
     pool: 10 # All HTTP requests from all virtual users will be sent over the same 10 connections
   phases:
@@ -21,7 +21,7 @@ config:
     - duration: 10
       arrivalRate: 2
   payload:
-      path: "perf.csv"
+      path: "{{filename}}"
       fields:
         - "date"
         - "cityId"
@@ -32,7 +32,7 @@ scenarios:
             url: "/api/mass/week?date={{ date }}"
             cookie:
                 cityId: "{{ cityId }}"
-#            expect:
-#              - statusCode: 200
-#              - contentType: json
+            expect:
+              - statusCode: 200
+              - contentType: json
 #              - hasProperty: schedule
