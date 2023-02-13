@@ -17,6 +17,9 @@ jobs:
       - name: Make reports directory
         run: mkdir reports
 
+      - name: Look to disk
+        run: ls -la
+
       - name: Execute load tests
         run: /home/node/artillery/bin/run run --target https://api2.qa.imsha.by --output reports/report.json perf/artillery.yml
 
