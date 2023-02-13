@@ -3,10 +3,12 @@ package by.imsha.cache;
 import org.redisson.Redisson;
 import org.redisson.api.NameMapper;
 import org.redisson.api.RedissonClient;
+import org.redisson.codec.Kryo5Codec;
 import org.redisson.config.Config;
 import org.redisson.config.SslProvider;
 import org.redisson.spring.cache.CacheConfig;
 import org.redisson.spring.cache.RedissonSpringCacheManager;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -24,11 +26,11 @@ import java.util.HashMap;
 public class CachingConfig {
 
     @Bean(destroyMethod = "shutdown")
-    public RedissonClient redisson() {
+    public RedissonClient redissonSingle(@Value("${redisson.master.uri}") String masterUri) {
         Config config = new Config();
         config.useSingleServer()
                 .setClientName(null)
-                .setAddress("redis://localhost:6379")
+                .setAddress(masterUri)
                 .setUsername(null)
                 .setPassword(null)
                 .setDatabase(0)
@@ -60,6 +62,8 @@ public class CachingConfig {
                 .setSslProtocols(null)
                 .setSslTruststore(null)
                 .setSslTruststorePassword(null);
+
+        config.setCodec(new Kryo5Codec());
 
         return Redisson.create(config);
     }
@@ -93,7 +97,9 @@ public class CachingConfig {
         webhookCacheConfig.setTTL(0);
         config.put("webhookCache", webhookCacheConfig);
 
-        return new RedissonSpringCacheManager(redissonClient, config);
+        RedissonSpringCacheManager redissonSpringCacheManager = new RedissonSpringCacheManager(redissonClient, config);
+        redissonSpringCacheManager.setCodec(redissonClient.getConfig().getCodec());
+        return redissonSpringCacheManager;
     }
 
 }
