@@ -1,6 +1,5 @@
 package by.imsha.security;
 
-import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,16 +28,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Value("${spring.profiles.active}")
     private String env;
 
-    @Value(value = "${auth0.audience}")
-    private String apiAudience;
-
-    @Value(value = "${auth0.issuer}")
-    private String issuer;
-
-    @Value(value = "${auth0.secret}")
-    private String secret;
-
-
     @Value(value = "${cors.urls}")
     private String[] urls;
 
@@ -61,9 +50,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         authorizeRequests(http);
-        JwtWebSecurityConfigurer
-                .forRS256(apiAudience, issuer)
-                .configure(http);
     }
 
 
@@ -79,17 +65,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .csrf().disable();
 
         if (env.equals("prod")) {
-//        http.cors();
-
-        http.authorizeRequests()
-                .antMatchers(HttpMethod.GET, "/api/mass/week").permitAll()
-                .antMatchers(HttpMethod.GET, "/hook/parish").permitAll()
-                .antMatchers(HttpMethod.GET, "/hook/mass").permitAll()
-                .anyRequest().authenticated();
-         }
-            http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-//        }
-
+            http.authorizeRequests()
+                    .antMatchers(HttpMethod.POST, "/api/passwordless/start").permitAll()
+                    .antMatchers(HttpMethod.POST, "/api/passwordless/login").permitAll()
+                    .antMatchers(HttpMethod.GET, "/api/mass/week").permitAll()
+                    .antMatchers(HttpMethod.GET, "/hook/parish").permitAll()
+                    .antMatchers(HttpMethod.GET, "/hook/mass").permitAll()
+                    .anyRequest().authenticated();
+        }
+        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+        http.oauth2ResourceServer().jwt();
     }
 
 }
