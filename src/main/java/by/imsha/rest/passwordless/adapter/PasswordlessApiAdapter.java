@@ -1,6 +1,6 @@
 package by.imsha.rest.passwordless.adapter;
 
-import by.imsha.rest.passwordless.PasswordlessApiProperties;
+import by.imsha.properties.PasswordlessApiProperties;
 import by.imsha.rest.passwordless.adapter.request.LoginRequest;
 import by.imsha.rest.passwordless.adapter.request.StartRequest;
 import by.imsha.rest.passwordless.adapter.response.LoginResponse;

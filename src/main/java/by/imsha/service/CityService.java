@@ -3,12 +3,11 @@ package by.imsha.service;
 
 import by.imsha.domain.City;
 import by.imsha.exception.ResourceNotFoundException;
+import by.imsha.properties.ImshaProperties;
 import by.imsha.repository.CityRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -20,21 +19,16 @@ import java.util.Optional;
 
 
 @Service
+@Slf4j
+@RequiredArgsConstructor
 public class CityService {
 
-    private static final Logger log = LoggerFactory.getLogger(CityService.class);
-
-    @Value("${imsha.city.name}")
-    private String defaultCityName;
+    private final ImshaProperties imshaProperties;
+    private final CityRepository cityRepository;
 
     public String getDefaultCityName() {
-        return defaultCityName;
+        return imshaProperties.getDefaultCity().getName();
     }
-
-    @Autowired
-    private CityRepository cityRepository;
-
-
 
     public City createCity(City city) {
         return cityRepository.save(city);
@@ -47,17 +41,13 @@ public class CityService {
 
     public String getCityIdOrDefault(String cityId) {
         if (StringUtils.isEmpty(cityId)) {
-//            if (log.isWarnEnabled()) {
-//                log.warn("Looking for default city..");
-//            }
             City defaultCity = defaultCity();
+
             if (defaultCity == null) {
                 throw new ResourceNotFoundException(String.format("No default city (name = %s) founded", getDefaultCityName()));
             }
+
             cityId = defaultCity.getId();
-//            if (log.isWarnEnabled()) {
-//                log.warn(String.format("Default city with id = %s is found.", cityId));
-//            }
         }
         return cityId;
     }
@@ -79,9 +69,7 @@ public class CityService {
     }
 
     public Page<City> getAllCities(Integer page, Integer size) {
-        Page pageOfHotels = cityRepository.findAll(
-                PageRequest.of(page, size));
-        return pageOfHotels;
+        return cityRepository.findAll(PageRequest.of(page, size));
     }
 
     @Cacheable(cacheNames = "cityCache", key = "'allCities'", unless = "#result != null")

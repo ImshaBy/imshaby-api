@@ -1,8 +1,8 @@
 package by.imsha.rest.passwordless.handler;
 
+import by.imsha.properties.PasswordlessApiProperties;
 import by.imsha.rest.passwordless.exception.PasswordlessApiException;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import by.imsha.rest.passwordless.PasswordlessApiProperties;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +15,6 @@ import org.springframework.web.client.RestTemplate;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
-import java.util.Optional;
 
 /**
  * Обработчик запроса на аутентификацию по коду
@@ -30,7 +29,7 @@ public class LoginHandler {
     private final RestTemplate passwordlessPublicRestTemplate;
 
     public String handle(@Valid @NotNull(message = "Входные параметры обязательны для заполнения")
-                               Input input) {
+                                 Input input) {
         try {
             ResponseBody response = passwordlessPublicRestTemplate.postForObject(
                     passwordlessApiProperties.getUri().getLogin(),

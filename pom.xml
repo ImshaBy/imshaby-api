@@ -25,7 +25,6 @@
         <mapstruct.defaultComponentModel>spring</mapstruct.defaultComponentModel>
         <!-- unused -->
         <org.lombok-mapstruct-binding.version>1.4.1.Final</org.lombok-mapstruct-binding.version>
-        <spring.boot.admin.version>1.5.7</spring.boot.admin.version>
     </properties>
 
     <repositories>
@@ -338,26 +337,6 @@
         </profile>
         <profile>
             <id>dev</id>
-            <dependencies>
-                <!--Provide a nice looking ui-->
-              <!--  <dependency>
-                    <groupId>de.codecentric</groupId>
-                    <artifactId>spring-boot-admin-server</artifactId>
-                    <version>${spring.boot.admin.version}</version>
-                </dependency>
-
-                <dependency>
-                    <groupId>de.codecentric</groupId>
-                    <artifactId>spring-boot-admin-server-ui</artifactId>
-                    <version>${spring.boot.admin.version}</version>
-                </dependency>-->
-                <!--Dependency for registering your app as a Spring Boot Admin Client-->
-                <!--<dependency>
-                    <groupId>de.codecentric</groupId>
-                    <artifactId>spring-boot-admin-starter-client</artifactId>
-                    <version>${spring.boot.admin.version}</version>
-                </dependency>-->
-            </dependencies>
             <build>
                 <resources>
                     <resource>

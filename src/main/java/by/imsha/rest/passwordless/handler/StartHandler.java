@@ -1,9 +1,9 @@
 package by.imsha.rest.passwordless.handler;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import by.imsha.rest.passwordless.PasswordlessApiProperties;
+import by.imsha.properties.PasswordlessApiProperties;
 import by.imsha.rest.passwordless.exception.PasswordlessApiException;
 import by.imsha.rest.passwordless.send.CodeSender;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;

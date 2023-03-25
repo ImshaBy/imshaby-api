@@ -1,5 +1,6 @@
 package by.imsha.rest.passwordless;
 
+import by.imsha.properties.PasswordlessApiProperties;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,8 +19,7 @@ public class PasswordlessConfig {
     }
 
     @Bean
-    RestTemplate passwordlessPublicRestTemplate(RestTemplateBuilder restTemplateBuilder,
-                                                PasswordlessApiProperties passwordlessApiProperties) {
+    RestTemplate passwordlessPublicRestTemplate(RestTemplateBuilder restTemplateBuilder) {
         return restTemplateBuilder.build();
     }
 }

@@ -1,0 +1,17 @@
+server:
+  port: 8080
+
+spring:
+  data:
+    mongodb:
+      uri: "mongodb://admin:LXAyrf52412@mongodb53235-prod-api-imsha.mycloud.by/api?authSource=admin"
+
+app:
+  cors:
+    allowed-origins:
+      - "http://imsha.by"
+      - "https://imsha.by"
+      - "https://admin.imsha.by"
+      - "http://prod-web-imsha.mycloud.by"
+      - "http://www.imsha.by"
+      - "https://www.imsha.by"

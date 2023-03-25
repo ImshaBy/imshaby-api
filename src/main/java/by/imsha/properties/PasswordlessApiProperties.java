@@ -1,4 +1,4 @@
-package by.imsha.rest.passwordless;
+package by.imsha.properties;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -7,7 +7,6 @@ import org.springframework.validation.annotation.Validated;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
-@ConfigurationProperties("app.oauth2.passwordless")
 @Data
 @Validated
 public class PasswordlessApiProperties {

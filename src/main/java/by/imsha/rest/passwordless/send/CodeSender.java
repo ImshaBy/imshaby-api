@@ -1,6 +1,6 @@
 package by.imsha.rest.passwordless.send;
 
-import by.imsha.rest.passwordless.PasswordlessApiProperties;
+import by.imsha.properties.PasswordlessApiProperties;
 import by.imsha.rest.passwordless.exception.PasswordlessApiException;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
