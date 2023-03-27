@@ -1,0 +1,22 @@
+server:
+  port: 8080
+
+logging:
+  level:
+    org.springframework.data.mongodb.core.MongoTemplate: WARN
+
+spring:
+  data:
+    mongodb:
+      uri: "mongodb://admin:HHPebl16917@node59577-prd-db-imshaby.mycloud.by/api?authSource=admin"
+
+app:
+  cors:
+    allowed-origins:
+      - "http://imsha.by"
+      - "https://imsha.by"
+      - "https://admin.imsha.by"
+      - "http://prod-web-imsha.mycloud.by"
+      - "http://www.imsha.by"
+      - "https://www.imsha.by"
+      - "https://preview.imsha.by"

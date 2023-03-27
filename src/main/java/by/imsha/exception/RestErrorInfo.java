@@ -1,7 +1,5 @@
 package by.imsha.exception;
 
-import javax.xml.bind.annotation.XmlRootElement;
-
 /*
  * A sample class for adding error information in the response
  */
