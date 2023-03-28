@@ -17,7 +17,7 @@ public class AppPropertiesConfig {
     }
 
     @Bean
-    @ConfigurationProperties("app.oauth2.passwordless")
+    @ConfigurationProperties(PasswordlessApiProperties.PREFIX)
     public PasswordlessApiProperties passwordlessApiProperties() {
         return new PasswordlessApiProperties();
     }

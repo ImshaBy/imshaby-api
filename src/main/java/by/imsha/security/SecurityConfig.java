@@ -38,7 +38,8 @@ public class SecurityConfig {
                 .and()
                 .csrf().disable();
 
-        if (environment.acceptsProfiles(Profiles.of("prod"))) {
+        //защищаем только на prod и qa
+        if (environment.acceptsProfiles(Profiles.of("prod", "qa"))) {
             http.authorizeRequests()
                     .antMatchers(HttpMethod.POST, "/api/passwordless/start").permitAll()
                     .antMatchers(HttpMethod.POST, "/api/passwordless/login").permitAll()
@@ -47,6 +48,7 @@ public class SecurityConfig {
                     .antMatchers(HttpMethod.GET, "/hook/mass").permitAll()
                     .anyRequest().authenticated();
         }
+
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         http.oauth2ResourceServer().jwt();
 

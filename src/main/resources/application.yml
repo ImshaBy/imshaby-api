@@ -1,5 +1,4 @@
 server:
-  port: 3000
   error:
     include-message: always
     include-binding-errors: always
@@ -9,8 +8,6 @@ logging:
     org.springframework.data.mongodb.core.MongoTemplate: DEBUG
 
 spring:
-  profiles:
-    active: "dev"
   data:
     mongodb:
       uri: "mongodb://localhost:27017/imshaby"
@@ -45,9 +42,10 @@ app:
       - "*"
   oauth2:
     passwordless:
+      log-code: ${PASSWORDLESS_LOG_CODE:false}
       application-id: ${PASSWORDLESS_APPLICATION_ID:adf0a804-0f48-43d9-a43c-566d377d8fcb}
       api-key: ${PASSWORDLESS_API_KEY}
       uri:
-        start: ${PASSWORDLESS_URI_START:https://localhost:9091/api/passwordless/login}
+        start: ${PASSWORDLESS_URI_START:https://localhost:9091/api/passwordless/start}
         send: ${PASSWORDLESS_URI_SEND:https://localhost:9091/api/passwordless/send}
         login: ${PASSWORDLESS_URI_LOGIN:https://localhost:9091/api/passwordless/login}
