@@ -6,12 +6,6 @@ name: Push To Yandex Cloud CR
 on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-    inputs:
-      branch: 
-        description: 'target branch'
-        required: true
-        default: 'master'
-        type: string
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -24,8 +18,6 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
-        with:
-          ref: ${{ inputs.branch }}
 
       # Runs a single command using the runners shell
 #       - name: Yandex Cloud CR "Login" Action for GitHub Actions
