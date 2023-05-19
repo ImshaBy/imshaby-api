@@ -1,11 +1,19 @@
-FROM openjdk:8u232-jre-slim
+#сборка war
+FROM maven:3.6.3-openjdk-8 as builder
 
-# copy the fat jar and the run script to /opt
+COPY src /usr/src/app/src
 
-COPY target/imshaby-api-0.0.1-SNAPSHOT.war /opt/imshaby-api-0.0.1-SNAPSHOT.war
-COPY run.sh /opt/run.sh
-RUN chmod +x /opt/run.sh
+COPY pom.xml /usr/src/app
 
-# to start a docker container, use docker run /opt/run.sh <port>
+RUN mvn -f /usr/src/app/pom.xml clean package
 
-CMD /opt/run.sh
+
+#сборка образа с томкатом и war, получившейся на стадии builder
+FROM tomcat:9-jdk8-temurin
+
+COPY --from=builder /usr/src/app/target/imshaby-api-0.0.1-SNAPSHOT.war /usr/local/tomcat/webapps/ROOT.war
+
+#дальше запуск сборки образа
+# docker build -t imshaby-api:0.1 .
+#и непосредственно сам запуск контейнера (в примере активация профиля qa)
+# docker run -it -e "SPRING_PROFILES_ACTIVE=qa" -p 80:8080 --name imshaby-api-qa imshaby-api:0.1
