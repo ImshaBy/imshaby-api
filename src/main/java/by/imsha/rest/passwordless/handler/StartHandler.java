@@ -28,9 +28,13 @@ public class StartHandler {
     private final CodeSender codeSender;
 
     public void handle(@Valid @NotNull(message = "Входные параметры обязательны для заполнения") final Input input) {
+        final String requestURI = passwordlessApiProperties.getUri().getStart();
+
+        log.info("Request uri: '{}', data: '{}'", requestURI, input);
+
         try {
             final ResponseBody response = passwordlessSecureRestTemplate.postForObject(
-                    passwordlessApiProperties.getUri().getStart(),
+                    requestURI,
                     RequestBody.builder()
                             .loginId(input.getLoginId())
                             .applicationId(input.getApplicationId())
