@@ -20,6 +20,7 @@ jobs:
       TERRAFORM_CLI_PATH: iac/tf
       YC_CLOUD_ID: b1g9o0e73jl7pt139g3j
       YC_FOLDER_ID: b1g6h3qks5n5r2p65aji
+      DOCKER_API_IMAGE_URL: redis:6.2.6
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
