@@ -32,6 +32,9 @@ jobs:
         uses: hashicorp/setup-terraform@v1
         with:
           terraform_version: 1.0.8
+      - run: cd iac/tf
+
+
       - run: terraform init
 
       - id: plan
