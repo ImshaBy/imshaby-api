@@ -28,12 +28,15 @@ jobs:
 #        uses: yc-actions/yc-iam-token@v1
 #        with:
 #          yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
-
-      - name: Install Yandex CLI
-        run: |
-          curl https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
-          export PATH=$PATH:/root/.yandex/cli/bin
-          source "/home/runner/.bashrc"
+      - name: Try to install yc cli and login into yandex cloud
+        uses: okar1/yc-cli-install@master
+        with:
+          SA_KEY: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+#      - name: Install Yandex CLI
+#        run: |
+#          curl https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
+#          export PATH=$PATH:/root/.yandex/cli/bin
+#          source "/home/runner/.bashrc"
 #      - run: curl https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash -s -- -i /opt/yc -n
       - run: yc config list
 
