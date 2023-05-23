@@ -32,10 +32,10 @@ jobs:
         uses: hashicorp/setup-terraform@v1
         with:
           terraform_version: 1.0.8
-      - run: pwd && cd iac/tf
+#      - run: pwd && cd iac/tf
 
 
-      - run: terraform init
+      - run: pwd && cd iac/tf && terraform init
 
       - id: plan
         run: terraform plan -no-color
