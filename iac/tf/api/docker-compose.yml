@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+  redis:
+    image: redis:6.2.6
+    volumes:
+      - /data/db/redis
+    ports:
+      - "6379:6379"
+#  imshaby-api:
+#    image: ${api_docker_image_url}
+#    environment:
+#      DATABASE_URL: jdbc:postgresql://prod.db.imshaby:5432/fusionauth
+#    restart: unless-stopped
+#    ports:
+#      - 8080:8080
+#    volumes:
+#      - fusionauth_config:/usr/local/fusionauth/config
+    # volumes:
+    #   - /home/yc-user/coi-data:/data
+
+# x-yc-disks:
+#   - device_name: coi-data
+#     fs_type: ext4
+#     host_path: /home/yc-user/coi-data
+#volumes:
+#  fusionauth_config:
