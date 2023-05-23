@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TERRAFORM_CLI_PATH: iac/tf
+      YC_CLOUD_ID: b1g9o0e73jl7pt139g3j
+      YC_FOLDER_ID: b1g6h3qks5n5r2p65aji
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -32,12 +34,11 @@ jobs:
         uses: okar1/yc-cli-install@master
         with:
           SA_KEY: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
-#      - name: Install Yandex CLI
-#        run: |
-#          curl https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
-#          export PATH=$PATH:/root/.yandex/cli/bin
-#          source "/home/runner/.bashrc"
-#      - run: curl https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash -s -- -i /opt/yc -n
+      - name: Configure Yandex Cloud CLI
+        run: |
+          yc config set cloud-id ${YC_CLOUD_ID}
+          yc config set folder-id ${YC_FOLDER_ID}
+
       - run: yc config list
 
       - name: Set up Terraform
@@ -49,12 +50,12 @@ jobs:
 
       - run: pwd && cd iac/tf && terraform init
 
-#      - id: plan
-#        run: cd iac/tf && terraform plan --var-file ../envs/production.tfvars -no-color
-      - run: export YC_TOKEN=$(yc iam create-token) export YC_CLOUD_ID=$(yc config get cloud-id) export YC_FOLDER_ID=$(yc config get folder-id)
-      - run: echo ${YC_TOKEN}
-      - run: echo ${YC_CLOUD_ID}
-      - run: echo ${YC_FOLDER_ID}
+      - name: Terraform Plan
+        run: cd iac/tf && terraform plan --var-file ../envs/production.tfvars -no-color
+#      - run: export YC_TOKEN=$(yc iam create-token) export YC_CLOUD_ID=$(yc config get cloud-id) export YC_FOLDER_ID=$(yc config get folder-id)
+#      - run: echo ${YC_TOKEN}
+#      - run: echo ${YC_CLOUD_ID}
+#      - run: echo ${YC_FOLDER_ID}
 
 
 #      - run: echo ${{ steps.plan.outputs.stdout }}
