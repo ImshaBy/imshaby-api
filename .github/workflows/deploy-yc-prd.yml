@@ -29,7 +29,7 @@ jobs:
         with:
           yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
 
-      - run: curl https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash -s -- -a
+      - run: curl https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash -s -- -i /opt/yc -n
       - run: yc config list
 
       - name: Set up Terraform
