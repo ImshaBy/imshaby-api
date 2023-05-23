@@ -23,9 +23,9 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
 
-      # Runs a single command using the runners shell
-      - name: Yandex Cloud CR "Login" Action for GitHub Actions
-        uses: yc-actions/yc-cr-login@v0.1-alpha
+      - name: IAM Token
+        id: issue-iam-token
+        uses: yc-actions/yc-iam-token@v1
         with:
           yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
 
