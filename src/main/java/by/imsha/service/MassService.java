@@ -191,7 +191,7 @@ public class MassService {
             List<Mass> masses = INSTANCE.getMassByParish(mass.getParishId());
             for (Mass massP : masses) {
 
-                if (massP.getId().equals(mass.getId())) {
+                if (massP.getId().equals(mass.getId()) || massP.isDeleted()) {
                     continue;
                 }
                 massP = massP.asPeriodic();
