@@ -24,9 +24,9 @@ jobs:
       CR_REGISTRY: crp8o64j2cl644b4pjki
       CR_REPOSITORY: imshaby-api
       IMAGE_TAG: ${{ github.sha }}
-      MONGODB_URI: ${secrets.MONGODB_URI}
-      CORS_URLS: ${vars.CORS_URLS}
-      DOCKER_API_IMAGE: cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG
+      MONGODB_URI: ${{secrets.MONGODB_URI}}
+      CORS_URLS: ${{vars.CORS_URLS}}
+      DOCKER_API_IMAGE: 'cr.yandex/${{env.CR_REGISTRY}}/${{env.CR_REPOSITORY}}:${{env.IMAGE_TAG}}'
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
