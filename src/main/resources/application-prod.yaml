@@ -12,3 +12,5 @@ app:
       - "http://prod-web-imsha.mycloud.by"
       - "http://www.imsha.by"
       - "https://www.imsha.by"
+      - "https://yc.imsha.by"
+      - "https://www.yc.imsha.by"
