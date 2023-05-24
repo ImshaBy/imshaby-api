@@ -26,7 +26,6 @@ jobs:
       IMAGE_TAG: ${{ github.sha }}
       MONGODB_URI: ${{secrets.MONGODB_URI}}
       CORS_URLS: ${{vars.CORS_URLS}}
-      DOCKER_API_IMAGE: cr.yandex/${{env.CR_REGISTRY}}/${{env.CR_REPOSITORY}}:${{env.IMAGE_TAG}}
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -43,6 +42,8 @@ jobs:
       - run: export YC_TOKEN=$(yc iam create-token) export YC_CLOUD_ID=$(yc config get cloud-id) export YC_FOLDER_ID=$(yc config get folder-id)
 
       - name: Generate docker compose with ENVs values
+        env:
+          DOCKER_API_IMAGE: 'cr.yandex/${{env.CR_REGISTRY}}/${{env.CR_REPOSITORY}}:${{env.IMAGE_TAG}}'
         run: |
           cd iac
           chmod +x replace-vars.sh
