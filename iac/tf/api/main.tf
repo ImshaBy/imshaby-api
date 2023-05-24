@@ -45,7 +45,7 @@ resource "yandex_compute_instance" "api_app" {
     # database_username = var.database_user
     # database_password = var.database_password
     # postgress_password = var.postgress_password
-    docker-compose = file("${path.module}/docker-compose.yml")
+    docker-compose = file("${path.module}/tf_docker-compose.yml")
     user-data = file("cloud_config.yaml")
   }
 
