@@ -6,6 +6,7 @@ services:
     environment:
       MONGODB_URI: ${MONGODB_URI}
       CORS_URLS: ${CORS_URLS}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
     restart: unless-stopped
     ports:
       - 8080:8080
