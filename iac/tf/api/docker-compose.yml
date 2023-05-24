@@ -4,9 +4,9 @@ services:
   imshaby-api:
     image: ${DOCKER_API_IMAGE}
     environment:
-      SPRING_DATA_MONGODB_URI: ${MONGODB_URI}
+      SPRING_DATA_MONGODB_URI: mongodb://mongoadmin:HHPebl16917@158.160.45.142:27017/imshaby?authSource=admin
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
-      PASSWORDLESS_API_KEY: ${PASSWORDLESS_API_KEY}
+      PASSWORDLESS_API_KEY: testtstst
     restart: unless-stopped
     ports:
       - 8080:8080
