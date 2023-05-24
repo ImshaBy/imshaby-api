@@ -26,6 +26,7 @@ jobs:
       IMAGE_TAG: ${{ github.sha }}
       MONGODB_URI: ${secrets.MONGODB_URI}
       CORS_URLS: ${vars.CORS_URLS}
+      DOCKER_API_IMAGE: cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -43,7 +44,7 @@ jobs:
 
       - name: Generate docker compose with ENVs values
         run: |
-          echo "cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG" >> $DOCKER_API_IMAGE
+#          echo "cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG" >> $DOCKER_API_IMAGE
           cd iac
           chmod +x replace-vars.sh
           bash replace-vars.sh tf/api/docker-compose.yml
