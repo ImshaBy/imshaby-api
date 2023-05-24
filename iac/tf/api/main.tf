@@ -16,7 +16,7 @@ provider "yandex" {
 data "yandex_compute_image" "container-optimized-image" {
   family = "container-optimized-image"
 }
-data "yandex_vpc_subnet" "default" {
+data "yandex_vpc_subnet" "default_subnet" {
   name = var.subnet_name
 }
 
@@ -42,7 +42,7 @@ resource "yandex_compute_instance" "api_app" {
   }
 
   network_interface {
-    subnet_id = data.yandex_vpc_subnet.default.id
+    subnet_id = data.yandex_vpc_subnet.default_subnet.id
     nat = true # автоматически установить динамический ip
   }
   service_account_id = data.yandex_iam_service_account.deployer.id
