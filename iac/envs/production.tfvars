@@ -7,9 +7,12 @@ zone_name = "prod-imshaby-zone"
 zone = "imshaby."
 
 
-// Identity Server
+//  Server
 api_app_name = "prod-api-app"
 db_instance_name = "prod-db-instance"
+
+service_acc_name = "yc-imshaby-prod-slava"
+subnet_name = "prod_ru_central1_a"
 
 // DB Server
 postgress_user = "cmsadmin"
@@ -20,3 +23,4 @@ database_user = "fusionauth"
 
 db_disk_name = "prod-db-disk"
 db_dns_internal_name = "prod.db.imshaby."
+

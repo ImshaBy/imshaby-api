@@ -6,6 +6,11 @@ variable "subnet_id" {
   default     = "TBD"
 }
 
+variable "subnet_name" {
+  type        = string
+}
+
+
 variable "network_id" {
   type        = string
 }
@@ -59,6 +64,9 @@ variable "db_disk_name" {
 }
 
 // API Server
+variable "service_acc_name" {
+  type        = string
+}
 
 variable "api_app_name" {
   type        = string

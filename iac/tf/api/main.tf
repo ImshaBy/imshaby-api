@@ -16,6 +16,13 @@ provider "yandex" {
 data "yandex_compute_image" "container-optimized-image" {
   family = "container-optimized-image"
 }
+data "yandex_vpc_subnet" "default" {
+  name = var.subnet_name
+}
+
+data "yandex_iam_service_account" "deployer" {
+  name = var.service_acc_name
+}
 
 # ресурс "yandex_compute_instance" т.е. сервер
 resource "yandex_compute_instance" "api_app" {
@@ -35,9 +42,10 @@ resource "yandex_compute_instance" "api_app" {
   }
 
   network_interface {
-    subnet_id = "e9bgufd35inak5suac9d" // var.subnet_id # одна из дефолтных подсетей
+    subnet_id = data.yandex_vpc_subnet.default.id
     nat = true # автоматически установить динамический ip
   }
+  service_account_id = data.yandex_iam_service_account.deployer.id
 
   metadata = {
     docker-compose = file("${path.module}/tf_docker-compose.yml")
