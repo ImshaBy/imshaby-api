@@ -46,6 +46,7 @@ public class SecurityConfig {
                     .antMatchers(HttpMethod.GET, "/api/mass/week").permitAll()
                     .antMatchers(HttpMethod.GET, "/hook/parish").permitAll()
                     .antMatchers(HttpMethod.GET, "/hook/mass").permitAll()
+                    .antMatchers(HttpMethod.GET, "/status").permitAll()
                     .anyRequest().authenticated();
         }
 

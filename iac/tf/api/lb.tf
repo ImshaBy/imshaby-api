@@ -71,13 +71,13 @@ resource "yandex_alb_virtual_host" "api_virtual_host" {
   }
 }
 
-resource "yandex_vpc_address" "api_alb_addr" {
-  name = "prod-api-alb-addr" //var.api_alb_addr_name
-
-  external_ipv4_address {
-    zone_id = data.yandex_vpc_subnet.default.zone
-  }
-}
+#resource "yandex_vpc_address" "api_alb_addr" {
+#  name = "prod-api-alb-addr" //var.api_alb_addr_name
+#
+#  external_ipv4_address {
+#    zone_id = data.yandex_vpc_subnet.default.zone
+#  }
+#}
 
 # data "yandex_cm_certificate" "my_cert" {
 # #   folder_id = "b1g6h3qks5n5r2p65aji" // var.folder_id
@@ -103,7 +103,7 @@ resource "yandex_alb_load_balancer" "api_alb" {
     endpoint {
       address {
         external_ipv4_address {
-          address = yandex_vpc_address.api_alb_addr.external_ipv4_address.0.address
+#          address = yandex_vpc_address.api_alb_addr.external_ipv4_address.0.address
         }
       }
       ports = [ 443,80 ]

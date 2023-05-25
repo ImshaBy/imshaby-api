@@ -16,18 +16,14 @@ import java.util.Locale;
 
 
 @RestController
-@RequestMapping(value = "/ping1")
+@RequestMapping(value = "/status")
 public class PingController extends AbstractRestHandler {
-
-    public static Ping pingObject = new Ping("ping");
 
     @RequestMapping(value = "",
             method = RequestMethod.GET,
             produces = {MediaType.APPLICATION_JSON_VALUE, "application/xml"})
     @ResponseStatus(HttpStatus.OK)
     public @ResponseBody Ping ping(HttpServletRequest request, HttpServletResponse response) {
-        log.info("ping-o execution...");
-
         Locale locale = RequestContextUtils.getLocale(request);
         return new Ping("locale: " + locale);
     }

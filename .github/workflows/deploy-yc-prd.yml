@@ -93,7 +93,7 @@ jobs:
         run: |
           cd iac/tf 
           export YC_TOKEN=$(yc iam create-token) export YC_CLOUD_ID=$(yc config get cloud-id) export YC_FOLDER_ID=$(yc config get folder-id)
-          terraform apply --var-file ../envs/production.tfvars -no-color -auto-approve
+#          terraform apply --var-file ../envs/production.tfvars -no-color -auto-approve
 
           
 
