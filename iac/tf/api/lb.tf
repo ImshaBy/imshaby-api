@@ -34,7 +34,7 @@ resource "yandex_alb_backend_group" "api_backend_group" {
   http_backend {
     name                   = "api-back-end"
     weight                 = 1
-    port                   = 9011
+    port                   = 8080 //var.api_back_port
     target_group_ids       = [yandex_alb_target_group.api_alb_target_group.id]
     load_balancing_config {
       panic_threshold      = 90
@@ -45,7 +45,7 @@ resource "yandex_alb_backend_group" "api_backend_group" {
       healthy_threshold    = 10
       unhealthy_threshold  = 15
       http_healthcheck {
-        path               = "/ping1"
+        path               = "/status"
       }
     }
   }
@@ -120,7 +120,7 @@ resource "yandex_alb_load_balancer" "api_alb" {
       }
       sni_handler {
         name = "prod-api-sni-handler" // var.api_sni_handler_name
-        server_names = ["api.yc.imsha.by"] // var.api_domain_name
+        server_names = ["yc.api.imsha.by"] // var.api_domain_name
         handler {
           http_handler {
             http_router_id = yandex_alb_http_router.api_http_router.id
