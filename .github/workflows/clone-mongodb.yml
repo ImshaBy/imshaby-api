@@ -11,18 +11,18 @@ on:
         type: choice
         description: Select SOURCE DB_URI secret
         options:
-        # Only from prod and mycloud qa (the list will grow)
-        - PROD_YC_MONGODB_URI
-        - PROD_MYCLOUD_MONGODB_URI
-        - QA_MYCLOUD_MONGODB_URI
-        - QA_YC_MONGODB_URI
+          # Only from prod and mycloud qa (the list will grow)
+          - PROD_YC_MONGODB_URI
+          - PROD_MYCLOUD_MONGODB_URI
+          - QA_MYCLOUD_MONGODB_URI
+          - QA_YC_MONGODB_URI
       targetUri:
         type: choice
         description: Select TARGET DB_URI secret
         options:
-        # Only to YC qa (the list will grow)
-        - PROD_YC_MONGODB_URI
-        - QA_YC_MONGODB_URI
+          # Only to YC qa (the list will grow)
+          - PROD_YC_MONGODB_URI
+          - QA_YC_MONGODB_URI
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -31,7 +31,9 @@ jobs:
     runs-on: ubuntu-22.04
     name: Clone MongoDB
     steps:
-    - uses: ./.github/actions/mongo-clone-action
-      with:
-        source: ${{ secrets[github.event.inputs.sourceUri] }}
-        target: ${{ secrets[github.event.inputs.targetUri] }}
+      # This step checks out a copy of your repository.
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/mongo-clone-action
+        with:
+          source: ${{ secrets[github.event.inputs.sourceUri] }}
+          target: ${{ secrets[github.event.inputs.targetUri] }}
