@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-22.04
     name: Clone MongoDB
     steps:
-    - uses: Maggi64/mongo-clone-action@0.3
+    - uses: ./.github/actions/mongo-clone-action
       with:
         source: ${{ secrets[github.event.inputs.sourceUri] }}
         target: ${{ secrets[github.event.inputs.targetUri] }}
