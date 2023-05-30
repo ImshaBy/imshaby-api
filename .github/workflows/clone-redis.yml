@@ -1,0 +1,35 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Copy Redis data
+
+# Controls when the action will run.
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      sourceUri:
+        type: choice
+        description: Select SOURCE REDIS_URI secret
+        options:
+          # Only from MYCLOUD prod (the list will grow)
+          - PROD_MYCLOUD_REDIS_URI
+      targetUri:
+        type: choice
+        description: Select TARGET REDIS_URI secret
+        options:
+          # Only to YC prod (the list will grow)
+          - PROD_YC_REDIS_URI
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "mongo-clone-action"
+  mongo-clone-action:
+    runs-on: ubuntu-22.04
+    name: Clone MongoDB
+    steps:
+      # This step checks out a copy of your repository.
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/redis-clone-action
+        with:
+          source: ${{ secrets[github.event.inputs.sourceUri] }}
+          target: ${{ secrets[github.event.inputs.targetUri] }}
