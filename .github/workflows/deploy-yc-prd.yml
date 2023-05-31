@@ -6,9 +6,10 @@ name: Deploy Image to Yandex Cloud Compute Instance
 on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-
   push:
     branches: [ terraform-yc ]
+    tags:
+      - v*
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -37,75 +38,60 @@ jobs:
         run: |
           docker build -t cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG .
           docker push cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG
-
-  # This workflow contains a single job called "deployment"
-  deployment:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
-    needs: build
-    environment: production
-    env:
-      TERRAFORM_CLI_PATH: iac/tf
-      YC_CLOUD_ID: b1g9o0e73jl7pt139g3j
-      YC_FOLDER_ID: b1g6h3qks5n5r2p65aji
-      CR_REGISTRY: crp8o64j2cl644b4pjki
-      CR_REPOSITORY: imshaby-api
-      IMAGE_TAG: ${{ github.sha }}
-      MONGODB_URI: ${{secrets.MONGODB_URI}}
-      CORS_URLS: ${{vars.CORS_URLS}}
-    # Steps represent a sequence of tasks that will be executed as part of the job
-    steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
-      - name: Try to install yc cli and login into yandex cloud
-        uses: okar1/yc-cli-install@master
-        with:
-          SA_KEY: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
-      - name: Configure Yandex Cloud CLI
-        run: |
-          yc config set cloud-id ${YC_CLOUD_ID}
-          yc config set folder-id ${YC_FOLDER_ID}
-
-      - run: export YC_TOKEN=$(yc iam create-token) export YC_CLOUD_ID=$(yc config get cloud-id) export YC_FOLDER_ID=$(yc config get folder-id)
-
-      - name: Generate docker compose with ENVs values
-        env:
-          DOCKER_API_IMAGE: 'cr.yandex/${{env.CR_REGISTRY}}/${{env.CR_REPOSITORY}}:${{env.IMAGE_TAG}}'
-          SPRING_PROFILES_ACTIVE: ${{vars.SPRING_PROFILE}}
-        run: |
-          cd iac
-          chmod +x replace-vars.sh
-          bash replace-vars.sh tf/api/docker-compose.yml
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v2
-
-
-      - run: cd iac/tf && terraform init
-
-      - name: Terraform Plan
-        run: |
-          cd iac/tf 
-          export YC_TOKEN=$(yc iam create-token) export YC_CLOUD_ID=$(yc config get cloud-id) export YC_FOLDER_ID=$(yc config get folder-id)
-          terraform plan --var-file ../envs/production.tfvars -no-color
-#        continue-on-error: true
-      - name: Terraform Apply
-        run: |
-          cd iac/tf 
-          export YC_TOKEN=$(yc iam create-token) export YC_CLOUD_ID=$(yc config get cloud-id) export YC_FOLDER_ID=$(yc config get folder-id)
-#          terraform apply --var-file ../envs/production.tfvars -no-color -auto-approve
-
-          
-
-#      - run: echo ${{ steps.plan.outputs.stdout }}
-#      - run: echo ${{ steps.plan.outputs.stderr }}
-#      - run: echo ${{ steps.plan.outputs.exitcode }}
-
-#      - name: Build, tag, and push image to Yandex Cloud Container Registry
-#        env:
-#          CR_REGISTRY: crp8o64j2cl644b4pjki
-#          CR_REPOSITORY: imshaby-api
-#          IMAGE_TAG: ${{ github.sha }}
+#
+#  # This workflow contains a single job called "deployment"
+#  deployment:
+#    # The type of runner that the job will run on
+#    runs-on: ubuntu-latest
+#    needs: build
+#    environment: production
+#    env:
+#      TERRAFORM_CLI_PATH: iac/tf
+#      YC_CLOUD_ID: b1g9o0e73jl7pt139g3j
+#      YC_FOLDER_ID: b1g6h3qks5n5r2p65aji
+#      CR_REGISTRY: crp8o64j2cl644b4pjki
+#      CR_REPOSITORY: imshaby-api
+#      IMAGE_TAG: ${{ github.sha }}
+#      MONGODB_URI: ${{secrets.MONGODB_URI}}
+#      CORS_URLS: ${{vars.CORS_URLS}}
+#    # Steps represent a sequence of tasks that will be executed as part of the job
+#    steps:
+#      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+#      - uses: actions/checkout@v3
+#      - name: Try to install yc cli and login into yandex cloud
+#        uses: okar1/yc-cli-install@master
+#        with:
+#          SA_KEY: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+#      - name: Configure Yandex Cloud CLI
 #        run: |
-#          docker build -t cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG .
-#          docker push cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG
+#          yc config set cloud-id ${YC_CLOUD_ID}
+#          yc config set folder-id ${YC_FOLDER_ID}
+#
+#      - run: export YC_TOKEN=$(yc iam create-token) export YC_CLOUD_ID=$(yc config get cloud-id) export YC_FOLDER_ID=$(yc config get folder-id)
+#
+#      - name: Generate docker compose with ENVs values
+#        env:
+#          DOCKER_API_IMAGE: 'cr.yandex/${{env.CR_REGISTRY}}/${{env.CR_REPOSITORY}}:${{env.IMAGE_TAG}}'
+#          SPRING_PROFILES_ACTIVE: ${{vars.SPRING_PROFILE}}
+#        run: |
+#          cd iac
+#          chmod +x replace-vars.sh
+#          bash replace-vars.sh tf/api/docker-compose.yml
+#
+#      - name: Set up Terraform
+#        uses: hashicorp/setup-terraform@v2
+#
+#
+#      - run: cd iac/tf && terraform init
+#
+#      - name: Terraform Plan
+#        run: |
+#          cd iac/tf
+#          export YC_TOKEN=$(yc iam create-token) export YC_CLOUD_ID=$(yc config get cloud-id) export YC_FOLDER_ID=$(yc config get folder-id)
+#          terraform plan --var-file ../envs/production.tfvars -no-color
+##        continue-on-error: true
+#      - name: Terraform Apply
+#        run: |
+#          cd iac/tf
+#          export YC_TOKEN=$(yc iam create-token) export YC_CLOUD_ID=$(yc config get cloud-id) export YC_FOLDER_ID=$(yc config get folder-id)
+##          terraform apply --var-file ../envs/tf_env.tfvars -no-color -auto-approve

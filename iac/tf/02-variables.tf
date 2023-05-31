@@ -1,21 +1,33 @@
-
-variable "az" {
-  type        = string
-}
-
-variable "service_acc_name" {
-  type        = string
-}
-variable "api_app_name" {
-  type        = string
-}
-variable "platform_id" {
-  type        = string
-}
+// Network
 
 variable "subnet_name" {
   type        = string
 }
+
+
+variable "az" {
+  type        = string
+  default     = "ru-central1-a"
+}
+
+
+
+// Compute Instance
+variable "platform_id" {
+  type        = string
+  default     = "standard-v3"
+}
+
+
+// API Server
+variable "service_acc_name" {
+  type        = string
+}
+
+variable "api_app_name" {
+  type        = string
+}
+
 variable "api_target_group_name" {
   type        = string
 }
