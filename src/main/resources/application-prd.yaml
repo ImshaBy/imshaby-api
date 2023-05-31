@@ -17,3 +17,6 @@ app:
       - "http://www.imsha.by"
       - "https://www.imsha.by"
       - "https://preview.imsha.by"
+      - "https://yc.imsha.by"
+      - "https://www.yc.imsha.by"
+      - "https://www.admin.yc.imsha.by"
