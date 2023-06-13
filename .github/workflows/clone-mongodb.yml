@@ -16,6 +16,7 @@ on:
           - PROD_MYCLOUD_MONGODB_URI
           - QA_MYCLOUD_MONGODB_URI
           - QA_YC_MONGODB_URI
+          - PROD_DC_MONGO_URI
       targetUri:
         type: choice
         description: Select TARGET DB_URI secret
@@ -23,6 +24,7 @@ on:
           # Only to YC qa (the list will grow)
           - PROD_YC_MONGODB_URI
           - QA_YC_MONGODB_URI
+          - PROD_DC_MONGO_URI
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
