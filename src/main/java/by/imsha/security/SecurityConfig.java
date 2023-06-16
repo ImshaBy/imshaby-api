@@ -41,6 +41,9 @@ public class SecurityConfig {
         //защищаем только на prod и qa
         if (environment.acceptsProfiles(Profiles.of("prod", "qa"))) {
             http.authorizeRequests()
+                    //ping controller
+                    .antMatchers(HttpMethod.GET, "/").permitAll()
+
                     .antMatchers(HttpMethod.POST, "/api/passwordless/start").permitAll()
                     .antMatchers(HttpMethod.POST, "/api/passwordless/login").permitAll()
                     .antMatchers(HttpMethod.GET, "/api/mass/week").permitAll()
