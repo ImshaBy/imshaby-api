@@ -16,12 +16,12 @@ import java.util.Locale;
 
 
 @RestController
-@RequestMapping(value = "/status")
+@RequestMapping(value = "/")
 public class PingController extends AbstractRestHandler {
 
     @RequestMapping(value = "",
             method = RequestMethod.GET,
-            produces = {MediaType.APPLICATION_JSON_VALUE, "application/xml"})
+            produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseStatus(HttpStatus.OK)
     public @ResponseBody Ping ping(HttpServletRequest request, HttpServletResponse response) {
         Locale locale = RequestContextUtils.getLocale(request);
