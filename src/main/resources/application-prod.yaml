@@ -2,7 +2,9 @@ spring:
   data:
     mongodb:
       uri: "mongodb://admin:LXAyrf52412@mongodb53235-prod-api-imsha.mycloud.by/api?authSource=admin"
-
+logging:
+  level:
+    org.springframework.data.mongodb.core.MongoTemplate: INFO
 app:
   cors:
     allowed-origins:
