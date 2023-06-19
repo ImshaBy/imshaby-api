@@ -1,20 +1,19 @@
 package by.imsha.security;
 
-import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.Arrays;
 
 /**
  * @author Alena Misan
@@ -23,73 +22,47 @@ import java.util.Arrays;
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
-
-
-    @Value("${spring.profiles.active}")
-    private String env;
-
-    @Value(value = "${auth0.audience}")
-    private String apiAudience;
-
-    @Value(value = "${auth0.issuer}")
-    private String issuer;
-
-    @Value(value = "${auth0.secret}")
-    private String secret;
-
-
-    @Value(value = "${cors.urls}")
-    private String[] urls;
+@RequiredArgsConstructor
+public class SecurityConfig {
 
     @Bean
-    CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(urls));
-        configuration.setAllowedMethods(Arrays.asList("*"));
-        configuration.setAllowCredentials(true);
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-//        configuration.addAllowedHeader("Content-Type");
-
-//        configuration.addExposedHeader("Content-Type");
-
+    CorsConfigurationSource corsConfigurationSource(CorsConfiguration corsConfiguration) {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", corsConfiguration);
         return source;
     }
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        authorizeRequests(http);
-        JwtWebSecurityConfigurer
-                .forRS256(apiAudience, issuer)
-                .configure(http);
-    }
-
-
-    /**
-     * Our API Configuration - for Profile CRUD operations
-     * <p>
-     * Here we choose not to bother using the `auth0.securedRoute` property configuration
-     * and instead ensure any unlisted endpoint in our config is secured by default
-     */
-    protected void authorizeRequests(final HttpSecurity http) throws Exception {
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, Environment environment) throws Exception {
         http.cors()
                 .and()
                 .csrf().disable();
 
-        if (env.equals("prod")) {
-//        http.cors();
+        //защищаем только на prod и qa
+        if (environment.acceptsProfiles(Profiles.of("prod", "qa"))) {
+            http.authorizeRequests()
+                    //ping controller
+                    .antMatchers(HttpMethod.GET, "/").permitAll()
 
-        http.authorizeRequests()
-                .antMatchers(HttpMethod.GET, "/api/mass/week").permitAll()
-                .antMatchers(HttpMethod.GET, "/hook/parish").permitAll()
-                .antMatchers(HttpMethod.GET, "/hook/mass").permitAll()
-                .anyRequest().authenticated();
-         }
-            http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-//        }
+                    .antMatchers(HttpMethod.POST, "/api/passwordless/start").permitAll()
+                    .antMatchers(HttpMethod.POST, "/api/passwordless/login").permitAll()
+                    .antMatchers(HttpMethod.GET, "/api/mass/week").permitAll()
+                    .antMatchers(HttpMethod.GET, "/hook/parish").permitAll()
+                    .antMatchers(HttpMethod.GET, "/hook/mass").permitAll()
+                    .antMatchers(HttpMethod.GET, "/status").permitAll()
 
+                    // temporary before integration BOT with Auth server
+                    .antMatchers(HttpMethod.GET, "/api/parish/*").permitAll()
+                    .antMatchers(HttpMethod.GET, "/api/parish").permitAll()
+                    .antMatchers(HttpMethod.GET, "/api/mass/*").permitAll()
+                    .antMatchers(HttpMethod.PUT, "/api/mass").permitAll()
+                    .anyRequest().authenticated();
+        }
+
+        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+        http.oauth2ResourceServer().jwt();
+
+        return http.build();
     }
 
 }

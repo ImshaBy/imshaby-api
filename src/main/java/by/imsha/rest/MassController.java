@@ -12,7 +12,6 @@ import by.imsha.utils.ServiceUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,9 +35,6 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping(value = "/api/mass")
 public class MassController extends AbstractRestHandler {
-
-    @Value("${imsha.date.format}")
-    private String dateFormat;
 
     @Autowired
     private MassService massService;

@@ -1,0 +1,25 @@
+version: '3'
+
+services:
+  imshaby-api:
+    image: ${DOCKER_API_IMAGE}
+    environment:
+      SPRING_DATA_MONGODB_URI: ${MONGODB_URI}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      PASSWORDLESS_API_KEY: ${PASSWORDLESS_API_KEY}
+      PASSWORDLESS_APPLICATION_ID: ${PASSWORDLESS_APPLICATION_ID}
+      PASSWORDLESS_LOG_CODE: ${PASSWORDLESS_LOG_CODE}
+      PASSWORDLESS_URI_LOGIN: ${PASSWORDLESS_URI_LOGIN}
+      PASSWORDLESS_URI_SEND: ${PASSWORDLESS_URI_SEND}
+      PASSWORDLESS_URI_START: ${PASSWORDLESS_URI_START}
+      JWK_SET_URI: ${JWK_SET_URI}
+    restart: unless-stopped
+    ports:
+      - 80:8080
+    # volumes:
+    #   - /home/yc-user/coi-data:/data
+
+# x-yc-disks:
+#   - device_name: coi-data
+#     fs_type: ext4
+#     host_path: /home/yc-user/coi-data

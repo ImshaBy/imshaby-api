@@ -1,0 +1,283 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Production Build & Deploy (Yandex Cloud)
+
+# Controls when the action will run.
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+  push:
+    branches: [ terraform-yc ]
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    environment: production
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+
+      # Runs a single command using the runners shell
+      - name: Yandex Cloud CR "Login" Action for GitHub Actions
+        uses: yc-actions/yc-cr-login@v0.1-alpha
+        with:
+          yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+
+
+      - name: Build, tag, and push image to Yandex Cloud Container Registry
+        env:
+          CR_REGISTRY: ${{secrets.CR_REGISTRY}}
+          CR_REPOSITORY: ${{vars.CR_REPOSITORY}}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -f ./Dockerfile.prod -t cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG .
+          docker push cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG
+  # # This workflow contains a single job called "deployment"
+  prepare:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    needs: build
+    environment: production
+    env:
+      TERRAFORM_CLI_PATH: iac/tf
+      YC_CLOUD_ID: ${{secrets.YC_CLOUD_ID}}
+      YC_FOLDER_ID: ${{secrets.YC_FOLDER_ID}}
+      CR_REGISTRY: ${{secrets.CR_REGISTRY}}
+      CR_REPOSITORY: ${{vars.CR_REPOSITORY}}
+      IMAGE_TAG: ${{ github.sha }}
+      AZ : ${{vars.AZ}}
+      SERVICE_ACC_NAME : ${{vars.SERVICE_ACC_NAME}}
+      SUBNET_NAME : ${{vars.SUBNET_NAME}}
+      API_APP_NAME : ${{vars.API_APP_NAME}}
+      API_TARGET_GROUP_NAME : ${{vars.API_TARGET_GROUP_NAME}}
+      API_BACKEND_GROUP_NAME : ${{vars.API_BACKEND_GROUP_NAME}}
+      API_BACK_END_NAME : ${{vars.API_BACK_END_NAME}}
+      API_HTTP_ROUTER_NAME : ${{vars.API_HTTP_ROUTER_NAME}}
+      API_VIRTUAL_HOST_NAME : ${{vars.API_VIRTUAL_HOST_NAME}}
+      API_ROUTE_NAME : ${{vars.API_ROUTE_NAME}}
+      API_ALB_NAME : ${{vars.API_ALB_NAME}}
+      API_HTTP_LISTENER_NAME : ${{vars.API_HTTP_LISTENER_NAME}}
+      CDN_ORIGIN_GROUP_NAME : ${{vars.CDN_ORIGIN_GROUP_NAME}}
+      API_DNS_INTERNAL_NAME : ${{vars.API_DNS_INTERNAL_NAME}}
+      API_DOMAIN_NAME : ${{vars.API_DOMAIN_NAME}}
+      DYNAMODB_TABLE : ${{vars.DYNAMODB_TABLE}}
+      DYNAMODB_ENDPOINT : ${{secrets.DYNAMODB_ENDPOINT}}
+      SECRET_KEY : ${{secrets.SA_SECRET_KEY}}
+      ACCESS_KEY : ${{secrets.SA_ACCESS_KEY}}
+      TF_BACKEND_KEY : ${{vars.TF_BACKEND_KEY}}
+      TR_BACKEND_BUCKET_NAME : ${{vars.TR_BACKEND_BUCKET_NAME}}
+      ACCESS_KEY_ID: ${{secrets.ACCESS_KEY_ID}}
+      ACCESS_SECRET_KEY: ${{secrets.ACCESS_SECRET_KEY}}
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+      - name: Try to install yc cli and login into yandex cloud
+        uses: okar1/yc-cli-install@master
+        with:
+          SA_KEY: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+      - name: Configure Yandex Cloud CLI
+        run: |
+          yc config set cloud-id ${YC_CLOUD_ID}
+          yc config set folder-id ${YC_FOLDER_ID}
+
+      - run: export YC_TOKEN=$(yc iam create-token) export YC_CLOUD_ID=$(yc config get cloud-id) export YC_FOLDER_ID=$(yc config get folder-id)
+
+      - name: Generate docker compose with ENVs values
+        env:
+          DOCKER_IMAGE: 'cr.yandex/${{env.CR_REGISTRY}}/${{env.CR_REPOSITORY}}:${{env.IMAGE_TAG}}'
+          SECRET_KEY : ${{secrets.SA_SECRET_KEY}}
+          DATABASE_CLIENT: ${{vars.DATABASE_CLIENT}}
+          DATABASE_HOST: ${{vars.DATABASE_HOST}}
+          DATABASE_PORT: ${{vars.DATABASE_PORT}}
+          DATABASE_NAME: ${{vars.DATABASE_NAME}}
+          DATABASE_USERNAME: ${{secrets.DATABASE_USERNAME}}
+          DATABASE_PASSWORD: ${{secrets.DATABASE_PASSWORD}}
+          JWT_SECRET: ${{secrets.JWT_SECRET}}
+          ADMIN_JWT_SECRET: ${{secrets.ADMIN_JWT_SECRET}}
+          API_TOKEN_SALT: ${{secrets.API_TOKEN_SALT}}
+          APP_KEYS: ${{secrets.APP_KEYS}}
+          NODE_ENV: ${{vars.NODE_ENV}}
+          BUCKET_NAME: ${{vars.BUCKET_NAME}}
+          BUCKET_URL: ${{vars.BUCKET_URL}}
+          TRANSFER_TOKEN_SALT: ${{secrets.TRANSFER_TOKEN_SALT}}
+        run: |
+          cd iac
+          chmod +x replace-vars.sh
+          bash replace-vars.sh tf/API/docker-compose.yml
+          cat tf/API/tf_docker-compose.yml
+      - name: Generate terraform env file
+        env:
+          DOCKER_API_IMAGE: 'cr.yandex/${{env.CR_REGISTRY}}/${{env.CR_REPOSITORY}}:${{env.IMAGE_TAG}}'
+          SECRET_KEY : ${{secrets.SA_SECRET_KEY}}
+          DATABASE_CLIENT: ${{vars.DATABASE_CLIENT}}
+          DATABASE_HOST: ${{vars.DATABASE_HOST}}
+          DATABASE_PORT: ${{vars.DATABASE_PORT}}
+          DATABASE_NAME: ${{vars.DATABASE_NAME}}
+          DATABASE_USERNAME: ${{secrets.DATABASE_USERNAME}}
+          DATABASE_PASSWORD: ${{secrets.DATABASE_PASSWORD}}
+          JWT_SECRET: ${{secrets.JWT_SECRET}}
+          ADMIN_JWT_SECRET: ${{secrets.ADMIN_JWT_SECRET}}
+          API_TOKEN_SALT: ${{secrets.API_TOKEN_SALT}}
+          APP_KEYS: ${{secrets.APP_KEYS}}
+          NODE_ENV: ${{vars.NODE_ENV}}
+          ACCESS_KEY_ID: ${{secrets.ACCESS_KEY_ID}}
+          ACCESS_SECRET_KEY: ${{secrets.ACCESS_SECRET_KEY}}
+          BUCKET_NAME: ${{vars.BUCKET_NAME}}
+          BUCKET_URL: ${{vars.BUCKET_URL}}
+          TRANSFER_TOKEN_SALT: ${{secrets.TRANSFER_TOKEN_SALT}}
+        run: |
+          cd iac
+          chmod +x replace-vars.sh
+          bash replace-vars.sh envs/env.tfvars
+          cat envs/tf_env.tfvars
+      - name: Generate new providers file, remove old one
+        env:
+          ACCESS_KEY_ID: ${{secrets.ACCESS_KEY_ID}}
+          ACCESS_SECRET_KEY: ${{secrets.ACCESS_SECRET_KEY}}
+        run: |
+          cd iac
+          chmod +x replace-vars.sh
+          bash replace-vars.sh tf/01-providers.tf
+          rm -f tf/01-providers.tf
+          cat tf/tf_01-providers.tf
+          cd tf
+          ls -la
+
+
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+
+
+      - run: cd iac/tf && terraform init
+
+      - name: Terraform Plan
+        run: |
+          cd iac/tf
+          export YC_TOKEN=$(yc iam create-token) export YC_CLOUD_ID=$(yc config get cloud-id) export YC_FOLDER_ID=$(yc config get folder-id)
+          terraform plan --var-file ../envs/tf_env.tfvars -no-color
+  deploy:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    needs: [build, prepare]
+    environment: production
+    env:
+      TERRAFORM_CLI_PATH: iac/tf
+      YC_CLOUD_ID: ${{secrets.YC_CLOUD_ID}}
+      YC_FOLDER_ID: ${{secrets.YC_FOLDER_ID}}
+      CR_REGISTRY: ${{secrets.CR_REGISTRY}}
+      CR_REPOSITORY: ${{vars.CR_REPOSITORY}}
+      IMAGE_TAG: ${{ github.sha }}
+      AZ : ${{vars.AZ}}
+      SERVICE_ACC_NAME : ${{vars.SERVICE_ACC_NAME}}
+      SUBNET_NAME : ${{vars.SUBNET_NAME}}
+      API_APP_NAME : ${{vars.API_APP_NAME}}
+      API_TARGET_GROUP_NAME : ${{vars.API_TARGET_GROUP_NAME}}
+      API_BACKEND_GROUP_NAME : ${{vars.API_BACKEND_GROUP_NAME}}
+      API_BACK_END_NAME : ${{vars.API_BACK_END_NAME}}
+      API_HTTP_ROUTER_NAME : ${{vars.API_HTTP_ROUTER_NAME}}
+      API_VIRTUAL_HOST_NAME : ${{vars.API_VIRTUAL_HOST_NAME}}
+      API_ROUTE_NAME : ${{vars.API_ROUTE_NAME}}
+      API_ALB_NAME : ${{vars.API_ALB_NAME}}
+      API_HTTP_LISTENER_NAME : ${{vars.API_HTTP_LISTENER_NAME}}
+      CDN_ORIGIN_GROUP_NAME : ${{vars.CDN_ORIGIN_GROUP_NAME}}
+      API_DNS_INTERNAL_NAME : ${{vars.API_DNS_INTERNAL_NAME}}
+      API_DOMAIN_NAME : ${{vars.API_DOMAIN_NAME}}
+      DYNAMODB_TABLE : ${{vars.DYNAMODB_TABLE}}
+      DYNAMODB_ENDPOINT : ${{secrets.DYNAMODB_ENDPOINT}}
+      SECRET_KEY : ${{secrets.SA_SECRET_KEY}}
+      ACCESS_KEY : ${{secrets.SA_ACCESS_KEY}}
+      TF_BACKEND_KEY : ${{vars.TF_BACKEND_KEY}}
+      TR_BACKEND_BUCKET_NAME : ${{vars.TR_BACKEND_BUCKET_NAME}}
+      ACCESS_KEY_ID: ${{secrets.ACCESS_KEY_ID}}
+      ACCESS_SECRET_KEY: ${{secrets.ACCESS_SECRET_KEY}}
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+      - name: Try to install yc cli and login into yandex cloud
+        uses: okar1/yc-cli-install@master
+        with:
+          SA_KEY: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+      - name: Configure Yandex Cloud CLI
+        run: |
+          yc config set cloud-id ${YC_CLOUD_ID}
+          yc config set folder-id ${YC_FOLDER_ID}
+
+      - run: export YC_TOKEN=$(yc iam create-token) export YC_CLOUD_ID=$(yc config get cloud-id) export YC_FOLDER_ID=$(yc config get folder-id)
+
+      - name: Generate docker compose with ENVs values
+        env:
+          DOCKER_IMAGE: 'cr.yandex/${{env.CR_REGISTRY}}/${{env.CR_REPOSITORY}}:${{env.IMAGE_TAG}}'
+          SECRET_KEY : ${{secrets.SA_SECRET_KEY}}
+          DATABASE_CLIENT: ${{vars.DATABASE_CLIENT}}
+          DATABASE_HOST: ${{vars.DATABASE_HOST}}
+          DATABASE_PORT: ${{vars.DATABASE_PORT}}
+          DATABASE_NAME: ${{vars.DATABASE_NAME}}
+          DATABASE_USERNAME: ${{secrets.DATABASE_USERNAME}}
+          DATABASE_PASSWORD: ${{secrets.DATABASE_PASSWORD}}
+          JWT_SECRET: ${{secrets.JWT_SECRET}}
+          ADMIN_JWT_SECRET: ${{secrets.ADMIN_JWT_SECRET}}
+          API_TOKEN_SALT: ${{secrets.API_TOKEN_SALT}}
+          APP_KEYS: ${{secrets.APP_KEYS}}
+          NODE_ENV: ${{vars.NODE_ENV}}
+          BUCKET_NAME: ${{vars.BUCKET_NAME}}
+          BUCKET_URL: ${{vars.BUCKET_URL}}
+          TRANSFER_TOKEN_SALT: ${{secrets.TRANSFER_TOKEN_SALT}}
+        run: |
+          cd iac
+          chmod +x replace-vars.sh
+          bash replace-vars.sh tf/api/docker-compose.yml
+          cat tf/api/tf_docker-compose.yml
+      - name: Generate terraform env file
+        env:
+          DOCKER_API_IMAGE: 'cr.yandex/${{env.CR_REGISTRY}}/${{env.CR_REPOSITORY}}:${{env.IMAGE_TAG}}'
+          SECRET_KEY : ${{secrets.SA_SECRET_KEY}}
+          DATABASE_CLIENT: ${{vars.DATABASE_CLIENT}}
+          DATABASE_HOST: ${{vars.DATABASE_HOST}}
+          DATABASE_PORT: ${{vars.DATABASE_PORT}}
+          DATABASE_NAME: ${{vars.DATABASE_NAME}}
+          DATABASE_USERNAME: ${{secrets.DATABASE_USERNAME}}
+          DATABASE_PASSWORD: ${{secrets.DATABASE_PASSWORD}}
+          JWT_SECRET: ${{secrets.JWT_SECRET}}
+          ADMIN_JWT_SECRET: ${{secrets.ADMIN_JWT_SECRET}}
+          API_TOKEN_SALT: ${{secrets.API_TOKEN_SALT}}
+          APP_KEYS: ${{secrets.APP_KEYS}}
+          NODE_ENV: ${{vars.NODE_ENV}}
+          ACCESS_KEY_ID: ${{secrets.ACCESS_KEY_ID}}
+          ACCESS_SECRET_KEY: ${{secrets.ACCESS_SECRET_KEY}}
+          BUCKET_NAME: ${{vars.BUCKET_NAME}}
+          BUCKET_URL: ${{vars.BUCKET_URL}}
+          TRANSFER_TOKEN_SALT: ${{secrets.TRANSFER_TOKEN_SALT}}
+        run: |
+          cd iac
+          chmod +x replace-vars.sh
+          bash replace-vars.sh envs/env.tfvars
+          cat envs/tf_env.tfvars
+      - name: Generate new providers file, remove old one
+        env:
+          ACCESS_KEY_ID: ${{secrets.ACCESS_KEY_ID}}
+          ACCESS_SECRET_KEY: ${{secrets.ACCESS_SECRET_KEY}}
+        run: |
+          cd iac
+          chmod +x replace-vars.sh
+          bash replace-vars.sh tf/01-providers.tf
+          rm -f tf/01-providers.tf
+          cat tf/tf_01-providers.tf
+
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+
+
+      - run: cd iac/tf && terraform init
+
+      - name: Terraform Apply
+        run: |
+          cd iac/tf
+          export YC_TOKEN=$(yc iam create-token) export YC_CLOUD_ID=$(yc config get cloud-id) export YC_FOLDER_ID=$(yc config get folder-id)
+          terraform apply --var-file ../envs/tf_env.tfvars -no-color -auto-approve

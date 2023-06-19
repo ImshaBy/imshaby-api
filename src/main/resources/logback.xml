@@ -1,10 +1,9 @@
 <configuration>
     <include resource="org/springframework/boot/logging/logback/base.xml"/>
 
-    <!--
-    <logger name="org.springframework.cache" level="trace">
+    <logger name="SystemOut" level="trace">
         <appender-ref ref="CONSOLE" />
-    </logger>-->
+    </logger>
 
     <jmxConfigurator/>
 </configuration>

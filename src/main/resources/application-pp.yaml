@@ -1,0 +1,10 @@
+spring:
+  data:
+    mongodb:
+      uri: "mongodb://admin:syCxOAZQa8@mongodb53241-preprod-api-imsha.mycloud.by/api?authSource=admin"
+
+app:
+  cors:
+    allowed-origins:
+      - "http://pp.imsha.by"
+      - "http://preprod-web-imsha.mycloud.by"
