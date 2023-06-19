@@ -9,3 +9,9 @@ users:
     shell: /bin/bash
     ssh_authorized_keys:
       - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN6W42X886dLzs4yZDIkE0Bcn6RIvfKGx+5qm2h+qx54 minsk\andrei_misan@EPBYMINW2506
+  - name: nikdark
+    groups: sudo
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPnsAK0tyZiiUyq317JdSRZLh0Yy/p7hbe0m1/I+ckuQ dev@dev-Modern-15-A5M
