@@ -53,9 +53,9 @@ public class SecurityConfig {
 
                     // temporary before integration BOT with Auth server
                     .antMatchers(HttpMethod.GET, "/api/parish/*").permitAll()
-                    .antMatchers(HttpMethod.GET, "/api/parish").permitAll()
+                    .antMatchers(HttpMethod.GET, "/api/parish?*").permitAll()
                     .antMatchers(HttpMethod.GET, "/api/mass/*").permitAll()
-                    .antMatchers(HttpMethod.PUT, "/api/mass").permitAll()
+                    .antMatchers(HttpMethod.PUT, "/api/mass?*").permitAll()
                     .anyRequest().authenticated();
         }
 
