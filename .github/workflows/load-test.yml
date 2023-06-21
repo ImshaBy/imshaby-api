@@ -1,0 +1,33 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Artillery Load Test
+
+# Controls when the action will run. 
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  artillery:
+    runs-on: ubuntu-latest
+    environment: production
+    container: artilleryio/artillery:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Make reports directory
+        run: mkdir reports
+
+      - name: Execute load tests
+        run: /home/node/artillery/bin/run run --target {{vars.LOAD_TEST_URL}} --output reports/report.json perf/artillery.yaml
+
+      - name: Generate HTML report
+        run: /home/node/artillery/bin/run report --output reports/report reports/report.json
+
+      - name: Archive test report
+        uses: actions/upload-artifact@v2
+        with:
+          name: artillery-test-report
+          path: reports/*
