@@ -11,8 +11,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
-import java.util.Map;
 
 /**
  * Контроллер-адаптер, для использования Passwordless API
@@ -55,12 +52,6 @@ public class PasswordlessApiAdapter {
         return LoginResponse.builder()
                 .token(token)
                 .build();
-    }
-
-    //TODO убрать, просто пока для демонстрации работы
-    @PostMapping("/claims")
-    public Map<String, Object> token(@AuthenticationPrincipal Jwt principal) {
-        return principal.getClaims();
     }
 
     //TODO сделать общий для проекта ControllerAdvice , пока локальная имплементация

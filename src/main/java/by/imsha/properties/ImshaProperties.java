@@ -5,6 +5,7 @@ import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.util.Set;
 
 /**
  * Параметры приложения imshaby
@@ -28,6 +29,10 @@ public class ImshaProperties {
      */
     @NotNull
     private City defaultCity;
+    /**
+     * Набор API-ключей
+     */
+    Set<String> apiKeys;
 
     @Data
     public static class City {
