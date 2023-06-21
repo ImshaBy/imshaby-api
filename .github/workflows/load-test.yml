@@ -21,7 +21,7 @@ jobs:
         run: mkdir reports
 
       - name: Execute load tests
-        run: /home/node/artillery/bin/run run --target {{vars.LOAD_TEST_URL}} --output reports/report.json perf/artillery.yaml
+        run: /home/node/artillery/bin/run run --target ${{vars.LOAD_TEST_URL}} --output reports/report.json perf/artillery.yaml
 
       - name: Generate HTML report
         run: /home/node/artillery/bin/run report --output reports/report reports/report.json
