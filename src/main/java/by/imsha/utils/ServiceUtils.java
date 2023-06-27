@@ -153,22 +153,6 @@ public class ServiceUtils {
         return date.toEpochSecond(ZoneOffset.UTC);
     }
 
-    public static LocalDate buildDateOrDefault(String dateStr) {
-        LocalDate date = null;
-        if(dateStr != null){
-            try{
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateFormat);
-                date = LocalDate.parse(dateStr, formatter);
-            }catch (DateTimeParseException ex){
-                log.warn(String.format("Date format is incorrect. Date - %s,format - %s ", dateStr, dateFormat));
-            }
-        }
-        if(date == null){
-            date = LocalDateTime.now(BEL_ZONE_ID).toLocalDate();
-        }
-        return date;
-    }
-
     /**
      *
      * */

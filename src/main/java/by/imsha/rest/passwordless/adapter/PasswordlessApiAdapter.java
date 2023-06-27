@@ -6,16 +6,12 @@ import by.imsha.rest.passwordless.adapter.request.LoginRequest;
 import by.imsha.rest.passwordless.adapter.request.StartRequest;
 import by.imsha.rest.passwordless.adapter.response.GenerateCodeInternalResponse;
 import by.imsha.rest.passwordless.adapter.response.LoginResponse;
-import by.imsha.rest.passwordless.exception.PasswordlessApiException;
 import by.imsha.rest.passwordless.handler.LoginHandler;
 import by.imsha.rest.passwordless.handler.StartHandler;
 import by.imsha.rest.passwordless.send.InterceptingCodeSender;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -80,14 +76,4 @@ public class PasswordlessApiAdapter {
                 .build();
     }
 
-    //TODO сделать общий для проекта ControllerAdvice , пока локальная имплементация
-    @ExceptionHandler(PasswordlessApiException.class)
-    public ResponseEntity<Void> handleException(PasswordlessApiException passwordlessApiException) {
-        log.error("Passwordless API exception!", passwordlessApiException);
-        if (passwordlessApiException.isNotifiable()) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        } else {
-            return ResponseEntity.ok().build();
-        }
-    }
 }

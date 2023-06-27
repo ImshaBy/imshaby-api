@@ -18,6 +18,6 @@ public class ParishStateInfo {
     /**
      * Состояние парафии
      */
-    @NotNull
+    @NotNull(message = "PARISH.401")
     Parish.State state;
 }

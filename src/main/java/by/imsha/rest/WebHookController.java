@@ -1,82 +1,78 @@
 package by.imsha.rest;
 
-import by.imsha.domain.City;
 import by.imsha.domain.EntityWebhook;
-import by.imsha.domain.Mass;
-import by.imsha.domain.dto.CityInfo;
 import by.imsha.domain.dto.UpdateEntityInfo;
 import by.imsha.domain.dto.WebHookInfo;
-import by.imsha.domain.dto.mapper.CityMapper;
+import by.imsha.exception.ResourceNotFoundException;
 import by.imsha.service.EntityWebhookService;
 import by.imsha.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Optional;
+import javax.validation.Valid;
 
 
 @RestController
 @RequestMapping(value = "/hook")
-public class WebHookController extends AbstractRestHandler {
+public class WebHookController {
 
     @Autowired
     private EntityWebhookService entityWebhookService;
 
-    @RequestMapping(value = "/city",
-            method = RequestMethod.POST,
-            consumes = {"application/json"},
-            produces = {"application/json"})
-    @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<EntityWebhook> createCityWebHook(@Validated @RequestBody WebHookInfo webHookInfo){
-        return ResponseEntity.ok().body(entityWebhookService.createCityWebHook(webHookInfo));
+    @PostMapping("/city")
+    public ResponseEntity<EntityWebhook> createCityWebHook(@Valid @RequestBody WebHookInfo webHookInfo) {
+        return ResponseEntity.ok(
+                entityWebhookService.createCityWebHook(webHookInfo)
+        );
     }
 
-    @RequestMapping(value = "/parish",
-            method = RequestMethod.POST,
-            consumes = {"application/json"},
-            produces = {"application/json"})
+    @PostMapping("/parish")
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<EntityWebhook> createParishWebHook(@Validated @RequestBody WebHookInfo webHookInfo){
-        return ResponseEntity.ok().body(entityWebhookService.createParishWebHook(webHookInfo));
+    public ResponseEntity<EntityWebhook> createParishWebHook(@Valid @RequestBody WebHookInfo webHookInfo) {
+        return ResponseEntity.ok(
+                entityWebhookService.createParishWebHook(webHookInfo)
+        );
     }
 
-
-    @RequestMapping(value = "",
-            method = RequestMethod.GET,
-            produces = {"application/json"})
-    @ResponseStatus(HttpStatus.OK)
-    @ResponseBody
-    public Page<EntityWebhook> getAllHooks(
-            @RequestParam(value = "page",  defaultValue = Constants.DEFAULT_PAGE_NUM) int page,
+    @GetMapping
+    public ResponseEntity<Page<EntityWebhook>> getAllHooks(
+            @RequestParam(value = "page", defaultValue = Constants.DEFAULT_PAGE_NUM) int page,
             @RequestParam(value = "size", defaultValue = Constants.DEFAULT_PAGE_SIZE) int size) {
-        return this.entityWebhookService.getAllHooks(page, size);
+        return ResponseEntity.ok(
+                this.entityWebhookService.getAllHooks(page, size)
+        );
     }
 
-    @RequestMapping(value = "/{id}",
-            method = RequestMethod.GET,
-            produces = {"application/json"})
-    @ResponseStatus(HttpStatus.OK)
-    @ResponseBody
-    public EntityWebhook getHook(
-            @PathVariable("id") String id) {
-        Optional<EntityWebhook> hook = this.entityWebhookService.retrieveHook(id);
-        checkResourceFound(hook);
-        return hook.get();
+    @GetMapping("/{id}")
+    public ResponseEntity<EntityWebhook> getHook(@PathVariable("id") String id) {
+        return this.entityWebhookService.retrieveHook(id)
+                .map(ResponseEntity::ok)
+                .orElseThrow(ResourceNotFoundException::new);
     }
 
-    @RequestMapping(value = "/{id}",
-            method = RequestMethod.DELETE,
-            produces = {"application/json"})
+    @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public UpdateEntityInfo deleteHook(
-            @PathVariable("id") String id) {
-        checkResourceFound(this.entityWebhookService.retrieveHook(id));
+    public ResponseEntity<UpdateEntityInfo> deleteHook(@PathVariable("id") String id) {
+        if (!this.entityWebhookService.retrieveHook(id).isPresent()) {
+            throw new ResourceNotFoundException();
+        }
+
         this.entityWebhookService.removeHook(id);
-        return new UpdateEntityInfo(id, UpdateEntityInfo.STATUS.DELETED);
+
+        return ResponseEntity.ok(
+                new UpdateEntityInfo(id, UpdateEntityInfo.STATUS.DELETED)
+        );
     }
 
 

@@ -36,12 +36,13 @@ public class SecurityConfig {
 
     private static final String PRODUCTION_PROFILE = "prod";
     private static final String QA_PROFILE = "qa";
+    private static final String LOCAL_PROFILE = "local";
 
     /**
      * Включаем работу с аннотациями только для профилей prod и qa
      */
     @Configuration
-    @Profile(value = {PRODUCTION_PROFILE, QA_PROFILE})
+    @Profile(value = {PRODUCTION_PROFILE, QA_PROFILE, LOCAL_PROFILE})
     @EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
     public static class SecurityAnnotationsEnableConfiguration {
     }
@@ -61,7 +62,7 @@ public class SecurityConfig {
                 .csrf().disable();
 
         //защищаем только на prod и qa
-        if (environment.acceptsProfiles(Profiles.of(PRODUCTION_PROFILE, QA_PROFILE))) {
+        if (environment.acceptsProfiles(Profiles.of(PRODUCTION_PROFILE, QA_PROFILE, LOCAL_PROFILE))) {
             http.authorizeRequests()
                     //ping controller
                     .antMatchers(HttpMethod.GET, "/").permitAll()
@@ -74,6 +75,9 @@ public class SecurityConfig {
                     .antMatchers(HttpMethod.GET, "/hook/mass").permitAll()
                     .antMatchers(HttpMethod.GET, "/status").permitAll()
                     .anyRequest().authenticated();
+
+            //обработку токенов добавляем только при необходимости авторизации запросов
+            http.oauth2ResourceServer().jwt();
 
             //при наличии API ключей добавляем фильтр для работы с ними
             if (!CollectionUtils.isEmpty(imshaProperties.getApiKeys()) ||

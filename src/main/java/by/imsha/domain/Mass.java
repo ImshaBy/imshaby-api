@@ -3,13 +3,20 @@ package by.imsha.domain;
 import by.imsha.rest.serializers.CustomLocalDateTimeSerializer;
 import by.imsha.rest.serializers.LocalDateDeserializer;
 import by.imsha.rest.serializers.LocalDateSerializer;
-import by.imsha.service.MassService;
 import by.imsha.utils.Constants;
 import by.imsha.utils.ServiceUtils;
+import by.imsha.validation.common.ComparableFieldsValid;
+import by.imsha.validation.mass.MassDaysValid;
+import by.imsha.validation.mass.MassGroupSequenceProvider;
+import by.imsha.validation.mass.MassGroups.Duplicate;
+import by.imsha.validation.mass.MassGroups.Periodic;
+import by.imsha.validation.mass.MassGroups.Single;
+import by.imsha.validation.mass.UniqueMass;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Data;
-import org.apache.commons.lang3.builder.ToStringBuilder;
+import lombok.NoArgsConstructor;
+import org.hibernate.validator.group.GroupSequenceProvider;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
@@ -17,15 +24,18 @@ import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Null;
 import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
+import static by.imsha.validation.common.ComparableFieldsValid.Condition.LESS_OR_EQUALS;
 
 /**
  * TODO refactor Mass model to have different types of Masses
@@ -36,44 +46,40 @@ import java.util.Map;
 
 )
 @Data
+@NoArgsConstructor
+@GroupSequenceProvider(MassGroupSequenceProvider.class)
+@ComparableFieldsValid(fields = {"startDate", "endDate"}, condition = LESS_OR_EQUALS, groups = Periodic.class, message = "MASS.001")
+@MassDaysValid(groups = Periodic.class, message = "MASS.002")
+@UniqueMass(groups = Duplicate.class, message = "MASS.011")
 public class Mass {
 
     @Id
     private String id;
 
-    //    @ApiObjectField(description = "City ID.", required = true)
-    @NotNull
-    @NotEmpty
+    @NotEmpty(message = "MASS.003")
     private String cityId;
 
-
-    //    @ApiObjectField(description = "Language code of provided mass. Available codes are presented in ISO 639-2 Language Code List.", required = true)
-    @NotNull
-    @NotEmpty
+    @NotEmpty(message = "MASS.004")
     private String langCode;
 
-    //    @ApiObjectField(description = "Duration of mass in ms, default value = 3600 (1 hour)",  required = false)
-//    @NotNull
     private Long duration = 3600l;
 
-//    @ApiObjectField(description = "Time of regular mass, that is defined throw time and days.", required = false)
-//    @JsonFormat(pattern = "KK:mm")
-//    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
-//    @JsonSerialize(using = LocalDateTimeSerializer.class)
-
     @Indexed
-    @Pattern(regexp = "^[0-2][0-9]:[0-5][0-9]$")
+    @Pattern(groups = Periodic.class, regexp = "([01][0-9]|2[0-3]):[0-5][0-9]", message = "MASS.005")
+    @NotNull(groups = Periodic.class, message = "MASS.006")
+    @Null(groups = Single.class, message = "MASS.007")
     private String time;
 
     @Indexed
+    @NotEmpty(groups = Periodic.class, message = "MASS.008")
+    @Size(max = 0, groups = Single.class, message = "MASS.009")
     private int[] days;
 
     private Boolean online;
 
     private Boolean rorate;
 
-    @NotNull
-    @NotEmpty
+    @NotEmpty(message = "MASS.010")
     @Indexed
     private String parishId;
 
@@ -83,15 +89,6 @@ public class Mass {
 
     private Map<String, LocalizedMass> localizedInfo = new HashMap<>();
 
-    public Map<String, LocalizedMass> getLocalizedInfo() {
-        return localizedInfo;
-    }
-
-    public void setLocalizedInfo(Map<String, LocalizedMass> localizedInfo) {
-        this.localizedInfo = localizedInfo;
-    }
-
-    //    @ApiObjectField(description = "Start time for non regular mass, that occurs and is defined only once", required = false)
     private long singleStartTimestamp;
 
     @LastModifiedDate
@@ -106,45 +103,6 @@ public class Mass {
     @JsonDeserialize(using = LocalDateDeserializer.class)
     @JsonSerialize(using = LocalDateSerializer.class)
     private LocalDate endDate;
-
-
-    public Mass() {
-    }
-
-    @AssertTrue(message = "Only one of fields have to be populated: time or singleStartTimestamp")
-    private boolean isValid() {
-        return MassService.isMassTimeConfigIsValid(this);
-    }
-
-    @AssertTrue(message = "Please specify not empty 'days' for scheduled mass (you already specified field 'time').")
-    private boolean isValidScheduledMassEmptyDays() {
-        return MassService.isScheduleMassDaysIsNotEmpty(this);
-    }
-
-    @AssertTrue(message = "Please specify correct 'days' (value is between 1 and 7) for scheduled mass.")
-    private boolean isValidScheduledMassIncorrectDays() {
-        return MassService.isScheduleMassDaysAreCorrect(this);
-    }
-
-    @AssertTrue(message = "Please specify correct start/end dates (startDate shouldn't be after endDate) for scheduled mass.")
-    private boolean isValidScheduledMassIncorrectStartEndDates() {
-        return MassService.isScheduleMassStartEndDatesAreCorrect(this);
-    }
-
-    @AssertTrue(message = "Week days of mass are out of start/end dates.")
-    private boolean isScheduleMassDaysNotInDatePeriod() {
-        return MassService.isScheduleMassDaysInDatePeriod(this);
-    }
-
-    @AssertTrue(message = "Please specify 'time' for scheduled mass (you already specified field 'days').")
-    private boolean isValidScheduledMassEmptyTime() {
-        return MassService.isScheduleMassTimeIsNotBlank(this);
-    }
-
-    @AssertTrue(message = "Mass time shouldn't be overlapped with time/date from other predefined masses.")
-    private boolean isDuplicatedMassTime() {
-        return MassService.isUniqueMassTime(this);
-    }
 
     public Mass(String langCode, String cityId, long duration, String parishId, String time, long start, int[] days,
                 LocalDate startDate, LocalDate endDate, Boolean online, Boolean rorate, String notes, boolean deleted,
@@ -169,16 +127,20 @@ public class Mass {
 
     public Mass(Mass mass) {
         this(mass.langCode, mass.cityId, mass.duration, mass.parishId, mass.time, mass.singleStartTimestamp, mass.days,
-            mass.startDate, mass.endDate, mass.online, mass.rorate, mass.notes, mass.deleted, mass.localizedInfo);
+                mass.startDate, mass.endDate, mass.online, mass.rorate, mass.notes, mass.deleted, mass.localizedInfo);
+    }
+
+    public boolean isPeriodic() {
+        return this.getSingleStartTimestamp() == 0;
     }
 
     public String getNotes() {
         String lang = ServiceUtils.fetchUserLangFromHttpRequest();
         LocalizedMass localizedMass = getLocalizedInfo().get(lang);
         String calculatedNotes = null;
-        if(localizedMass != null){
-            calculatedNotes =  localizedMass.getNotes();
-        }else if(Constants.DEFAULT_LANG.equalsIgnoreCase(lang)){
+        if (localizedMass != null) {
+            calculatedNotes = localizedMass.getNotes();
+        } else if (Constants.DEFAULT_LANG.equalsIgnoreCase(lang)) {
             calculatedNotes = notes;
         }
         return calculatedNotes;

@@ -12,10 +12,8 @@ import com.github.rutledgepaulv.qbuilders.builders.GeneralQueryBuilder;
 import com.github.rutledgepaulv.qbuilders.conditions.Condition;
 import com.github.rutledgepaulv.qbuilders.visitors.MongoVisitor;
 import com.github.rutledgepaulv.rqe.pipes.QueryConversionPipeline;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,8 +24,10 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.validation.annotation.Validated;
 
 import javax.annotation.PostConstruct;
+import javax.validation.Valid;
 import java.text.Collator;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -43,6 +43,7 @@ import static by.imsha.utils.Constants.*;
  */
 
 @Service
+@Validated
 public class MassService {
     private static Logger logger = LoggerFactory.getLogger(MassService.class);
     /**
@@ -55,8 +56,6 @@ public class MassService {
     private MongoVisitor mongoVisitor = new MongoVisitor();
 
     private static MassService INSTANCE;
-
-    private static final int WEEK_DAYS_COUNT = (int) ChronoUnit.WEEKS.getDuration().toDays();
 
     @PostConstruct
     public void initInstance(){
@@ -77,79 +76,8 @@ public class MassService {
             @CacheEvict(cacheNames = "massCache", key = "'massesByParish:' + #p0.parishId"),
             @CacheEvict(cacheNames = "massCache", key = "'oldestMass:' + #p0.parishId")
     })
-    public Mass createMass(Mass mass){
+    public Mass createMass(@Valid Mass mass){
         return massRepository.save(mass);
-    }
-
-    public List<Mass> createMassesWithList(List<Mass> masses){
-        return massRepository.saveAll(masses);
-    }
-
-    public static boolean isPeriodicMass(Mass mass) {
-        long singleStartTimestamp = mass.getSingleStartTimestamp();
-        return singleStartTimestamp == 0;
-    }
-
-    public static boolean isMassTimeConfigIsValid(Mass mass) {
-        long singleStartTimestamp = mass.getSingleStartTimestamp();
-        String time = mass.getTime();
-        boolean timeIsNotNull = singleStartTimestamp == 0 && StringUtils.isNotBlank(time);
-        boolean singleTimestampIsNotNull = singleStartTimestamp > 0 && StringUtils.isBlank(time);
-        return timeIsNotNull || singleTimestampIsNotNull;
-    }
-
-    public static boolean isScheduleMassDaysIsNotEmpty(Mass mass) {
-        int[] days = mass.getDays();
-        boolean validScheduledMass = true;
-        if (isPeriodicMass(mass)) {
-            validScheduledMass = ArrayUtils.isNotEmpty(days);
-        }
-        return validScheduledMass;
-    }
-    public static boolean isCorrectEndDateForPeriodicMass(Mass mass) {
-        int[] days = mass.getDays();
-        boolean validScheduledMass = true;
-        if (isPeriodicMass(mass)) {
-            validScheduledMass = ArrayUtils.isNotEmpty(days);
-        }
-        return validScheduledMass;
-    }
-
-    public static boolean isScheduleMassDaysAreCorrect(Mass mass) {
-        if (isPeriodicMass(mass) && isScheduleMassDaysIsNotEmpty(mass)) {
-            for (int day : mass.getDays()) {
-                if (day < 1 || day > WEEK_DAYS_COUNT) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    public static boolean isScheduleMassStartEndDatesAreCorrect(Mass mass) {
-        if (isPeriodicMass(mass)) {
-            LocalDate startDate = mass.getStartDate();
-            LocalDate endDate = mass.getEndDate();
-            return startDate == null || endDate == null || !startDate.isAfter(endDate);
-        }
-        return true;
-    }
-
-    public static boolean isScheduleMassTimeIsNotBlank(Mass mass) {
-        String time = mass.getTime();
-        boolean validScheduledMass = true;
-        if (isPeriodicMass(mass)) {
-            validScheduledMass = StringUtils.isNotBlank(time);
-        }
-        return validScheduledMass;
-    }
-
-    public static boolean isScheduleMassDaysInDatePeriod(Mass mass) {
-        if (isPeriodicMass(mass) && isMassTimeConfigIsValid(mass) && isScheduleMassDaysIsNotEmpty(mass)
-            && isScheduleMassDaysAreCorrect(mass) && isScheduleMassStartEndDatesAreCorrect(mass)) {
-            return mass.getDays().length == buildValidWeekDaysInDatePeriod(mass).length;
-        }
-        return true;
     }
 
     private static int[] buildValidWeekDaysInDatePeriod(Mass mass) {
@@ -189,77 +117,6 @@ public class MassService {
         }
         return validWeekDays;
     }
-
-    public static boolean isUniqueMassTime(Mass mass) {
-        if (isMassTimeConfigIsValid(mass) && isScheduleMassTimeIsNotBlank(mass)
-            && isScheduleMassDaysIsNotEmpty(mass) && isScheduleMassDaysAreCorrect(mass)
-            && isScheduleMassStartEndDatesAreCorrect(mass) && isScheduleMassDaysInDatePeriod(mass)) {
-            boolean[] commDays = new boolean[WEEK_DAYS_COUNT], daysToCheck = new boolean[WEEK_DAYS_COUNT];
-            LocalDate commStartDate, commEndDate, date1, date2;
-            Mass massToCheck = mass.asPeriodic();
-            Arrays.stream(massToCheck.getDays()).forEach(day -> daysToCheck[day - 1] = true);
-            List<Mass> masses = INSTANCE.getMassByParish(mass.getParishId());
-            for (Mass massP : masses) {
-
-                if (massP.getId().equals(mass.getId()) || massP.isDeleted()) {
-                    continue;
-                }
-                massP = massP.asPeriodic();
-                if (!massP.getTime().equals(massToCheck.getTime())) {
-                    continue;
-                }
-                date1 = massP.getStartDate() == null ? ServiceUtils.timestampToLocalDate(0L).toLocalDate() : massP.getStartDate();
-                date2 = massToCheck.getStartDate() == null ? ServiceUtils.timestampToLocalDate(0L).toLocalDate() : massToCheck.getStartDate();
-                if (date1.isAfter(date2)) {
-                    commStartDate = date1;
-                } else {
-                    commStartDate = date2;
-                }
-                date1 = massP.getEndDate() == null ? commStartDate.plusWeeks(1) : massP.getEndDate();
-                date2 = massToCheck.getEndDate() == null ? commStartDate.plusWeeks(1) : massToCheck.getEndDate();
-                if (date1.isBefore(date2)) {
-                    commEndDate = date1;
-                } else {
-                    commEndDate = date2;
-                }
-                if (commStartDate.isAfter(commEndDate)) {
-                    continue;
-                }
-                Arrays.fill(commDays, false);
-                Arrays.stream(massP.getDays()).forEach(day -> commDays[day - 1] = daysToCheck[day - 1]);
-                for (int day = 0; (commStartDate.isBefore(commEndDate) || commStartDate.isEqual(commEndDate))
-                    && day < WEEK_DAYS_COUNT; day++) {
-                    if (commDays[commStartDate.getDayOfWeek().getValue() - 1]) {
-                        if(logger.isErrorEnabled()){
-//                            logger.error(String.format("Mass (time = %s, startDate = %s, endDate =%s, days = %s) has issues with isUniqueMassTime verification due to mass with id = %s (time = %s, startDate = %s, endDate = %s, days = %s)", mass.getTime(), mass.getStartDate(), mass.getEndDate(), Arrays.toString(mass.getDays()), massP.getId()),
-//                                    massP.getTime(), massP.getStartDate(), massP.getEndDate(), Arrays.toString(massP.getDays()));
-                            logger.error(String.format("Mass = %s has issues with isUniqueMassTime verification due to mass  = %s", massToString(mass), massToString(massP)));
-                        }
-                        return false;
-                    }
-                    commStartDate = commStartDate.plusDays(1);
-                }
-            }
-        }
-        return true;
-    }
-
-    private static String massToString(Mass mass){
-            return new ToStringBuilder(mass)
-                    .append("id", mass.getId())
-                    .append("cityId", mass.getCityId())
-                    .append("time", mass.getTime())
-                    .append("days", mass.getDays())
-                    .append("online", mass.getOnline())
-                    .append("rorate", mass.getRorate())
-                    .append("parishId", mass.getParishId())
-                    .append("deleted", mass.isDeleted())
-                    .append("notes", mass.getNotes())
-                    .append("singleStartTimestamp", mass.getSingleStartTimestamp())
-                    .append("startDate", mass.getStartDate())
-                    .append("endDate", mass.getEndDate())
-                    .toString();
-    };
 
     @Cacheable(cacheNames = "massCache", key = "'massesByParish:' + #parishId")
     public List<Mass> getMassByParish(String parishId){
@@ -323,25 +180,13 @@ public class MassService {
             .collect(Collectors.toList());
     }
 
-
-    @Caching(evict = {
-            @CacheEvict(cacheNames = "massCache", key = "#p1.id"),
-            @CacheEvict(cacheNames = "massCache", key = "'massesByCity:' + #p1.cityId"),
-            @CacheEvict(cacheNames = "massCache", key = "'massesByParish:' + #p1.parishId"),
-            @CacheEvict(cacheNames = "massCache", key = "'oldestMass:' + #p1.parishId")
-    })
-    public Mass updateMass(UpdateMassInfo massInfo, Mass massToUpdate){
-        MassInfoMapper.MAPPER.updateMassFromDTO(massInfo, massToUpdate);
-        return massRepository.save(massToUpdate);
-    }
-
     @Caching(evict = {
             @CacheEvict(cacheNames = "massCache", key = "#p0.id"),
             @CacheEvict(cacheNames = "massCache", key = "'massesByCity:' + #p0.cityId"),
             @CacheEvict(cacheNames = "massCache", key = "'massesByParish:' + #p0.parishId"),
             @CacheEvict(cacheNames = "massCache", key = "'oldestMass:' + #p0.parishId")
     })
-    public Mass updateMass(Mass mass){
+    public Mass updateMass(@Valid Mass mass){
         return massRepository.save(mass);
     }
 

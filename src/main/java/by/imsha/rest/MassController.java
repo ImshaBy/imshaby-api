@@ -3,26 +3,30 @@ package by.imsha.rest;
 import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
 import by.imsha.domain.dto.*;
+import by.imsha.domain.dto.mapper.MassInfoMapper;
 import by.imsha.exception.InvalidDateIntervalException;
+import by.imsha.exception.ResourceNotFoundException;
 import by.imsha.service.CityService;
 import by.imsha.service.MassService;
 import by.imsha.service.ParishService;
 import by.imsha.service.ScheduleFactory;
 import by.imsha.utils.ServiceUtils;
+import by.imsha.utils.DateTimeProvider;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.hateoas.EntityModel;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static java.util.Objects.isNull;
 
 
 /**
@@ -31,7 +35,8 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "/api/mass")
-public class MassController extends AbstractRestHandler {
+@Slf4j
+public class MassController {
 
     @Autowired
     private MassService massService;
@@ -46,114 +51,98 @@ public class MassController extends AbstractRestHandler {
     @Autowired
     private ScheduleFactory scheduleFactory;
 
+    @Autowired
+    private DateTimeProvider dateTimeProvider;
 
-    @RequestMapping(value = "",
-            method = RequestMethod.POST,
-            consumes = {"application/json"},
-            produces = {"application/json"})
-    @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<Mass> createMass(@Validated @RequestBody Mass mass, HttpServletRequest request, HttpServletResponse response){
-        return ResponseEntity.ok().body(massService.createMass(mass));
+    @PostMapping
+    public ResponseEntity<Mass> createMass(@RequestBody final Mass mass) {
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(massService.createMass(mass));
     }
 
-    @RequestMapping(value = "/{massId}",
-            method = RequestMethod.GET,
-            produces = {"application/json", "application/xml"})
-    @ResponseStatus(HttpStatus.OK)
-    @ResponseBody
-    public EntityModel<Mass> retrieveMass(@PathVariable("massId") String id,
-                                          HttpServletRequest request, HttpServletResponse response){
-        Optional<Mass> mass = massService.getMass(id);
-        checkResourceFound(mass);
-        EntityModel<Mass> massResource = EntityModel.of(mass.get());
-        return massResource;
+    @GetMapping("/{massId}")
+    public ResponseEntity<Mass> retrieveMass(@PathVariable("massId") final String id) {
+        return massService.getMass(id)
+                .map(ResponseEntity::ok)
+                .orElseThrow(() -> new ResourceNotFoundException("resource not found"));
     }
 
-    @RequestMapping(value = "/{massId}",
-            method = RequestMethod.PUT,
-            consumes = {"application/json"},
-            produces = {"application/json"})
-    @ResponseStatus(HttpStatus.OK)
-    public UpdateEntityInfo updateMass(@PathVariable("massId") String id,@Validated @RequestBody Mass mass) {
-        Optional<Mass> massForUpdate = this.massService.getMass(id);
-        checkResourceFound(massForUpdate);
-        // TODO check implementation??
+    @PutMapping("/{massId}")
+    public ResponseEntity<UpdateEntityInfo> updateMass(@PathVariable("massId") String id, @RequestBody Mass mass) {
+        //из-за кэша не переделывал проверку на existsById
+        if (!this.massService.getMass(id).isPresent()) {
+            throw new ResourceNotFoundException("resource not found");
+        }
+
         mass.setId(id);
-        Mass updatedMass = this.massService.updateMass(mass);
-        return new UpdateEntityInfo(updatedMass.getId(), UpdateEntityInfo.STATUS.UPDATED);
+        final Mass updatedMass = this.massService.updateMass(mass);
+
+        return ResponseEntity.ok(
+                new UpdateEntityInfo(updatedMass.getId(), UpdateEntityInfo.STATUS.UPDATED)
+        );
     }
 
 
-    @RequestMapping(value = "/refresh/{massId}",
-            method = RequestMethod.PUT,
-            consumes = {"application/json"},
-            produces = {"application/json"}
-            )
-    @ResponseStatus(HttpStatus.OK)
-    public UpdateEntityInfo refreshMass(@PathVariable("massId") String id,@Validated @RequestBody (required = false) UpdateMassInfo massInfo) {
-        Optional<Mass> massForUpdate = this.massService.getMass(id);
-        checkResourceFound(massForUpdate);
-        if(massInfo == null){
+    @PutMapping("/refresh/{massId}")
+    public ResponseEntity<UpdateEntityInfo> refreshMass(@PathVariable("massId") final String id, @RequestBody(required = false) UpdateMassInfo massInfo) {
+        final Mass massToUpdate = this.massService.getMass(id)
+                .orElseThrow(() -> new ResourceNotFoundException("resource not found"));
+
+        if (massInfo == null) {
             massInfo = new UpdateMassInfo();
         }
-        Mass updatedMass = this.massService.updateMass(massInfo, massForUpdate.get());
-        return new UpdateEntityInfo(updatedMass.getId(), UpdateEntityInfo.STATUS.UPDATED);
+        //TODO переделать мапперы на componentModel = "spring"
+        MassInfoMapper.MAPPER.updateMassFromDTO(massInfo, massToUpdate);
+        final Mass updatedMass = this.massService.updateMass(massToUpdate);
+
+        return ResponseEntity.ok(
+                new UpdateEntityInfo(updatedMass.getId(), UpdateEntityInfo.STATUS.UPDATED)
+        );
     }
 
-    @RequestMapping(
-            method = RequestMethod.PUT,
-            consumes = {"application/json"},
-            produces = {"application/json"},
-            params = {"parishId"})
-    @ResponseStatus(HttpStatus.OK)
-    public UpdateEntitiesInfo refreshMasses(@RequestParam("parishId") String parishId) {
-        List<Mass> massesToRefresh = massService.getMassByParish(parishId);
+    @PutMapping(params = "parishId")
+    public ResponseEntity<UpdateEntitiesInfo> refreshMasses(@RequestParam("parishId") String parishId) {
+        final List<Mass> massesToRefresh = massService.getMassByParish(parishId);
+
         for (Mass massForUpdate : massesToRefresh) {
-            this.massService.updateMass(new UpdateMassInfo(), massForUpdate);
+            MassInfoMapper.MAPPER.updateMassFromDTO(new UpdateMassInfo(), massForUpdate);
+            this.massService.updateMass(massForUpdate);
         }
-        return new UpdateEntitiesInfo(massesToRefresh.stream()
-                .map(Mass::getId).collect(Collectors.toList()), UpdateEntitiesInfo.STATUS.UPDATED);
+
+        return ResponseEntity.ok(
+                new UpdateEntitiesInfo(massesToRefresh.stream().map(Mass::getId).collect(Collectors.toList()),
+                        UpdateEntitiesInfo.STATUS.UPDATED)
+        );
     }
 
 
-    @RequestMapping(value = "/{massId}",
-            method = RequestMethod.DELETE,
-            produces = {"application/json"})
-    @ResponseStatus(HttpStatus.OK)
-    public UpdateEntityInfo removeMass(@PathVariable("massId") String id) {
-        Optional<Mass> mass = this.massService.getMass(id);
-        checkResourceFound(mass);
-        this.massService.removeMass(mass.get());
-        return new UpdateEntityInfo(id, UpdateEntityInfo.STATUS.DELETED);
+    @DeleteMapping("/{massId}")
+    public ResponseEntity<UpdateEntityInfo> removeMass(@PathVariable("massId") String id) {
+        final Mass mass = this.massService.getMass(id)
+                .orElseThrow(() -> new ResourceNotFoundException("resource not found"));
+
+        this.massService.removeMass(mass);
+
+        return ResponseEntity.ok(
+                new UpdateEntityInfo(id, UpdateEntityInfo.STATUS.DELETED)
+        );
     }
 
-    @RequestMapping(value = "/{massId}",
-            method = RequestMethod.DELETE,
-            produces = {"application/json"},
-            params = {"from"})
-    @ResponseStatus(HttpStatus.OK)
-    public List<UpdateEntityInfo> removeMassByTimeInterval(@PathVariable("massId") String id,
-                                                           @RequestParam("from") String fromDateStr) {
-        return removeMassByTimeInterval(id, fromDateStr, null);
-    }
+    @DeleteMapping(path = "/{massId}", params = "from")
+    public ResponseEntity<List<UpdateEntityInfo>> removeMassByTimeInterval(@PathVariable("massId") String id,
+                                                                           @DateTimeFormat(pattern = "dd-MM-yyyy")
+                                                                           @RequestParam("from") LocalDate fromDate,
+                                                                           @DateTimeFormat(pattern = "dd-MM-yyyy")
+                                                                           @RequestParam(name = "to", required = false) LocalDate toDate) {
+        Mass mass = this.massService.getMass(id)
+                .orElseThrow(() -> new ResourceNotFoundException("resource not found"));
 
-    @RequestMapping(value = "/{massId}",
-            method = RequestMethod.DELETE,
-            produces = {"application/json"},
-            params = {"from", "to"})
-    @ResponseStatus(HttpStatus.OK)
-    public List<UpdateEntityInfo> removeMassByTimeInterval(@PathVariable("massId") String id,
-                                                     @RequestParam("from") String fromDateStr,
-                                                     @RequestParam(name = "to", required = false) String toDateStr) {
-        Optional<Mass> mass = this.massService.getMass(id);
-        checkResourceFound(mass);
-        LocalDate fromDate = ServiceUtils.buildDateOrDefault(fromDateStr);
-        LocalDate toDate = toDateStr == null ? null : ServiceUtils.buildDateOrDefault(toDateStr);
         if (toDate != null && fromDate.isAfter(toDate)) {
-            throw new InvalidDateIntervalException(String.format("Invalid date interval bounds (from: %s, to: %s), " +
-                    "the from-date should be equal or less than to-date!", fromDateStr, toDateStr));
+            throw new InvalidDateIntervalException("Invalid dates", "from", "MASS.012");
         }
-        Triple<String, String, String> removalResult = this.massService.removeMass(mass.get(), fromDate, toDate);
+
+        Triple<String, String, String> removalResult = this.massService.removeMass(mass, fromDate, toDate);
         List<UpdateEntityInfo> updateEntityInfos = new ArrayList<>();
         String infoId = removalResult.getLeft();
         if (infoId != null) {
@@ -167,47 +156,48 @@ public class MassController extends AbstractRestHandler {
         if (infoId != null) {
             updateEntityInfos.add(new UpdateEntityInfo(infoId, UpdateEntityInfo.STATUS.DELETED));
         }
-        return updateEntityInfos;
+        return ResponseEntity.ok(updateEntityInfos);
     }
 
-    @RequestMapping(method = RequestMethod.DELETE,
-            produces = {"application/json"})
-    @ResponseStatus(HttpStatus.OK)
-    public UpdateEntitiesInfo removeMasses(@RequestParam(value="parishId", required = true) String parishId) {
-        Optional<Parish> massParish = this.parishService.getParish(parishId);
-        checkResourceFound(massParish);
-        List<Mass> deletedMasses = this.massService.removeMasses(parishId);
-        return new UpdateEntitiesInfo(deletedMasses.stream()
-                .map(Mass::getId).collect(Collectors.toList()), UpdateEntitiesInfo.STATUS.DELETED);
+    @DeleteMapping(params = "parishId")
+    public ResponseEntity<UpdateEntitiesInfo> removeMasses(@RequestParam(value = "parishId") String parishId) {
+        if (!this.parishService.getParish(parishId).isPresent()) {
+            throw new ResourceNotFoundException("resource not found");
+        }
+
+        final List<Mass> deletedMasses = this.massService.removeMasses(parishId);
+
+        return ResponseEntity.ok(
+                new UpdateEntitiesInfo(deletedMasses.stream().map(Mass::getId).collect(Collectors.toList()),
+                        UpdateEntitiesInfo.STATUS.DELETED)
+        );
     }
 
 
-
-    @RequestMapping(value = "/week",
-            method = RequestMethod.GET,
-            produces = {"application/json", "application/xml"})
-    @ResponseStatus(HttpStatus.OK)
-    @ResponseBody
-    public EntityModel<MassSchedule> weekMasses(@CookieValue(value = "cityId", required = false) String cityId, @RequestParam(value = "date", required = false) String day,
-                                                @RequestParam(value = "parishId", required = false) String parishId, @RequestParam(value = "online", defaultValue = "false") String online,
-                                                @RequestParam(value = "massLang", required = false) String massLang,
-                                                @RequestHeader(name = "x-show-pending", required = false, defaultValue = "false") boolean showPending) {
+    @GetMapping("/week")
+    public ResponseEntity<MassSchedule> weekMasses(@CookieValue(value = "cityId", required = false) String cityId,
+                                                   @DateTimeFormat(pattern = "dd-MM-yyyy")
+                                                   @RequestParam(value = "date", required = false) LocalDate day,
+                                                   @RequestParam(value = "parishId", required = false) String parishId,
+                                                   @RequestParam(value = "online", defaultValue = "false") boolean online,
+                                                   @RequestParam(value = "massLang", required = false) String massLang,
+                                                   @RequestHeader(name = "x-show-pending", required = false, defaultValue = "false") boolean showPending) {
 
         List<Mass> masses;
-        if(StringUtils.isNotEmpty(parishId)){
+        if (StringUtils.isNotEmpty(parishId)) {
             Optional<Parish> parishOptional = parishService.getParish(parishId);
 
             if (!showPending) {
                 parishOptional = parishOptional.filter(parish -> Parish.State.PENDING != parish.getState());
             }
 
-            if(parishOptional.isPresent()){
+            if (parishOptional.isPresent()) {
                 cityId = parishOptional.get().getCityId();
                 masses = this.massService.getMassByParish(parishId);
-            }else{
+            } else {
                 masses = Collections.emptyList();
             }
-        }else{
+        } else {
             cityId = cityService.getCityIdOrDefault(cityId);
             masses = this.massService.getMassByCity(cityId); // TODO filter by date as well
 
@@ -218,50 +208,40 @@ public class MassController extends AbstractRestHandler {
             }
         }
 
-        if(Boolean.parseBoolean(online)){
+        if (online) {
             masses = massService.filterOutOnlyOnline(masses);
         }
 
-        if(StringUtils.isNotEmpty(massLang)){
+        if (StringUtils.isNotEmpty(massLang)) {
             masses = massService.filterByMassLang(masses, massLang);
         }
 
-        LocalDate date = ServiceUtils.buildDateOrDefault(day);
+        final LocalDate startDate = isNull(day) ? dateTimeProvider.today() : day;
 
-        MassSchedule massHolder = scheduleFactory.build(masses, date);
+        final MassSchedule massHolder = scheduleFactory.build(masses, startDate);
 
         massHolder.createSchedule();
 
-        final MassNav massFilters = massService.buildMassNavigation(massHolder, cityId, parishId, online, massLang);
+        final MassNav massFilters = massService.buildMassNavigation(massHolder, cityId, parishId, Boolean.toString(online), massLang);
 
         massHolder.setNav(massFilters);
 
-        if(log.isDebugEnabled()){
-            log.debug(String.format("%s masses found: %s. Scheduler is built.", masses.size(), masses));
-        }
-        EntityModel<MassSchedule> massResource = EntityModel.of(massHolder);
-        // TODO add links
-//        massResource.add(linkTo(methodOn(MassController.class).retrieveMassByParish(parishId,request, response)).withSelfRel());
-        return massResource;
+        log.debug("{} masses found: {}. Scheduler is built.", masses.size(), masses);
+
+        return ResponseEntity.ok(
+                massHolder
+        );
     }
 
-
-
-
-
-    @RequestMapping(value = "",
-            method = RequestMethod.GET,
-            consumes = {"application/json"},
-            produces = {"application/json"})
-    @ResponseStatus(HttpStatus.OK)
-    @ResponseBody
-    public List<Mass> filterMasses(@RequestParam("filter") String filter,
-                                       @RequestParam(value="offset", required = false, defaultValue = "0") String page,
-                                       @RequestParam(value="limit", required = false, defaultValue = "10") String perPage,
-                                       @RequestParam(value="sort", required = false, defaultValue = "+name") String sorting){
-        return massService.search(filter, Integer.parseInt(page), Integer.parseInt(perPage), sorting);
+    @GetMapping
+    public ResponseEntity<List<Mass>> filterMasses(@RequestParam("filter") String filter,
+                                                   @RequestParam(value = "offset", required = false, defaultValue = "0") Integer page,
+                                                   @RequestParam(value = "limit", required = false, defaultValue = "10") Integer perPage,
+                                                   @RequestParam(value = "sort", required = false, defaultValue = "+name") String sorting) {
+        return ResponseEntity.ok(
+                massService.search(filter, page, perPage, sorting)
+        );
     }
-
 
 
 }

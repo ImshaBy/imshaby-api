@@ -21,9 +21,10 @@ public class EntityWebhook {
 
     private String type;
 
-    @NotNull
+    //TODO аннотации стоят, но по факту не работают, проверки лежат на web слое
+    @NotNull(message = "WEBHOOK.001")
     private String key;
-
-    @NotNull
+    //TODO аннотации стоят, но по факту не работают, проверки лежат на web слое
+    @NotNull(message = "WEBHOOK.002")
     private String url;
 }

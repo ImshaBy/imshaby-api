@@ -5,6 +5,7 @@ import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.time.ZoneId;
 import java.util.Set;
 
 /**
@@ -14,6 +15,11 @@ import java.util.Set;
 @Validated
 public class ImshaProperties {
 
+    /**
+     * Идентификатор временной зоны
+     */
+    @NotNull
+    private ZoneId zoneId;
     /**
      * Токен аутентификации (куда-то?)
      */
