@@ -31,6 +31,8 @@ public class LoginHandler {
     public String handle(@Valid @NotNull(message = "Входные параметры обязательны для заполнения")
                                  Input input) {
         try {
+            log.info("[VERBOSE] Received code: '{}'", input.getCode());
+
             ResponseBody response = passwordlessPublicRestTemplate.postForObject(
                     passwordlessApiProperties.getUri().getLogin(),
                     RequestBody.builder()
