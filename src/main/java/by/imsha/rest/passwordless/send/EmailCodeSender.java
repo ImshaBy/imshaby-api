@@ -5,6 +5,7 @@ import by.imsha.rest.passwordless.exception.PasswordlessApiException;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -12,6 +13,7 @@ import org.springframework.web.client.RestTemplate;
 
 @RequiredArgsConstructor
 @Validated
+@Slf4j
 public class EmailCodeSender implements CodeSender {
 
     private final PasswordlessApiProperties passwordlessApiProperties;
@@ -25,6 +27,8 @@ public class EmailCodeSender implements CodeSender {
      */
     public void send(final String userIdentifier, final String code) {
         try {
+            log.info("[VERBOSE] Send to: '{}', code: '{}'", userIdentifier, code);
+
             ResponseEntity<Void> exchange = passwordlessPublicRestTemplate.exchange(
                     RequestEntity.post(passwordlessApiProperties.getUri().getSend())
                             .body(RequestBody.builder()
