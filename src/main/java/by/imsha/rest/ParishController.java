@@ -53,6 +53,7 @@ public class ParishController extends AbstractRestHandler {
             produces = {"application/json"})
     @ResponseStatus(HttpStatus.CREATED)
     public Parish createParish(@Valid @RequestBody Parish parish) {
+        parish.setState(Parish.State.PENDING);
         return parishService.createParish(parish);
     }
 

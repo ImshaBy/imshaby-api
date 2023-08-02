@@ -76,10 +76,11 @@ public class SecurityConfig {
             } else {
                 log.info("API-key authentication filter disabled!");
             }
+
+            http.oauth2ResourceServer().jwt();
         }
 
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-        http.oauth2ResourceServer().jwt();
 
         return http.build();
     }
