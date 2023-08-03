@@ -19,15 +19,19 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static by.imsha.utils.Constants.LIMIT;
 import static by.imsha.utils.Constants.PAGE;
+import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 @Service
 public class ParishService {
@@ -126,4 +130,17 @@ public class ParishService {
     }
 
 
+    @Cacheable(cacheNames = "pendingParishes", key = "'parishCity:' + #cityId")
+    public Set<String> getPendingParishIds(final String cityId) {
+        Query query = new Query();
+        query.fields()
+                .include("id");
+        query.addCriteria(
+                where("state").is(Parish.State.PENDING)
+        );
+
+        return parishRepository.search(query, Parish.class).stream()
+                .map(Parish::getId)
+                .collect(Collectors.toSet());
+    }
 }

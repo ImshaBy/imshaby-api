@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -52,7 +53,10 @@ public class CityService {
         return cityId;
     }
 
-    @CacheEvict(cacheNames = "cityCache", condition = "#result != null")
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "cityCache", condition = "#result != null"),
+            @CacheEvict(cacheNames = "pendingParishes", key = "'parishCity:' + #p0")
+    })
     public void removeCity(String id) {
         cityRepository.deleteById(id);
     }
