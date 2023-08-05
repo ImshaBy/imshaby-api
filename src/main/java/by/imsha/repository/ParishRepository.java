@@ -22,7 +22,7 @@ public interface ParishRepository extends QuerableMongoRepository<Parish, String
 
     @Caching(evict = {
             @CacheEvict(cacheNames = "parishCache"),
-            @CacheEvict(cacheNames = "pendingParishes")
+            @CacheEvict(cacheNames = "pendingParishes", allEntries = true)
     })
     void deleteParishById(String id);
 
