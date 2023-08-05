@@ -5,6 +5,7 @@ import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
 import by.imsha.domain.dto.*;
 import by.imsha.exception.InvalidLocaleException;
+import by.imsha.exception.ResourceNotFoundException;
 import by.imsha.service.CityService;
 import by.imsha.service.MassService;
 import by.imsha.service.ParishService;
@@ -14,6 +15,7 @@ import org.apache.commons.lang3.LocaleUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -80,6 +82,32 @@ public class ParishController extends AbstractRestHandler {
         checkResourceFound(parishToUpdate);
         Parish updatedParish = this.parishService.updateParish(parishInfo, parishToUpdate.get() );
         return new UpdateEntityInfo(updatedParish.getId(), UpdateEntityInfo.STATUS.UPDATED);
+    }
+
+    @GetMapping(value = "/{parishId}/state")
+    public ResponseEntity<ParishStateInfo> getParishState(@PathVariable("parishId") String parishId) {
+        final Parish parish = this.parishService.getParish(parishId)
+                .orElseThrow(ResourceNotFoundException::new);
+
+        return ResponseEntity.ok(
+                ParishStateInfo.builder()
+                        .state(parish.getState())
+                        .build()
+        );
+    }
+
+    @PutMapping(value = "/{parishId}/state")
+    public ResponseEntity<UpdateEntityInfo> updateParishState(@PathVariable("parishId") String parishId,
+                                                              @Valid @RequestBody ParishStateInfo parishStateInfo) {
+        final Parish parish = this.parishService.getParish(parishId)
+                .orElseThrow(ResourceNotFoundException::new);
+
+        parish.setState(parishStateInfo.getState());
+
+        final Parish updatedParish = parishService.updateParish(parish);
+        return ResponseEntity.ok(
+                new UpdateEntityInfo(updatedParish.getId(), UpdateEntityInfo.STATUS.UPDATED)
+        );
     }
 
     @RequestMapping(value = "/{parishId}/lang/{lc}",

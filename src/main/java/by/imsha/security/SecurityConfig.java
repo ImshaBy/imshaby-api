@@ -57,6 +57,7 @@ public class SecurityConfig {
                     .antMatchers(HttpMethod.POST, "/api/passwordless/start").permitAll()
                     .antMatchers(HttpMethod.POST, "/api/passwordless/login").permitAll()
                     .antMatchers(HttpMethod.GET, "/api/mass/week").permitAll()
+                    .antMatchers(HttpMethod.GET, "/api/parish/*/state").permitAll()
                     .antMatchers(HttpMethod.GET, "/hook/parish").permitAll()
                     .antMatchers(HttpMethod.GET, "/hook/mass").permitAll()
                     .antMatchers(HttpMethod.GET, "/status").permitAll()
