@@ -136,7 +136,7 @@ public class ParishService {
         query.fields()
                 .include("id");
         query.addCriteria(
-                where("state").is(Parish.State.PENDING)
+                where("state").is(Parish.State.PENDING).and("cityId").is(cityId)
         );
 
         return parishRepository.search(query, Parish.class).stream()
