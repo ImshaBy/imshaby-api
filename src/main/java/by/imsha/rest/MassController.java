@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -192,12 +193,18 @@ public class MassController extends AbstractRestHandler {
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     public EntityModel<MassSchedule> weekMasses(@CookieValue(value = "cityId", required = false) String cityId, @RequestParam(value = "date", required = false) String day,
-                                             @RequestParam(value = "parishId", required = false) String parishId, @RequestParam(value = "online", defaultValue = "false") String online,
-                                             @RequestParam(value = "massLang", required = false) String massLang){
+                                                @RequestParam(value = "parishId", required = false) String parishId, @RequestParam(value = "online", defaultValue = "false") String online,
+                                                @RequestParam(value = "massLang", required = false) String massLang,
+                                                @RequestHeader(name = "x-show-pending", required = false, defaultValue = "false") boolean showPending) {
 
         List<Mass> masses;
         if(StringUtils.isNotEmpty(parishId)){
             Optional<Parish> parishOptional = parishService.getParish(parishId);
+
+            if (!showPending) {
+                parishOptional = parishOptional.filter(parish -> Parish.State.PENDING != parish.getState());
+            }
+
             if(parishOptional.isPresent()){
                 cityId = parishOptional.get().getCityId();
                 masses = this.massService.getMassByParish(parishId);
@@ -207,6 +214,12 @@ public class MassController extends AbstractRestHandler {
         }else{
             cityId = cityService.getCityIdOrDefault(cityId);
             masses = this.massService.getMassByCity(cityId); // TODO filter by date as well
+
+            if (!showPending) {
+                final Set<String> pendingParishIds = parishService.getPendingParishIds(cityId);
+                masses = masses.stream().filter(mass -> !pendingParishIds.contains(mass.getParishId()))
+                        .collect(Collectors.toList());
+            }
         }
 
         if(Boolean.parseBoolean(online)){

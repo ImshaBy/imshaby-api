@@ -30,13 +30,6 @@ public class Parish {
 
     private State state;
 
-    /**
-     * FIXME [0001] если у записи нет статуса, то считаем, что она подтвержденная (выпилить после обновления данных в БД)
-     */
-    public State getState() {
-        return state == null ? State.APPROVED : state;
-    }
-
     private String imgPath;
 
     private String broadcastUrl;
@@ -111,13 +104,14 @@ public class Parish {
     private String phone;
 
     //    @ApiObjectField(description = "Not available for public audience; used for internal purpose.", required = true)
-    @NotNull
-    @NotEmpty
+    //    @NotNull
+//    @NotEmpty
     private String supportPhone;
 
     //    @ApiObjectField(description = "Parish email.", required = true)
-    @Email
-    @NotNull
+    // TODO при рефакторинге учесть
+//    @Email
+//    @NotNull
     private String email;
 
     @Email
