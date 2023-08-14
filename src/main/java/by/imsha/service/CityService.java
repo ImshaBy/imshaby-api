@@ -2,9 +2,11 @@ package by.imsha.service;
 
 
 import by.imsha.domain.City;
+import by.imsha.domain.Parish;
 import by.imsha.exception.ResourceNotFoundException;
 import by.imsha.properties.ImshaProperties;
 import by.imsha.repository.CityRepository;
+import by.imsha.repository.ParishRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -17,6 +19,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -26,6 +30,7 @@ public class CityService {
 
     private final ImshaProperties imshaProperties;
     private final CityRepository cityRepository;
+    private final ParishRepository parishRepository;
 
     public String getDefaultCityName() {
         return imshaProperties.getDefaultCity().getName();
@@ -55,7 +60,8 @@ public class CityService {
 
     @Caching(evict = {
             @CacheEvict(cacheNames = "cityCache", condition = "#result != null"),
-            @CacheEvict(cacheNames = "pendingParishes", key = "'parishCity:' + #p0")
+            @CacheEvict(cacheNames = "pendingParishes", key = "'parishCity:' + #p0"),
+            @CacheEvict(cacheNames = "citiesWithParishCache", allEntries = true)
     })
     public void removeCity(String id) {
         cityRepository.deleteById(id);
@@ -79,5 +85,12 @@ public class CityService {
     @Cacheable(cacheNames = "cityCache", key = "'allCities'", unless = "#result != null")
     public List<City> getAllCities() {
         return cityRepository.findAll();
+    }
+
+    @Cacheable(cacheNames = "citiesWithParishCache")
+    public Set<String> getCityWithApprovedParishesIds() {
+        return parishRepository.findByState(Parish.State.APPROVED).stream()
+                .map(Parish::getCityId)
+                .collect(Collectors.toSet());
     }
 }

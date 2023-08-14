@@ -462,7 +462,10 @@ public class MassService {
             // TODO to consider contry or other region (no need to return all cities in the system)
 
         List<City> cities = cityService.getAllCities();
+        Set<String> cityWithApprovedParishesIds = cityService.getCityWithApprovedParishesIds();
+
         List<MassFilterValue> cityFilterValues = cities.stream()
+                .filter(city -> cityWithApprovedParishesIds.contains(city.getId()))
                 .map(city -> MassFilterValue.builder()
                         .name(city.getLocalizedName())
                         .value(city.getId())
