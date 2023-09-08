@@ -33,6 +33,10 @@ public class ImshaProperties {
      * Набор API-ключей
      */
     Set<String> apiKeys;
+    /**
+     * Набор API-ключей для внутреннего использования
+     */
+    Set<String> internalApiKeys;
 
     @Data
     public static class City {

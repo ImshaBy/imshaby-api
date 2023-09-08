@@ -28,16 +28,35 @@ public class ApiKeyAuthenticationFilter extends GenericFilterBean {
 
     private static final String API_KEY_HEADER_NAME = "X-Api-Key";
 
+    /**
+     * api-ключи позволяющие получить доступ к бизнес-функциям
+     */
     private final Set<String> apiKeys;
+    /**
+     * api-ключи, позволяющие получить доступ к приватным функциям
+     */
+    private final Set<String> internalApiKeys;
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain)
             throws IOException, ServletException {
         try {
-            //Пытаемся получить аутентификацию по API-key
-            Optional.ofNullable(((HttpServletRequest) request).getHeader(API_KEY_HEADER_NAME))
-                    .filter(apiKeys::contains)
-                    .map(apiKey -> new ApiKeyAuthentication(apiKey, AuthorityUtils.NO_AUTHORITIES))
+
+            Optional<String> header = Optional.ofNullable(((HttpServletRequest) request).getHeader(API_KEY_HEADER_NAME));
+
+            //Пытаемся получить аутентификацию по internal API-key
+            Optional<ApiKeyAuthentication> apiKeyAuthentication = header
+                    .filter(internalApiKeys::contains)
+                    .map(apiKey -> new ApiKeyAuthentication(apiKey, AuthorityUtils.createAuthorityList("ROLE_INTERNAL")));
+
+            //Пытаемся получить аутентификацию по API-key, если не был использован internal API-key
+            if (!apiKeyAuthentication.isPresent()) {
+                apiKeyAuthentication = header
+                        .filter(apiKeys::contains)
+                        .map(apiKey -> new ApiKeyAuthentication(apiKey, AuthorityUtils.NO_AUTHORITIES));
+            }
+
+            apiKeyAuthentication
                     .ifPresent(authentication -> SecurityContextHolder.getContext().setAuthentication(authentication));
         } catch (Exception exception) {
             //в случае ошибки не прерываем фильтрацию

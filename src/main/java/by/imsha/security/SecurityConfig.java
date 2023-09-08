@@ -29,7 +29,7 @@ import java.util.HashSet;
 
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true)
+@EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
 @RequiredArgsConstructor
 @Slf4j
 public class SecurityConfig {
@@ -64,11 +64,15 @@ public class SecurityConfig {
                     .anyRequest().authenticated();
 
             //при наличии API ключей добавляем фильтр для работы с ними
-            if (!CollectionUtils.isEmpty(imshaProperties.getApiKeys())) {
+            if (!CollectionUtils.isEmpty(imshaProperties.getApiKeys()) ||
+                    !CollectionUtils.isEmpty(imshaProperties.getInternalApiKeys())) {
                 http.addFilterBefore(
                         new ApiKeyAuthenticationFilter(
                                 Collections.unmodifiableSet(
                                         new HashSet<>(imshaProperties.getApiKeys())
+                                ),
+                                Collections.unmodifiableSet(
+                                        new HashSet<>(imshaProperties.getInternalApiKeys())
                                 )
                         ),
                         BearerTokenAuthenticationFilter.class
