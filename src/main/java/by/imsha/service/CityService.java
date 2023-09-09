@@ -32,8 +32,8 @@ public class CityService {
     private final CityRepository cityRepository;
     private final ParishRepository parishRepository;
 
-    public String getDefaultCityName() {
-        return imshaProperties.getDefaultCity().getName();
+    public String getDefaultCityKey() {
+        return imshaProperties.getDefaultCity().getKey();
     }
 
     public City createCity(City city) {
@@ -42,7 +42,7 @@ public class CityService {
 
     @Cacheable(cacheNames = "cityCache", key = "'default'", unless = "#result != null")
     public City defaultCity() {
-        return cityRepository.findByName(getDefaultCityName());
+        return cityRepository.findByKey(getDefaultCityKey());
     }
 
     public String getCityIdOrDefault(String cityId) {
@@ -50,7 +50,7 @@ public class CityService {
             City defaultCity = defaultCity();
 
             if (defaultCity == null) {
-                throw new ResourceNotFoundException(String.format("No default city (name = %s) founded", getDefaultCityName()));
+                throw new ResourceNotFoundException(String.format("No default city (name = %s) founded", getDefaultCityKey()));
             }
 
             cityId = defaultCity.getId();

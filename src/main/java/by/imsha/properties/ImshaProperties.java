@@ -41,9 +41,9 @@ public class ImshaProperties {
     @Data
     public static class City {
         /**
-         * Наименование города
+         * Key города
          */
         @NotBlank
-        public String name;
+        public String key;
     }
 }
