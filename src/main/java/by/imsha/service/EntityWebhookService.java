@@ -7,7 +7,6 @@ import by.imsha.domain.Parish;
 import by.imsha.domain.dto.EntityWebHookType;
 import by.imsha.domain.dto.WebHookInfo;
 import by.imsha.repository.EntityWebhookRepository;
-import by.imsha.repository.MassRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,8 +62,11 @@ public class EntityWebhookService {
 
     public List<EntityWebhook> retrieveCityHooks(Mass mass){
         Optional<City> city = cityService.retrieveCity(mass.getCityId());
-        if(city.isPresent() && city.get().getKey() != null){
-            return retrieveHooksByKey(city.get().getKey());
+        if(city.isPresent()) {
+            String key = city.get().getKey();
+            if (key != null) {
+                return retrieveHooks(key, EntityWebHookType.CITY.getType());
+            }
         }
         log.warn("Key is not configured for CITY, id: %s ", mass.getCityId());
         return Collections.emptyList();
@@ -72,8 +74,11 @@ public class EntityWebhookService {
 
     public List<EntityWebhook> retrieveParishHooks(Mass mass){
         Optional<Parish> parish = parishService.getParish(mass.getParishId());
-        if(parish.isPresent() && parish.get().getKey() != null){
-            return retrieveHooksByKey(parish.get().getKey());
+        if(parish.isPresent()) {
+            String key = parish.get().getKey();
+            if (key != null) {
+                return retrieveHooks(key, EntityWebHookType.PARISH.getType());
+            }
         }
         log.warn("Key is not configured for PARISH, id: %s ", mass.getParishId());
         return Collections.emptyList();
@@ -81,6 +86,10 @@ public class EntityWebhookService {
 
     private List<EntityWebhook> retrieveHooksByKey(String key){
         return entityWebhookRepository.findAllByKey(key);
+    }
+
+    private List<EntityWebhook> retrieveHooks(String key, String type){
+        return entityWebhookRepository.findAllByKeyAndType(key, type);
     }
 
 

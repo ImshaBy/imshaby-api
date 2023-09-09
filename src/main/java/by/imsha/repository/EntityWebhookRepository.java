@@ -8,4 +8,6 @@ import java.util.List;
 public interface EntityWebhookRepository extends QuerableMongoRepository<EntityWebhook, String> {
     EntityModel findByKey(String key);
     List<EntityWebhook> findAllByKey(String key);
+    List<EntityWebhook> findAllByKeyAndType(String key, String type);
+
 }
