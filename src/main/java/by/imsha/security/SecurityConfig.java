@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpMethod;
@@ -29,10 +30,21 @@ import java.util.HashSet;
 
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
 @RequiredArgsConstructor
 @Slf4j
 public class SecurityConfig {
+
+    private static final String PRODUCTION_PROFILE = "prod";
+    private static final String QA_PROFILE = "qa";
+
+    /**
+     * Включаем работу с аннотациями только для профилей prod и qa
+     */
+    @Configuration
+    @Profile(value = {PRODUCTION_PROFILE, QA_PROFILE})
+    @EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
+    public static class SecurityAnnotationsEnableConfiguration {
+    }
 
     @Bean
     CorsConfigurationSource corsConfigurationSource(CorsConfiguration corsConfiguration) {
@@ -49,7 +61,7 @@ public class SecurityConfig {
                 .csrf().disable();
 
         //защищаем только на prod и qa
-        if (environment.acceptsProfiles(Profiles.of("prod", "qa"))) {
+        if (environment.acceptsProfiles(Profiles.of(PRODUCTION_PROFILE, QA_PROFILE))) {
             http.authorizeRequests()
                     //ping controller
                     .antMatchers(HttpMethod.GET, "/").permitAll()
