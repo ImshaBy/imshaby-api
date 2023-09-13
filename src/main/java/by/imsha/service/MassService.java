@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
+import java.text.Collator;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -42,6 +43,10 @@ import static by.imsha.utils.Constants.*;
 @Service
 public class MassService {
     private static Logger logger = LoggerFactory.getLogger(MassService.class);
+    /**
+     * Мап, для кэширования компараторов для различных локалей
+     */
+    private static final Map<String, Comparator<MassFilterValue>> COMPARATOR_CACHE = new HashMap<>();
 
     private QueryConversionPipeline pipeline = QueryConversionPipeline.defaultPipeline();
 
@@ -474,10 +479,19 @@ public class MassService {
                 .collect(Collectors.toList());
         massFilterValues.addAll(cityFilterValues);
 
-        TreeMap<String, Set<MassFilterValue>> guidedMap = new TreeMap<>();
-        massFilterValues.forEach(
-                massFilterValue -> guidedMap.computeIfAbsent(massFilterValue.getType().getName(), value -> new HashSet<MassFilterValue>())
-                                    .add(massFilterValue)
+        //сортируем значения на основании локали пользователя
+        final String locale = ServiceUtils.fetchUserLangFromHttpRequest();
+        final Comparator<MassFilterValue> comparator = COMPARATOR_CACHE.computeIfAbsent(locale, key -> {
+            final Collator collator = Collator.getInstance(new Locale(key));
+            return (first, second) -> collator.compare(first.getName().toLowerCase(), second.getName().toLowerCase());
+        });
+
+        final TreeMap<String, Set<MassFilterValue>> guidedMap = massFilterValues.stream().collect(
+                Collectors.groupingBy(
+                        massFilterValue -> massFilterValue.getType().getName(),
+                        TreeMap::new,
+                        Collectors.toCollection(() -> new TreeSet<>(comparator))
+                )
         );
         nav.setGuided(guidedMap);
         TreeMap<String, MassFilterValue> selectedMap = new TreeMap<>();
