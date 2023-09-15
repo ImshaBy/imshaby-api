@@ -1,8 +1,10 @@
 package by.imsha.domain;
 
 import by.imsha.rest.serializers.CustomLocalDateTimeSerializer;
+import by.imsha.rest.serializers.TrimStringDeserializer;
 import by.imsha.service.MassService;
 import by.imsha.utils.ServiceUtils;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Data;
 import org.hibernate.validator.constraints.Email;
@@ -52,6 +54,7 @@ public class Parish {
 //    @NotNull
     private Coordinate gps;
 
+    @JsonDeserialize(using = TrimStringDeserializer.class)
     @Indexed(unique=true)
     private String key;
 

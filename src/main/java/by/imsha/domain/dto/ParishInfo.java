@@ -1,5 +1,7 @@
 package by.imsha.domain.dto;
 
+import by.imsha.rest.serializers.TrimStringDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -18,6 +20,7 @@ public class ParishInfo implements Serializable {
     private Integer updatePeriodInDays;
     private String supportPhone;
     private String email;
+    @JsonDeserialize(using = TrimStringDeserializer.class)
     private String key;
     private String phone;
     private String lastModifiedEmail;
