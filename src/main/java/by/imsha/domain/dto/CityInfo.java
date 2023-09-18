@@ -1,5 +1,7 @@
 package by.imsha.domain.dto;
 
+import by.imsha.rest.serializers.TrimStringDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 
 
@@ -9,5 +11,6 @@ import lombok.Data;
 @Data
 public class CityInfo {
     private String name;
+    @JsonDeserialize(using = TrimStringDeserializer.class)
     private String key;
 }
