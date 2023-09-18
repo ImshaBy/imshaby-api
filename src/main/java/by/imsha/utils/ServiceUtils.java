@@ -153,7 +153,7 @@ public class ServiceUtils {
         return date.toEpochSecond(ZoneOffset.UTC);
     }
 
-    public static LocalDate formatDateString(String dateStr) {
+    public static LocalDate buildDateOrDefault(String dateStr) {
         LocalDate date = null;
         if(dateStr != null){
             try{
