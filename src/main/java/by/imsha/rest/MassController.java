@@ -21,11 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -151,8 +147,8 @@ public class MassController extends AbstractRestHandler {
                                                      @RequestParam(name = "to", required = false) String toDateStr) {
         Optional<Mass> mass = this.massService.getMass(id);
         checkResourceFound(mass);
-        LocalDate fromDate = ServiceUtils.formatDateString(fromDateStr);
-        LocalDate toDate = toDateStr == null ? null : ServiceUtils.formatDateString(toDateStr);
+        LocalDate fromDate = ServiceUtils.buildDateOrDefault(fromDateStr);
+        LocalDate toDate = toDateStr == null ? null : ServiceUtils.buildDateOrDefault(toDateStr);
         if (toDate != null && fromDate.isAfter(toDate)) {
             throw new InvalidDateIntervalException(String.format("Invalid date interval bounds (from: %s, to: %s), " +
                     "the from-date should be equal or less than to-date!", fromDateStr, toDateStr));
@@ -230,7 +226,7 @@ public class MassController extends AbstractRestHandler {
             masses = massService.filterByMassLang(masses, massLang);
         }
 
-        LocalDate date = ServiceUtils.formatDateString(day);
+        LocalDate date = ServiceUtils.buildDateOrDefault(day);
 
         MassSchedule massHolder = scheduleFactory.build(masses, date);
 

@@ -1,5 +1,6 @@
 package by.imsha.rest;
 
+import by.imsha.domain.City;
 import by.imsha.domain.LocalizedParish;
 import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
@@ -184,15 +185,24 @@ public class ParishController extends AbstractRestHandler {
             produces = {"application/json"})
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public Set<ParishKeyUpdateInfo> retrieveParishKeysWithExpiredMasses(@CookieValue(value = "cityId", required = false) String cityId,
-                                                          @RequestParam(value = "date", required = false) String day,
+    public Set<ParishKeyUpdateInfo> retrieveParishKeysWithExpiredMasses(@RequestParam(value = "date", required = false) String day,
             HttpServletRequest request, HttpServletResponse response) {
 
-        cityId = cityService.getCityIdOrDefault(cityId);
-        List<Mass> masses = this.massService.getMassByCity(cityId); // TODO filter by date as well
-        LocalDate date = ServiceUtils.formatDateString(day);
+        List<City> allCities = cityService.getAllCities();
+        Set<String> allPendingParishes = allCities.stream()
+                .map(city -> parishService.getPendingParishIds(city.getId()))
+                .flatMap(parishIds -> parishIds.stream())
+                .collect(Collectors.toSet());
 
-        MassSchedule massHolder = scheduleFactory.build(masses, date);
+        List<Mass> allMasses = allCities.stream()
+                .map(city -> massService.getMassByCity(city.getId()))
+                .flatMap(masses -> masses.stream())
+                .filter(mass -> !allPendingParishes.contains(mass.getParishId()))
+                .collect(Collectors.toList());
+
+        LocalDate date = ServiceUtils.buildDateOrDefault(day);
+
+        MassSchedule massHolder = scheduleFactory.build(allMasses, date);
 
         List<MassInfo> weekMasses = massHolder.getMassesByDay().values().stream()
                 .flatMap(timeMassValuesMap -> timeMassValuesMap.values().stream()
