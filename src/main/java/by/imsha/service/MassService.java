@@ -2,9 +2,11 @@ package by.imsha.service;
 
 import by.imsha.domain.City;
 import by.imsha.domain.Mass;
+import by.imsha.domain.Parish;
 import by.imsha.domain.dto.*;
 import by.imsha.domain.dto.mapper.MassInfoMapper;
 import by.imsha.repository.MassRepository;
+import by.imsha.repository.ParishRepository;
 import by.imsha.utils.ServiceUtils;
 import com.github.rutledgepaulv.qbuilders.builders.GeneralQueryBuilder;
 import com.github.rutledgepaulv.qbuilders.conditions.Condition;
@@ -66,6 +68,9 @@ public class MassService {
 
     @Autowired
     private CityService cityService;
+
+    @Autowired
+    private ParishRepository parishRepository;
 
     @Caching(evict = {
             @CacheEvict(cacheNames = "massCache", key = "'massesByCity:' + #p0.cityId"),
@@ -434,6 +439,11 @@ public class MassService {
 
     public MassNav buildMassNavigation(MassSchedule massSchedule, String cityId,
                                        String parishId, String online, String massLang){
+
+        if (massSchedule.getMassesByDay() == null || massSchedule.getMassesByDay().isEmpty()) {
+            return MassNav.EMPTY_NAV;
+        }
+
         MassNav nav = new MassNav();
         Collection<Map<LocalTime, List<MassInfo>>> massInfosByTime = massSchedule.getMassesByDay().values();
 
@@ -441,28 +451,28 @@ public class MassService {
                 .flatMap(x -> x.values().stream())
                 .flatMap(y -> y.stream())
                 .map(massInfo -> {
-                    MassFilterValue parishFilterValue = MassFilterValue.builder()
-                            .type(MassFilterType.PARISH)
-                            .name(Optional.ofNullable(massInfo.getParish().getShortName())
-                                    .orElseGet(massInfo.getParish()::getName))
-                            .value(massInfo.getParish().getParishId())
-                            .build();
-
+                    //значения флага online определяются только на основе парафий, попавших в выборку
+                    // (а выборка, как минимум, по городу есть всегда)
                     MassFilterValue onlineFilterValue = MassFilterValue.builder()
                             .type(MassFilterType.ONLINE)
                             .name(ONLINE_FILTER)
                             .value(String.valueOf(massInfo.isOnline()))
                             .build();
-
+                    //значения lang определяются только на основе парафий, попавших в выборку
+                    // (а выборка, как минимум, по городу есть всегда)
                     MassFilterValue langFilterValue = MassFilterValue.builder()
                             .type(MassFilterType.LANG)
                             .name(massInfo.getLangCode())
                             .value(massInfo.getLangCode())
                             .build();
-                    return  Arrays.asList(parishFilterValue, onlineFilterValue, langFilterValue);
+                    return  Arrays.asList(onlineFilterValue, langFilterValue);
                 })
                 .flatMap(filterValues -> filterValues.stream())
                 .collect(Collectors.toSet());
+
+        //всегда должны быть доступны все парафии выбранного города (а не только одна выбранная)
+        final List<MassFilterValue> parishMassFilterValues = getAllApprovedParishesByCityAsMassFilterValues(cityId);
+        massFilterValues.addAll(parishMassFilterValues);
 
             // TODO to consider contry or other region (no need to return all cities in the system)
 
@@ -513,6 +523,20 @@ public class MassService {
         }
         nav.setSelected(selectedMap);
         return nav;
+    }
+
+    /**
+     * Получить все подтвержденные парафии города в виде {@link MassFilterValue}
+     */
+    private List<MassFilterValue> getAllApprovedParishesByCityAsMassFilterValues(final String cityId) {
+        return parishRepository.findByCityIdAndState(cityId, Parish.State.APPROVED).stream()
+                .map(parish -> MassFilterValue.builder()
+                        .type(MassFilterType.PARISH)
+                        .name(Optional.ofNullable(parish.getShortName())
+                                .orElseGet(parish::getName))
+                        .value(parish.getId())
+                        .build())
+                .collect(Collectors.toList());
     }
 
     public static LocalDateTime getOldestModifiedMassTimeForParish(String parishId){
