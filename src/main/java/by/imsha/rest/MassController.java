@@ -231,12 +231,8 @@ public class MassController extends AbstractRestHandler {
         MassSchedule massHolder = scheduleFactory.build(masses, date);
 
         massHolder.createSchedule();
-        MassNav massFilters;
-        if(masses.isEmpty()){
-            massFilters = MassNav.EMPTY_NAV;
-        }else{
-            massFilters = massService.buildMassNavigation(massHolder, cityId, parishId, online, massLang);
-        }
+
+        final MassNav massFilters = massService.buildMassNavigation(massHolder, cityId, parishId, online, massLang);
 
         massHolder.setNav(massFilters);
 
