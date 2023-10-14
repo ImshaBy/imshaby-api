@@ -195,7 +195,7 @@ class ParishControllerTest {
     @Test
     void whenCreateRequestValid_then201() throws Exception {
 
-        final String requestBody = "{\"name\":\"testName\",\"cityId\":\"testCityId\"}";
+        final String requestBody = "{\"name\":\"testName\",\"cityId\":\"testCityId\", \"state\":\"PENDING\"}";
 
         final Parish parishStub = new Parish();
         parishStub.setId("testId");

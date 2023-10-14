@@ -4,6 +4,7 @@ import by.imsha.TestTimeConfiguration;
 import by.imsha.ValidationConfiguration;
 import by.imsha.domain.LocalizedMass;
 import by.imsha.domain.Mass;
+import by.imsha.properties.ImshaProperties;
 import by.imsha.service.CityService;
 import by.imsha.service.MassService;
 import by.imsha.service.ParishService;
@@ -53,6 +54,8 @@ class MassControllerFilterMassesTest {
     private ScheduleFactory scheduleFactory;
     @Autowired
     private ObjectMapper objectMapper;
+    @MockBean
+    private ImshaProperties imshaProperties;
 
     @Test
     void whenNoParamsSpecified_then400() throws Exception {

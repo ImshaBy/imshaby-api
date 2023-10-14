@@ -4,6 +4,7 @@ import by.imsha.TestTimeConfiguration;
 import by.imsha.ValidationConfiguration;
 import by.imsha.domain.LocalizedMass;
 import by.imsha.domain.Mass;
+import by.imsha.properties.ImshaProperties;
 import by.imsha.service.CityService;
 import by.imsha.service.MassService;
 import by.imsha.service.ParishService;
@@ -51,6 +52,8 @@ class MassControllerRetrieveMassTest {
     private ScheduleFactory scheduleFactory;
     @Autowired
     private ObjectMapper objectMapper;
+    @MockBean
+    private ImshaProperties imshaProperties;
 
     @Test
     void whenMassNotFound_then404() throws Exception {

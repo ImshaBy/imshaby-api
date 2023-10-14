@@ -3,6 +3,7 @@ package by.imsha.rest;
 import by.imsha.TestTimeConfiguration;
 import by.imsha.ValidationConfiguration;
 import by.imsha.domain.Mass;
+import by.imsha.properties.ImshaProperties;
 import by.imsha.repository.MassRepository;
 import by.imsha.repository.ParishRepository;
 import by.imsha.service.CityService;
@@ -55,6 +56,8 @@ class MassControllerCreateMassTest {
     private ScheduleFactory scheduleFactory;
     @MockBean
     private ParishRepository parishRepository;
+    @MockBean
+    private ImshaProperties imshaProperties;
 
     @BeforeEach
     void setUp() {

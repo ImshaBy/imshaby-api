@@ -6,6 +6,7 @@ import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
 import by.imsha.domain.dto.MassNav;
 import by.imsha.domain.dto.MassSchedule;
+import by.imsha.properties.ImshaProperties;
 import by.imsha.service.CityService;
 import by.imsha.service.MassService;
 import by.imsha.service.ParishService;
@@ -52,6 +53,8 @@ class MassControllerWeekTest {
     private ScheduleFactory scheduleFactory;
     @Autowired
     private DateTimeProvider dateTimeProvider;
+    @MockBean
+    private ImshaProperties imshaProperties;
 
     @Test
     void whenNoParamsSpecified_then200() throws Exception {

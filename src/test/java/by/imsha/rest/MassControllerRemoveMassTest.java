@@ -3,6 +3,7 @@ package by.imsha.rest;
 import by.imsha.TestTimeConfiguration;
 import by.imsha.ValidationConfiguration;
 import by.imsha.domain.Mass;
+import by.imsha.properties.ImshaProperties;
 import by.imsha.service.CityService;
 import by.imsha.service.MassService;
 import by.imsha.service.ParishService;
@@ -48,6 +49,8 @@ class MassControllerRemoveMassTest {
     private CityService cityService;
     @MockBean
     private ScheduleFactory scheduleFactory;
+    @MockBean
+    private ImshaProperties imshaProperties;
 
     @Test
     void whenMassIdNotSpecified_then400() throws Exception {
