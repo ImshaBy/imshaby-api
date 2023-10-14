@@ -35,6 +35,8 @@ public interface ParishRepository extends QuerableMongoRepository<Parish, String
 
     Parish findByUserId(String userId);
 
+    Optional<Parish> findParishByKey(String key);
+
     List<Parish> findByState(Parish.State state);
 
     List<Parish> findByCityIdAndState(String cityId, Parish.State state);

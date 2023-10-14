@@ -6,11 +6,11 @@ import by.imsha.domain.dto.*;
 import by.imsha.domain.dto.mapper.MassInfoMapper;
 import by.imsha.exception.InvalidDateIntervalException;
 import by.imsha.exception.ResourceNotFoundException;
+import by.imsha.properties.ImshaProperties;
 import by.imsha.service.CityService;
 import by.imsha.service.MassService;
 import by.imsha.service.ParishService;
 import by.imsha.service.ScheduleFactory;
-import by.imsha.utils.ServiceUtils;
 import by.imsha.utils.DateTimeProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -53,6 +52,9 @@ public class MassController {
 
     @Autowired
     private DateTimeProvider dateTimeProvider;
+
+    @Autowired
+    private ImshaProperties imshaProperties;
 
     @PostMapping
     public ResponseEntity<Mass> createMass(@RequestBody final Mass mass) {
@@ -243,5 +245,48 @@ public class MassController {
         );
     }
 
+    /**
+     * Расписание месс для парафии по ее API-ключу из параметра запроса
+     *
+     * @param paramsApiKey ключ парафии из параметра запроса (отличает этот эндпоинт от
+     *                     {@link MassController#weekMasses(String, LocalDate, String, boolean, String, boolean)} )
+     */
+    @GetMapping(value = "/week", params = "apiKey")
+    public ResponseEntity<List<MassDay>> scheduleByParishKeyFromParams(@RequestParam(value = "apiKey") final String paramsApiKey) {
+        return privateParishScheduleByApiKey(paramsApiKey);
+    }
 
+    /**
+     * Расписание месс для парафии по ее API-ключу из заголовка запроса
+     *
+     * @param apiKey ключ парафии из заголовка запроса (отличает этот эндпоинт от
+     *               {@link MassController#weekMasses(String, LocalDate, String, boolean, String, boolean)} )
+     */
+    @GetMapping(value = "/week", headers = "parish-week-api-key")
+    public ResponseEntity<List<MassDay>> scheduleByParishKeyFromHeaders(@RequestHeader(value = "parish-week-api-key") final String apiKey) {
+        return privateParishScheduleByApiKey(apiKey);
+    }
+
+    /**
+     * Расписание месс для парафии по api-ключу
+     *
+     * @param apiKey API-ключ парафии (соответсвует ключу одной из парафий)
+     */
+    private ResponseEntity<List<MassDay>> privateParishScheduleByApiKey(final String apiKey) {
+
+        final String parishKey = Optional.ofNullable(apiKey)
+                .map(imshaProperties.getParishWeekApiKeys().getMap()::get)
+                .orElseThrow(ResourceNotFoundException::new);
+        final Parish parish = parishService.findParishByKey(parishKey)
+                .orElseThrow(ResourceNotFoundException::new);
+        final List<Mass> masses = this.massService.getMassByParish(parish.getId());
+        final LocalDate startDate = dateTimeProvider.today();
+
+        final MassSchedule massHolder = scheduleFactory.build(masses, startDate);
+        massHolder.createSchedule();
+
+        return ResponseEntity.ok(
+                massHolder.getSchedule()
+        );
+    }
 }
