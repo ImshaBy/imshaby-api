@@ -5,38 +5,48 @@ import by.imsha.domain.LocalizedParish;
 import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
 import by.imsha.domain.dto.*;
-import by.imsha.exception.InvalidLocaleException;
 import by.imsha.exception.ResourceNotFoundException;
 import by.imsha.service.CityService;
 import by.imsha.service.MassService;
 import by.imsha.service.ParishService;
 import by.imsha.service.ScheduleFactory;
-import by.imsha.utils.ServiceUtils;
-import org.apache.commons.lang3.LocaleUtils;
+import by.imsha.utils.DateTimeProvider;
+import by.imsha.validation.common.AvailableLocale;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.hateoas.EntityModel;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
 /**
  * Parish services
  */
-
-//@Api(name = "Parish services", description = "Methods for managing parishes", visibility = ApiVisibility.PUBLIC, stage = ApiStage.RC)
-//@ApiVersion(since = "1.0")
-//@ApiAuthNone
 @RestController
 @RequestMapping(value = "/api/parish")
-public class ParishController extends AbstractRestHandler {
+@Validated
+@Slf4j
+public class ParishController {
 
     @Autowired
     private ParishService parishService;
@@ -50,39 +60,34 @@ public class ParishController extends AbstractRestHandler {
     @Autowired
     private ScheduleFactory scheduleFactory;
 
-    @RequestMapping(value = "",
-            method = RequestMethod.POST,
-            consumes = {"application/json"},
-            produces = {"application/json"})
-    @ResponseStatus(HttpStatus.CREATED)
-    public Parish createParish(@Valid @RequestBody Parish parish) {
+    @Autowired
+    private DateTimeProvider dateTimeProvider;
+
+    @PostMapping
+    public ResponseEntity<Parish> createParish(@Valid @RequestBody Parish parish) {
         parish.setState(Parish.State.PENDING);
-        return parishService.createParish(parish);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(parishService.createParish(parish));
     }
 
-    @RequestMapping(value = "/{parishId}",
-            method = RequestMethod.GET,
-            produces = {"application/json"})
-    @ResponseStatus(HttpStatus.OK)
-    @ResponseBody
-    public EntityModel<Parish> retrieveParish(@PathVariable("parishId") String id,
-                                              HttpServletRequest request, HttpServletResponse response) {
-        Optional<Parish> parish = parishService.getParish(id);
-        checkResourceFound(parish);
-        EntityModel<Parish> parishResource = EntityModel.of(parish.get());
-        return parishResource;
+    @GetMapping("/{parishId}")
+    public ResponseEntity<Parish> retrieveParish(@PathVariable("parishId") String parishId) {
+        return parishService.getParish(parishId)
+                .map(ResponseEntity::ok)
+                .orElseThrow(ResourceNotFoundException::new);
     }
 
-    @RequestMapping(value = "/{parishId}",
-            method = RequestMethod.PUT,
-            consumes = {"application/json"},
-            produces = {"application/json"})
-    @ResponseStatus(HttpStatus.OK)
-    public UpdateEntityInfo updateParish(@PathVariable("parishId") String id, @RequestBody ParishInfo parishInfo) {
-        Optional<Parish> parishToUpdate = this.parishService.getParish(id);
-        checkResourceFound(parishToUpdate);
-        Parish updatedParish = this.parishService.updateParish(parishInfo, parishToUpdate.get() );
-        return new UpdateEntityInfo(updatedParish.getId(), UpdateEntityInfo.STATUS.UPDATED);
+    @PutMapping("/{parishId}")
+    public ResponseEntity<UpdateEntityInfo> updateParish(@PathVariable("parishId") String id, @RequestBody ParishInfo parishInfo) {
+        final Parish parishToUpdate = this.parishService.getParish(id)
+                .orElseThrow(ResourceNotFoundException::new);
+
+        final Parish updatedParish = this.parishService.updateParish(parishInfo, parishToUpdate);
+
+        return ResponseEntity.ok(
+                new UpdateEntityInfo(updatedParish.getId(), UpdateEntityInfo.STATUS.UPDATED)
+        );
     }
 
     @GetMapping(value = "/{parishId}/state")
@@ -111,40 +116,37 @@ public class ParishController extends AbstractRestHandler {
         );
     }
 
-    @RequestMapping(value = "/{parishId}/lang/{lc}",
-            method = RequestMethod.PUT,
-            consumes = {"application/json"},
-            produces = {"application/json"})
-    @ResponseStatus(HttpStatus.OK)
-    public UpdateEntityInfo createLocalizedParish(@PathVariable("parishId") String id, @PathVariable("lc") String lang,
-                                                  @RequestBody LocalizedParishInfo localizedParishInfo){
-        Optional<Parish> parishToUpdate = this.parishService.getParish(id);
-        checkResourceFound(parishToUpdate);
-        Locale localeObj = new Locale(lang);
-        if(!LocaleUtils.isAvailableLocale(localeObj)){
-            throw new InvalidLocaleException("Invalid lang specified : " + lang);
-        }
-        LocalizedParish localizedParish = new LocalizedParish(lang, id);
+    @PutMapping(value = "/{parishId}/lang/{locale}")
+    public ResponseEntity<UpdateEntityInfo> createLocalizedParish(@PathVariable("parishId") String id,
+                                                                  @AvailableLocale(field = "locale", message = "PARISH.001")
+                                                                  @PathVariable("locale") Locale locale,
+                                                                  @RequestBody @Valid LocalizedParishInfo localizedParishInfo) {
+        final Parish parishToUpdate = this.parishService.getParish(id)
+                .orElseThrow(ResourceNotFoundException::new);
+
+        final LocalizedParish localizedParish = new LocalizedParish(locale.getLanguage(), id);
         localizedParish.setName(localizedParishInfo.getName());
         localizedParish.setAddress(localizedParishInfo.getAddress());
         localizedParish.setShortName(localizedParishInfo.getShortName());
-        Parish updatedParish = this.parishService.updateLocalizedParishInfo(localizedParish, parishToUpdate.get());
-        return new UpdateEntityInfo(updatedParish.getId(), UpdateEntityInfo.STATUS.UPDATED);
+
+        final Parish updatedParish = this.parishService.updateLocalizedParishInfo(localizedParish, parishToUpdate);
+
+        return ResponseEntity.ok(
+                new UpdateEntityInfo(updatedParish.getId(), UpdateEntityInfo.STATUS.UPDATED)
+        );
     }
 
 
+    @DeleteMapping("/{parishId}")
+    public ResponseEntity<UpdateEntityInfo> removeParish(@PathVariable("parishId") String id,
+                                                         @RequestParam(value = "cascade", defaultValue = "false") Boolean cascade) {
+        if (!this.parishService.getParish(id).isPresent()) {
+            throw new ResourceNotFoundException();
+        }
 
-    @RequestMapping(value = "/{parishId}",
-            method = RequestMethod.DELETE,
-            produces = {"application/json"})
-    @ResponseStatus(HttpStatus.OK)
-    public UpdateEntityInfo removeParish(@PathVariable("parishId") String id, @RequestParam(value = "cascade", defaultValue = "false") Boolean cascade, HttpServletRequest request,
-                                         HttpServletResponse response) {
-        Optional<Parish> parish = this.parishService.getParish(id);
-        checkResourceFound(parish);
-        UpdateEntityInfo updateEntityInfo;
+        final UpdateEntityInfo updateEntityInfo;
 
-        if (cascade != null && cascade ) {
+        if (cascade != null && cascade) {
             updateEntityInfo = new CascadeUpdateEntityInfo();
             List<UpdateEntityInfo> massEntityInfos = new ArrayList<>();
             ((CascadeUpdateEntityInfo) updateEntityInfo).setRelatedEntities(massEntityInfos);
@@ -156,37 +158,33 @@ public class ParishController extends AbstractRestHandler {
                 massEntityInfos.add(new UpdateEntityInfo(parishMass.getId(), UpdateEntityInfo.STATUS.DELETED));
             }
             log.warn(String.format("Cascade remove is executed for mass list: %s", massIds));
-        } else{
-          updateEntityInfo = new UpdateEntityInfo();
+        } else {
+            updateEntityInfo = new UpdateEntityInfo();
         }
 
         this.parishService.removeParish(id);
+
         updateEntityInfo.setId(id);
         updateEntityInfo.setStatus(UpdateEntityInfo.STATUS.DELETED.toString());
-        return updateEntityInfo;
+
+        return ResponseEntity.ok(
+                updateEntityInfo
+        );
     }
 
 
-    @RequestMapping(value = "/user/{userId}",
-            method = RequestMethod.GET,
-            produces = {"application/json"})
-    @ResponseStatus(HttpStatus.OK)
-    @ResponseBody
-    public EntityModel<Parish> retrieveParishByUser(@PathVariable("userId") String userId, HttpServletRequest request, HttpServletResponse response) {
-        Parish parishByUser = this.parishService.getParishByUser(userId);
-        checkResourceFound(Optional.ofNullable(parishByUser));
-        EntityModel<Parish> parishResource = EntityModel.of(parishByUser);
-        return parishResource;
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<Parish> retrieveParishByUser(@PathVariable("userId") String userId) {
+        return Optional.ofNullable(this.parishService.getParishByUser(userId))
+                .map(ResponseEntity::ok)
+                .orElseThrow(ResourceNotFoundException::new);
     }
 
-
-    @RequestMapping(value = "/week/expired",
-            method = RequestMethod.GET,
-            produces = {"application/json"})
-    @ResponseStatus(HttpStatus.OK)
-    @ResponseBody
-    public Set<ParishKeyUpdateInfo> retrieveParishKeysWithExpiredMasses(@RequestParam(value = "date", required = false) String day,
-            HttpServletRequest request, HttpServletResponse response) {
+    //TODO вынести логику в сервис и тогда покрыть контроллер тестами
+    @GetMapping("/week/expired")
+    public ResponseEntity<Set<ParishKeyUpdateInfo>> retrieveParishKeysWithExpiredMasses(
+            @DateTimeFormat(pattern = "dd-MM-yyyy")
+            @RequestParam(value = "date", required = false) LocalDate date) {
 
         List<City> allCities = cityService.getAllCities();
         Set<String> allPendingParishes = allCities.stream()
@@ -200,7 +198,9 @@ public class ParishController extends AbstractRestHandler {
                 .filter(mass -> !allPendingParishes.contains(mass.getParishId()))
                 .collect(Collectors.toList());
 
-        LocalDate date = ServiceUtils.buildDateOrDefault(day);
+        if (date == null) {
+            date = dateTimeProvider.today();
+        }
 
         MassSchedule massHolder = scheduleFactory.build(allMasses, date);
 
@@ -213,24 +213,22 @@ public class ParishController extends AbstractRestHandler {
                 .filter(massInfo -> massInfo.isNeedUpdate())
                 .map(massInfo -> ParishService.extractParishKeyUpdateInfo(massInfo.getParish().getParishId()))
                 .collect(Collectors.toSet());
-        return parishKeys;
+        return ResponseEntity.ok(
+                parishKeys
+        );
     }
 
 
-    @RequestMapping(value = "",
-            method = RequestMethod.GET,
-            consumes = {"application/json"},
-            produces = {"application/json"})
-    @ResponseStatus(HttpStatus.OK)
-    @ResponseBody
-    public List<Parish> filterParishes(@RequestParam("filter") String filter,
-                                       @RequestParam(value = "offset", required = false, defaultValue = "0") String page,
-                                       @RequestParam(value = "limit", required = false, defaultValue = "10") String perPage,
-                                       @RequestParam(value = "sort", required = false, defaultValue = "+name") String sorting,
-                                       HttpServletRequest request, HttpServletResponse response) {
-//        parishService.search(filter);
+    @GetMapping
+    public ResponseEntity<List<Parish>> filterParishes(@RequestParam("filter") String filter,
+                                                       @RequestParam(value = "offset", required = false, defaultValue = "0") int page,
+                                                       @RequestParam(value = "limit", required = false, defaultValue = "10") int perPage,
+                                                       @RequestParam(value = "sort", required = false, defaultValue = "+name") String sorting) {
         log.info(filter);
-        return parishService.search(filter, Integer.parseInt(page), Integer.parseInt(perPage), sorting);
+
+        return ResponseEntity.ok(
+                parishService.search(filter, page, perPage, sorting)
+        );
     }
 
 }

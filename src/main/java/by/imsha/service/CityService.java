@@ -16,7 +16,9 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.annotation.Validated;
 
+import javax.validation.Valid;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -26,6 +28,7 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@Validated
 public class CityService {
 
     private final ImshaProperties imshaProperties;
@@ -36,7 +39,7 @@ public class CityService {
         return imshaProperties.getDefaultCity().getKey();
     }
 
-    public City createCity(City city) {
+    public City createCity(final @Valid City city) {
         return cityRepository.save(city);
     }
 

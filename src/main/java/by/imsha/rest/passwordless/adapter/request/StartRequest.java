@@ -13,6 +13,6 @@ import javax.validation.constraints.NotBlank;
 public class StartRequest {
 
     @JsonDeserialize(using = TrimStringDeserializer.class)
-    @NotBlank(message = "email не должен быть пустым")
+    @NotBlank(message = "PASSWORDLESS.001")
     String email;
 }

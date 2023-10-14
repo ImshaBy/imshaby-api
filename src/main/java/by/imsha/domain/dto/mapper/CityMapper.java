@@ -2,16 +2,18 @@ package by.imsha.domain.dto.mapper;
 
 import by.imsha.domain.City;
 import by.imsha.domain.dto.CityInfo;
-import org.mapstruct.*;
-import org.mapstruct.factory.Mappers;
+import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValueCheckStrategy;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
 /**
  * @author Alena Misan
  */
 @Mapper( nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS ,
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
+        componentModel = "spring")
 public interface CityMapper {
-    CityMapper MAPPER = Mappers.getMapper(CityMapper.class);
 
     void updateCityFromDTO(CityInfo cityInfo, @MappingTarget City city);
 }

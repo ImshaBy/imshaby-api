@@ -1,23 +1,21 @@
 package by.imsha.exception;
 
+import lombok.Getter;
+
 /**
- * For HTTP 404 errros
+ * Исключение, в случае невалидного порядка дат, с полями идентифицирующими ошибку
  */
 public class InvalidDateIntervalException extends RuntimeException {
-    public InvalidDateIntervalException() {
-        super();
-    }
 
-    public InvalidDateIntervalException(String message, Throwable cause) {
-        super(message, cause);
-    }
+    @Getter
+    private final String field;
+    @Getter
+    private final String code;
 
-    public InvalidDateIntervalException(String message) {
+    public InvalidDateIntervalException(final String message, final String field, final String code) {
         super(message);
-    }
-
-    public InvalidDateIntervalException(Throwable cause) {
-        super(cause);
+        this.field = field;
+        this.code = code;
     }
 
 }

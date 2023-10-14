@@ -32,6 +32,7 @@ app:
     # empty by default, add them via environment (aaa, bbb,ccc ,ddd,eee) - spaces insensitive
     api-keys: ${API_KEYS:}
     internal-api-keys: ${INTERNAL_API_KEYS:}
+    zone-id: Europe/Minsk
   cors:
     allow-credentials: true
     allowed-origins:

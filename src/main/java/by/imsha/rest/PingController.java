@@ -1,9 +1,10 @@
 package by.imsha.rest;
 
 import by.imsha.domain.Ping;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -17,17 +18,13 @@ import java.util.Locale;
 
 @RestController
 @RequestMapping(value = "/")
-public class PingController extends AbstractRestHandler {
+public class PingController {
 
-    @RequestMapping(value = "",
-            method = RequestMethod.GET,
-            produces = {MediaType.APPLICATION_JSON_VALUE})
-    @ResponseStatus(HttpStatus.OK)
-    public @ResponseBody Ping ping(HttpServletRequest request, HttpServletResponse response) {
+    @GetMapping
+    public ResponseEntity<Ping> ping(HttpServletRequest request, HttpServletResponse response) {
         Locale locale = RequestContextUtils.getLocale(request);
-        return new Ping("locale: " + locale);
+        return ResponseEntity.ok(
+                new Ping("locale: " + locale)
+        );
     }
-
-
-
 }

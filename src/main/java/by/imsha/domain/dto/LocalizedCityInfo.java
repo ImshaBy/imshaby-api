@@ -1,25 +1,20 @@
 package by.imsha.domain.dto;
 
-import org.hibernate.validator.constraints.NotEmpty;
+import lombok.Getter;
+import lombok.Setter;
 
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotEmpty;
 import java.io.Serializable;
 
 /**
  * @author Alena Misan
  */
+@Getter
+@Setter
 public class LocalizedCityInfo implements Serializable {
-    @NotNull
-    @NotEmpty
+
+    @NotEmpty(message = "CITY.001")
     private String name;
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 
     @Override
     public boolean equals(Object o) {

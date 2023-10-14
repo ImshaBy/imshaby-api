@@ -10,6 +10,6 @@ import javax.validation.constraints.NotBlank;
 @Data
 public class LoginRequest {
 
-    @NotBlank(message = "code не должен быть пустым")
+    @NotBlank(message = "PASSWORDLESS.002")
     private String code;
 }
