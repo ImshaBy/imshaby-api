@@ -143,4 +143,8 @@ public class ParishService {
                 .map(Parish::getId)
                 .collect(Collectors.toSet());
     }
+
+    public Optional<Parish> findParishByKey(final String key) {
+        return parishRepository.findParishByKey(key);
+    }
 }
