@@ -73,13 +73,15 @@ public class UniqueMassValidator extends UniqueMassValidatorBase implements Cons
 
         for (Mass anotherMass : allMasses) {
             //пропускаем текущую мессу (с таким же id) и удаленные
-            //и те, время которых отличается от времени проверяемой мессы
-            if (anotherMass.getId().equals(currentMassId) || anotherMass.isDeleted() ||
-                    !anotherMass.getTime().equals(currentPeriodicMass.getTime())) {
+            if (anotherMass.getId().equals(currentMassId) || anotherMass.isDeleted()) {
                 continue;
             }
             //трансформируем сравниваемую мессу в периодическую
             final Mass anotherPeriodicMass = anotherMass.asPeriodic();
+            //пропускаем и те, время которых отличается от времени проверяемой мессы
+            if (!anotherPeriodicMass.getTime().equals(currentPeriodicMass.getTime())) {
+                continue;
+            }
             //вычисляем тип периода сравниваемой периодической мессы
             final MassPeriodType anotherPeriodicMassType = getMassPeriodType(anotherPeriodicMass);
             //получаем необходимый для типов месс калькулятор общего периода
