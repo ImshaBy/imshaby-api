@@ -50,9 +50,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static by.imsha.utils.Constants.LIMIT;
-import static by.imsha.utils.Constants.ONLINE_FILTER;
 import static by.imsha.utils.Constants.PAGE;
-import static by.imsha.utils.Constants.RORATE_FILTER;
 import static by.imsha.utils.Constants.WEEK_DAYS_COUNT;
 
 /**
@@ -323,7 +321,7 @@ public class MassService {
                     // (а выборка, как минимум, по городу есть всегда)
                     MassFilterValue onlineFilterValue = MassFilterValue.builder()
                             .type(MassFilterType.ONLINE)
-                            .name(ONLINE_FILTER)
+                            .name(String.valueOf(massInfo.isOnline()))
                             .value(String.valueOf(massInfo.isOnline()))
                             .build();
                     //значения lang определяются только на основе парафий, попавших в выборку
@@ -337,7 +335,7 @@ public class MassService {
                     // (а выборка, как минимум, по городу есть всегда)
                     MassFilterValue rorateFilterValue = MassFilterValue.builder()
                             .type(MassFilterType.RORATE)
-                            .name(RORATE_FILTER)
+                            .name(String.valueOf(massInfo.isRorate()))
                             .value(String.valueOf(massInfo.isRorate()))
                             .build();
                     return  Arrays.asList(onlineFilterValue, langFilterValue, rorateFilterValue);
