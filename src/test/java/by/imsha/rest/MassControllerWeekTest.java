@@ -133,6 +133,28 @@ class MassControllerWeekTest {
     }
 
     @Test
+    void whenRorateParamHasInvalidValue_then400() throws Exception {
+        mockMvc.perform(get(WEEK_MASSES_END_POINT_PATH + "?rorate=asd")
+                        .contentType("application/json")
+                        .with(csrf())
+                        .with(jwt()))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(
+                        matchAll(
+                                jsonPath("$.timestamp").value(ERROR_TIMESTAMP),
+                                jsonPath("$.requestInfo.uri").value(WEEK_MASSES_END_POINT_PATH),
+                                jsonPath("$.requestInfo.method").value("GET"),
+                                jsonPath("$.requestInfo.pathInfo").value(WEEK_MASSES_END_POINT_PATH),
+                                jsonPath("$.requestInfo.query").value("rorate=asd"),
+                                jsonPath("$.errors").isEmpty()
+                        )
+                );
+
+        verifyNoInteractions(massService);
+    }
+
+    @Test
     void whenAllParamsHaveValidValues_then200() throws Exception {
         final Mass firstMass = new Mass();
         firstMass.setId("firstMass");
@@ -153,8 +175,9 @@ class MassControllerWeekTest {
                 .thenReturn(massNav);
         when(massService.filterOutOnlyOnline(masses)).thenReturn(masses);
         when(massService.filterByMassLang(masses, "be")).thenReturn(masses);
+        when(massService.filterOutRorateOnly(masses)).thenReturn(masses);
 
-        mockMvc.perform(get(WEEK_MASSES_END_POINT_PATH + "?cityId=123&date=26-07-2023&parishId=qwe&online=true&massLang=be")
+        mockMvc.perform(get(WEEK_MASSES_END_POINT_PATH + "?cityId=123&date=26-07-2023&parishId=qwe&online=true&massLang=be&rorate=true")
                         .contentType("application/json")
                         .with(csrf())
                         .with(jwt()))
@@ -168,5 +191,6 @@ class MassControllerWeekTest {
         verify(massService).buildMassNavigation(massSchedule, "parishCityId", "qwe", "true", "be");
         verify(massService).filterOutOnlyOnline(masses);
         verify(massService).filterByMassLang(masses, "be");
+        verify(massService).filterOutRorateOnly(masses);
     }
 }

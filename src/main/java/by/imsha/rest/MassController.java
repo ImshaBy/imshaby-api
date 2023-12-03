@@ -2,7 +2,12 @@ package by.imsha.rest;
 
 import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
-import by.imsha.domain.dto.*;
+import by.imsha.domain.dto.MassDay;
+import by.imsha.domain.dto.MassNav;
+import by.imsha.domain.dto.MassSchedule;
+import by.imsha.domain.dto.UpdateEntitiesInfo;
+import by.imsha.domain.dto.UpdateEntityInfo;
+import by.imsha.domain.dto.UpdateMassInfo;
 import by.imsha.domain.dto.mapper.MassInfoMapper;
 import by.imsha.exception.InvalidDateIntervalException;
 import by.imsha.exception.ResourceNotFoundException;
@@ -19,10 +24,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
@@ -182,6 +201,7 @@ public class MassController {
                                                    @RequestParam(value = "date", required = false) LocalDate day,
                                                    @RequestParam(value = "parishId", required = false) String parishId,
                                                    @RequestParam(value = "online", defaultValue = "false") boolean online,
+                                                   @RequestParam(value = "rorate", defaultValue = "false") boolean rorate,
                                                    @RequestParam(value = "massLang", required = false) String massLang,
                                                    @RequestHeader(name = "x-show-pending", required = false, defaultValue = "false") boolean showPending) {
 
@@ -216,6 +236,10 @@ public class MassController {
 
         if (StringUtils.isNotEmpty(massLang)) {
             masses = massService.filterByMassLang(masses, massLang);
+        }
+
+        if (rorate) {
+            masses = massService.filterOutRorateOnly(masses);
         }
 
         final LocalDate startDate = isNull(day) ? dateTimeProvider.today() : day;

@@ -3,8 +3,11 @@ package by.imsha.service;
 import by.imsha.domain.City;
 import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
-import by.imsha.domain.dto.*;
-import by.imsha.domain.dto.mapper.MassInfoMapper;
+import by.imsha.domain.dto.MassFilterType;
+import by.imsha.domain.dto.MassFilterValue;
+import by.imsha.domain.dto.MassInfo;
+import by.imsha.domain.dto.MassNav;
+import by.imsha.domain.dto.MassSchedule;
 import by.imsha.repository.MassRepository;
 import by.imsha.repository.ParishRepository;
 import by.imsha.utils.ServiceUtils;
@@ -33,10 +36,23 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import static by.imsha.utils.Constants.*;
+import static by.imsha.utils.Constants.LIMIT;
+import static by.imsha.utils.Constants.ONLINE_FILTER;
+import static by.imsha.utils.Constants.PAGE;
+import static by.imsha.utils.Constants.WEEK_DAYS_COUNT;
 
 /**
  * @author Alena Misan
@@ -178,6 +194,11 @@ public class MassService {
     public List<Mass> filterByMassLang(List<Mass> masses, String massLang){
         return masses.stream().filter(mass -> StringUtils.equals(mass.getLangCode(), massLang))
             .collect(Collectors.toList());
+    }
+
+    public List<Mass> filterOutRorateOnly(List<Mass> masses){
+        return masses.stream().filter(mass -> BooleanUtils.isTrue(mass.getRorate()))
+                .collect(Collectors.toList());
     }
 
     @Caching(evict = {
