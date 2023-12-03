@@ -52,6 +52,7 @@ import java.util.stream.Collectors;
 import static by.imsha.utils.Constants.LIMIT;
 import static by.imsha.utils.Constants.ONLINE_FILTER;
 import static by.imsha.utils.Constants.PAGE;
+import static by.imsha.utils.Constants.RORATE_FILTER;
 import static by.imsha.utils.Constants.WEEK_DAYS_COUNT;
 
 /**
@@ -304,7 +305,8 @@ public class MassService {
 
 
     public MassNav buildMassNavigation(MassSchedule massSchedule, String cityId,
-                                       String parishId, String online, String massLang){
+                                       String parishId, String online, String massLang,
+                                       boolean rorate){
 
         if (massSchedule.getMassesByDay() == null || massSchedule.getMassesByDay().isEmpty()) {
             return MassNav.EMPTY_NAV;
@@ -331,7 +333,14 @@ public class MassService {
                             .name(massInfo.getLangCode())
                             .value(massInfo.getLangCode())
                             .build();
-                    return  Arrays.asList(onlineFilterValue, langFilterValue);
+                    //значения rorate определяются только на основе парафий, попавших в выборку
+                    // (а выборка, как минимум, по городу есть всегда)
+                    MassFilterValue rorateFilterValue = MassFilterValue.builder()
+                            .type(MassFilterType.RORATE)
+                            .name(RORATE_FILTER)
+                            .value(String.valueOf(massInfo.isRorate()))
+                            .build();
+                    return  Arrays.asList(onlineFilterValue, langFilterValue, rorateFilterValue);
                 })
                 .flatMap(filterValues -> filterValues.stream())
                 .collect(Collectors.toSet());
@@ -386,6 +395,10 @@ public class MassService {
         if(StringUtils.isNotEmpty(massLang)){
             selectedMap.put(MassFilterType.LANG.getName(), MassFilterValue.builder().type(MassFilterType.LANG)
                 .name(MassFilterType.LANG.getName()).value(massLang).build());
+        }
+        if(rorate){
+            selectedMap.put(MassFilterType.RORATE.getName(), MassFilterValue.builder().type(MassFilterType.RORATE)
+                    .name(MassFilterType.RORATE.getName()).value(String.valueOf(rorate)).build());
         }
         nav.setSelected(selectedMap);
         return nav;

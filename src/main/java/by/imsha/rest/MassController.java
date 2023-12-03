@@ -248,7 +248,8 @@ public class MassController {
 
         massHolder.createSchedule();
 
-        final MassNav massFilters = massService.buildMassNavigation(massHolder, cityId, parishId, Boolean.toString(online), massLang);
+        final MassNav massFilters = massService.buildMassNavigation(massHolder, cityId, parishId, Boolean.toString(online), massLang,
+                rorate);
 
         massHolder.setNav(massFilters);
 

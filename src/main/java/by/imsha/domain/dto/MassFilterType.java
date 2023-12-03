@@ -9,7 +9,9 @@ public enum MassFilterType  {
     CITY ("city", 1),
     PARISH ("parish", 2),
     ONLINE ("online", 3),
-    LANG ("lang", 4);
+    LANG ("lang", 4),
+    RORATE ("rorate", 5),
+    ;
     @Getter  private String name;
     @Getter private int priority;
 

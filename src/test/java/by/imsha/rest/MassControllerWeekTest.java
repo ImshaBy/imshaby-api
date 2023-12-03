@@ -72,7 +72,7 @@ class MassControllerWeekTest {
         when(massService.getMassByCity("defaultCity")).thenReturn(masses);
         when(scheduleFactory.build(masses, today)).thenReturn(massSchedule);
         //параметр online имеет по-умолчанию значение "false"
-        when(massService.buildMassNavigation(massSchedule, "defaultCity", null, "false", null))
+        when(massService.buildMassNavigation(massSchedule, "defaultCity", null, "false", null, false))
                 .thenReturn(massNav);
 
         mockMvc.perform(get(WEEK_MASSES_END_POINT_PATH)
@@ -85,7 +85,7 @@ class MassControllerWeekTest {
         verify(cityService).getCityIdOrDefault(null);
         verify(massService).getMassByCity("defaultCity");
         verify(scheduleFactory).build(masses, today);
-        verify(massService).buildMassNavigation(massSchedule, "defaultCity", null, "false", null);
+        verify(massService).buildMassNavigation(massSchedule, "defaultCity", null, "false", null, false);
     }
 
     @Test
@@ -171,7 +171,7 @@ class MassControllerWeekTest {
         when(massService.getMassByParish("qwe")).thenReturn(masses);
         when(scheduleFactory.build(masses, date)).thenReturn(massSchedule);
         //параметр online имеет по-умолчанию значение "false"
-        when(massService.buildMassNavigation(massSchedule, "parishCityId", "qwe", "true", "be"))
+        when(massService.buildMassNavigation(massSchedule, "parishCityId", "qwe", "true", "be", true))
                 .thenReturn(massNav);
         when(massService.filterOutOnlyOnline(masses)).thenReturn(masses);
         when(massService.filterByMassLang(masses, "be")).thenReturn(masses);
@@ -188,7 +188,7 @@ class MassControllerWeekTest {
         verify(parishService).getParish("qwe");
         verify(massService).getMassByParish("qwe");
         verify(scheduleFactory).build(masses, date);
-        verify(massService).buildMassNavigation(massSchedule, "parishCityId", "qwe", "true", "be");
+        verify(massService).buildMassNavigation(massSchedule, "parishCityId", "qwe", "true", "be", true);
         verify(massService).filterOutOnlyOnline(masses);
         verify(massService).filterByMassLang(masses, "be");
         verify(massService).filterOutRorateOnly(masses);
