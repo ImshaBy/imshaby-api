@@ -17,7 +17,6 @@ public class Constants {
 
     public static String DEFAULT_LANG = "be";
 
-    public static String ONLINE_FILTER = "online";
     public static final String  DEFAULT_PAGE_SIZE = "40";
     public static final String DEFAULT_PAGE_NUM = "0";
 
