@@ -3,7 +3,6 @@ package by.imsha.validation.mass;
 import by.imsha.domain.Mass;
 import by.imsha.utils.ServiceUtils;
 import lombok.Value;
-import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.util.Collections;
@@ -16,7 +15,6 @@ import java.util.Map;
  * здесь описаны все возможные варианты пересечений периодов и для каждого
  * варианта "простой" калькулятор периода (без всякой дополнительной логики)
  */
-@Component
 public class UniqueMassValidatorHelper {
 
     /**
@@ -123,6 +121,7 @@ public class UniqueMassValidatorHelper {
          * Дата окончания периода
          */
         LocalDate endDate;
+
         /**
          * Определить, считается ли период невалидным
          * <p>
@@ -154,6 +153,7 @@ public class UniqueMassValidatorHelper {
          */
         BOUNDED;
     }
+
     /**
      * Функциональный интерфейс для вычисления пересечения двух интервалов дат
      * <p>
