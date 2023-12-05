@@ -7,9 +7,7 @@ import org.springframework.beans.BeanWrapperImpl;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Тест только на проверку наименования поля, т.к. все остальные проверки в тестах контроллера
- *
- * @see by.imsha.rest.MassControllerCreateMassTest
+ * TODO можно покрыть отдельно тестами, все зависимости не статические
  */
 class UniqueMassValidatorTest {
 

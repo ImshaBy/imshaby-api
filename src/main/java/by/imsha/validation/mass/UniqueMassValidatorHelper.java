@@ -3,6 +3,7 @@ package by.imsha.validation.mass;
 import by.imsha.domain.Mass;
 import by.imsha.utils.ServiceUtils;
 import lombok.Value;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.util.Collections;
@@ -15,16 +16,17 @@ import java.util.Map;
  * здесь описаны все возможные варианты пересечений периодов и для каждого
  * варианта "простой" калькулятор периода (без всякой дополнительной логики)
  */
-abstract class UniqueMassValidatorBase {
+@Component
+public class UniqueMassValidatorHelper {
 
     /**
      * Мап, в которой можно по двум типам периодов получить калькулятор для вычисления пересечений периодов
      */
-    protected static final Map<MassPeriodType, Map<MassPeriodType, CommonPeriodCalculator>> MASS_COMMON_PERIOD_CALCULATOR_MAP;
+    private static final Map<MassPeriodType, Map<MassPeriodType, CommonPeriodCalculator>> MASS_COMMON_PERIOD_CALCULATOR_MAP;
     /**
      * Значение, используемое как минимальная дата
      */
-    private static final LocalDate MIN_DATE = ServiceUtils.timestampToLocalDate(0L).toLocalDate();
+    public static final LocalDate MIN_DATE = ServiceUtils.timestampToLocalDate(0L).toLocalDate();
 
     static {
         //составляем мап пересечений всех со всеми (4 типа = 16 комбинаций)
@@ -72,21 +74,21 @@ abstract class UniqueMassValidatorBase {
     /**
      * Получить минимальную из двух дат
      */
-    protected static LocalDate min(LocalDate first, LocalDate second) {
+    public static LocalDate min(LocalDate first, LocalDate second) {
         return first.isAfter(second) ? second : first;
     }
 
     /**
      * Получить максимальную из двух дат
      */
-    protected static LocalDate max(LocalDate first, LocalDate second) {
+    public static LocalDate max(LocalDate first, LocalDate second) {
         return first.isAfter(second) ? first : second;
     }
 
     /**
      * Получить тип периода мессы
      */
-    protected MassPeriodType getMassPeriodType(final Mass mass) {
+    public MassPeriodType getMassPeriodType(final Mass mass) {
         boolean boundedBelow = mass.getStartDate() != null;
         boolean boundedAbove = mass.getEndDate() != null;
 
@@ -99,17 +101,20 @@ abstract class UniqueMassValidatorBase {
         }
     }
 
+    protected Map<MassPeriodType, CommonPeriodCalculator> getCalculatorMapForPeriodType(final MassPeriodType massPeriodType) {
+        return MASS_COMMON_PERIOD_CALCULATOR_MAP.get(massPeriodType);
+    }
+
     /**
      * Период (дата начала и конца)
      */
     @Value
-    protected static class Period {
+    public static class Period {
 
         /**
          * Минимальный период относительно минимальной даты (1 неделя от минимальной даты)
          */
-        private static final Period MIN_DATE_WEEK_PERIOD = new Period(MIN_DATE, MIN_DATE.plusWeeks(1));
-
+        public static final Period MIN_DATE_WEEK_PERIOD = new Period(MIN_DATE, MIN_DATE.plusWeeks(1));
         /**
          * Дата начала периода
          */
@@ -118,7 +123,6 @@ abstract class UniqueMassValidatorBase {
          * Дата окончания периода
          */
         LocalDate endDate;
-
         /**
          * Определить, считается ли период невалидным
          * <p>
@@ -132,7 +136,7 @@ abstract class UniqueMassValidatorBase {
     /**
      * Тип периода действия мессы
      */
-    protected enum MassPeriodType {
+    public enum MassPeriodType {
         /**
          * Неограничен
          */
@@ -148,15 +152,14 @@ abstract class UniqueMassValidatorBase {
         /**
          * Ограничена (сверху и снизу)
          */
-        BOUNDED
+        BOUNDED;
     }
-
     /**
      * Функциональный интерфейс для вычисления пересечения двух интервалов дат
      * <p>
      * вспомогательные методы для всех видов MassPeriodType (для упрощения написания нужных lambda)
      */
-    protected interface CommonPeriodCalculator {
+    public interface CommonPeriodCalculator {
 
         /**
          * Получить пересечение двух интервалов в виде периода дат
@@ -176,7 +179,7 @@ abstract class UniqueMassValidatorBase {
         }
 
         static CommonPeriodCalculator infiniteAndBoundedBelow() {
-            return (firstStartDate, firstEndDate, secondStartDate, secondEndDate) -> new Period(secondStartDate, secondEndDate.plusWeeks(1));
+            return (firstStartDate, firstEndDate, secondStartDate, secondEndDate) -> new Period(secondStartDate, secondStartDate.plusWeeks(1));
         }
 
         static CommonPeriodCalculator boundedBelowAndInfinite() {
@@ -184,11 +187,11 @@ abstract class UniqueMassValidatorBase {
         }
 
         static CommonPeriodCalculator infiniteAndBounded() {
-            return (firstStartDate, firstEndDate, secondStartDate, secondEndDate) -> new Period(secondStartDate, min(secondStartDate.plusWeeks(1), secondEndDate));
+            return (firstStartDate, firstEndDate, secondStartDate, secondEndDate) -> new Period(secondStartDate, secondEndDate);
         }
 
         static CommonPeriodCalculator boundedAndInfinite() {
-            return (firstStartDate, firstEndDate, secondStartDate, secondEndDate) -> new Period(firstStartDate, min(firstStartDate.plusWeeks(1), firstEndDate));
+            return (firstStartDate, firstEndDate, secondStartDate, secondEndDate) -> new Period(firstStartDate, firstEndDate);
         }
 
         static CommonPeriodCalculator boundedAboveAndBoundedAbove() {
@@ -196,7 +199,7 @@ abstract class UniqueMassValidatorBase {
         }
 
         static CommonPeriodCalculator boundedAboveAndBoundedBelow() {
-            return (firstStartDate, firstEndDate, secondStartDate, secondEndDate) -> new Period(secondStartDate, min(secondStartDate.plusWeeks(1), firstEndDate));
+            return (firstStartDate, firstEndDate, secondStartDate, secondEndDate) -> new Period(secondStartDate, firstEndDate);
         }
 
         static CommonPeriodCalculator boundedAboveAndBounded() {
@@ -204,7 +207,7 @@ abstract class UniqueMassValidatorBase {
         }
 
         static CommonPeriodCalculator boundedBelowAndBoundedAbove() {
-            return (firstStartDate, firstEndDate, secondStartDate, secondEndDate) -> new Period(firstEndDate, min(firstStartDate.plusWeeks(1), secondEndDate));
+            return (firstStartDate, firstEndDate, secondStartDate, secondEndDate) -> new Period(firstStartDate, secondEndDate);
         }
 
         static CommonPeriodCalculator boundedBelowAndBoundedBelow() {
@@ -217,7 +220,7 @@ abstract class UniqueMassValidatorBase {
         static CommonPeriodCalculator boundedBelowAndBounded() {
             return (firstStartDate, firstEndDate, secondStartDate, secondEndDate) -> {
                 final LocalDate startDate = max(firstStartDate, secondStartDate);
-                return new Period(startDate, min(startDate.plusWeeks(1), secondEndDate));
+                return new Period(startDate, secondEndDate);
             };
         }
 
@@ -229,7 +232,7 @@ abstract class UniqueMassValidatorBase {
         static CommonPeriodCalculator boundedAndBoundedBelow() {
             return (firstStartDate, firstEndDate, secondStartDate, secondEndDate) -> {
                 final LocalDate startDate = max(firstStartDate, secondStartDate);
-                return new Period(startDate, min(startDate.plusWeeks(1), firstEndDate));
+                return new Period(startDate, firstEndDate);
             };
         }
 

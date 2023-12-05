@@ -4,6 +4,9 @@ import by.imsha.domain.Mass;
 import by.imsha.service.MassService;
 import by.imsha.utils.Constants;
 import by.imsha.validation.ConstraintViolationPayloadBase64Coder;
+import by.imsha.validation.mass.UniqueMassValidatorHelper.CommonPeriodCalculator;
+import by.imsha.validation.mass.UniqueMassValidatorHelper.MassPeriodType;
+import by.imsha.validation.mass.UniqueMassValidatorHelper.Period;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static by.imsha.utils.Constants.WEEK_DAYS_COUNT;
+import static by.imsha.validation.mass.UniqueMassValidatorHelper.min;
 
 /**
  * Валидатор уникальности мессы, проверяющий, что среди действующих (не удаленных) месс нет
@@ -29,13 +33,14 @@ import static by.imsha.utils.Constants.WEEK_DAYS_COUNT;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class UniqueMassValidator extends UniqueMassValidatorBase implements ConstraintValidator<UniqueMass, Mass> {
+public class UniqueMassValidator implements ConstraintValidator<UniqueMass, Mass> {
 
     //для закрепления ошибки за полем, используем поле time
     public static final String TIME_FIELD_NAME = "time";
 
     private final MassService massService;
     private final ConstraintViolationPayloadBase64Coder constraintViolationPayloadBase64Coder;
+    private final UniqueMassValidatorHelper uniqueMassValidatorHelper;
 
     @Override
     public boolean isValid(final Mass mass, final ConstraintValidatorContext context) {
@@ -64,10 +69,10 @@ public class UniqueMassValidator extends UniqueMassValidatorBase implements Cons
         Arrays.stream(currentPeriodicMass.getDays())
                 .forEach(day -> currentPeriodicMassDaysBitmap[day - 1] = true);
         //вычисляем тип периода текущей периодической мессы
-        final MassPeriodType currentPeriodicMassPeriodType = getMassPeriodType(currentPeriodicMass);
+        final MassPeriodType currentPeriodicMassPeriodType = uniqueMassValidatorHelper.getMassPeriodType(currentPeriodicMass);
         //получаем мап, содержащий все калькуляторы общего периода, описанные для типа текущей мессы
-        final Map<MassPeriodType, CommonPeriodCalculator> currentPeriodicMassCommonPeriodCalculatorMap = MASS_COMMON_PERIOD_CALCULATOR_MAP
-                .get(currentPeriodicMassPeriodType);
+        final Map<MassPeriodType, CommonPeriodCalculator> currentPeriodicMassCommonPeriodCalculatorMap = uniqueMassValidatorHelper
+                .getCalculatorMapForPeriodType(currentPeriodicMassPeriodType);
 
         final List<Mass> allMasses = massService.getMassByParish(currentMass.getParishId());
 
@@ -83,7 +88,7 @@ public class UniqueMassValidator extends UniqueMassValidatorBase implements Cons
                 continue;
             }
             //вычисляем тип периода сравниваемой периодической мессы
-            final MassPeriodType anotherPeriodicMassType = getMassPeriodType(anotherPeriodicMass);
+            final MassPeriodType anotherPeriodicMassType = uniqueMassValidatorHelper.getMassPeriodType(anotherPeriodicMass);
             //получаем необходимый для типов месс калькулятор общего периода
             final Period commonPeriod = currentPeriodicMassCommonPeriodCalculatorMap
                     .get(anotherPeriodicMassType)
