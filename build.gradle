@@ -1,0 +1,7 @@
+ext {
+    cache2kVersion = '2.6.1.Final'
+    restQueryEngineVersion = '0.7.1'
+    lombokMapstructBindingVersion = '0.2.0'
+    mapstructVersion = '1.4.1.Final'
+    guavaVersion = '31.1-jre'
+}

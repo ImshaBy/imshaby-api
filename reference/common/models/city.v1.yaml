@@ -1,8 +1,0 @@
-title: City
-type: object
-properties:
-  id:
-    type: string
-description: adf
-x-examples:
-  example-1: {}
