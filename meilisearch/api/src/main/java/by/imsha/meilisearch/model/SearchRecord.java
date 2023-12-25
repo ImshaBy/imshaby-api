@@ -9,6 +9,21 @@ import lombok.Builder;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * Запись в индексе (используется при сохранении в индекс)
+ *
+ * @param recordId   идентификатор записи
+ * @param time       дата и время мессы
+ * @param date       дата мессы
+ * @param parish     данные парафии
+ * @param notes      заметки (доп.инфо)
+ * @param lang       язык мессы
+ * @param online     признак трансляции мессы в онлайне
+ * @param rorate     признак рорат
+ * @param city       данные города
+ * @param needUpdate признак необходимости обновления данных
+ * @param geo        данные геолокации парафии
+ */
 @Builder
 public record SearchRecord(
         String recordId,
