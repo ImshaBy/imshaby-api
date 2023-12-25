@@ -8,6 +8,11 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * Представление записи в индексе, при поиске
+ * <p>
+ * Отличается полем geoDistance
+ */
 public record SearchResultItem(
         String recordId,
         @JsonDeserialize(using = Timestamp2LocalDateTimeDeserializer.class)
