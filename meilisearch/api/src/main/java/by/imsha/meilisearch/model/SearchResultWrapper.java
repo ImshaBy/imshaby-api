@@ -19,7 +19,7 @@ import java.util.Map;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record SearchResultWrapper(
         List<SearchResultItem> hits,
-        Map<String, Integer> facetDistribution,
+        Map<String, Map<String, Integer>> facetDistribution,
         int processingTimeMs,
         String query,
         int offset,
