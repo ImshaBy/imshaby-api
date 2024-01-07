@@ -1,4 +1,4 @@
-package by.imsha.meilisearch.reader.config;
+package by.imsha.meilisearch.writer.config;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -6,8 +6,8 @@ import org.springframework.validation.annotation.Validated;
 
 @Data
 @Validated
-public class MeilisearchReaderProperties {
-    public static final String PREFIX = "meilisearch.reader";
+public class MeilisearchWriterProperties {
+    public static final String PREFIX = "meilisearch.writer";
 
     /**
      * URL хоста meilisearch
@@ -20,7 +20,7 @@ public class MeilisearchReaderProperties {
     @NotBlank
     private String apiKey;
     /**
-     * UID индекса для чтения
+     * UID индекса для записи
      */
     @NotBlank
     private String indexUid;
