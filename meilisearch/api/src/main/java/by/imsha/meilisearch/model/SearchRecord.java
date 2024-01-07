@@ -40,4 +40,9 @@ public record SearchRecord(
         Boolean needUpdate,
         @JsonProperty("_geo")
         Geo geo) {
+
+        /**
+         * Название ключевого поля записи
+         */
+        public static final String PRIMARY_KEY_FIELD = "recordId";
 }

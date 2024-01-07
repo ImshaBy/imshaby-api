@@ -1,10 +1,8 @@
 package by.imsha.meilisearch.reader;
 
-import com.meilisearch.sdk.Client;
-import lombok.RequiredArgsConstructor;
+import by.imsha.meilisearch.model.SearchResultWrapper;
 
-@RequiredArgsConstructor
-public class MeilisearchReader {
+public interface MeilisearchReader {
 
-    private final Client client;
+    SearchResultWrapper search(QueryData queryData);
 }
