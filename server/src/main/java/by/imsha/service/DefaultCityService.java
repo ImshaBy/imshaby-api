@@ -2,8 +2,8 @@ package by.imsha.service;
 
 import by.imsha.domain.City;
 import by.imsha.exception.ResourceNotFoundException;
-import by.imsha.properties.ImshaProperties;
 import by.imsha.repository.CityRepository;
+import by.imsha.server.properties.ImshaProperties;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.annotation.Cacheable;
