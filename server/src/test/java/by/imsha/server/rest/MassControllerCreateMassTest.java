@@ -7,7 +7,7 @@ import by.imsha.server.TestTimeConfiguration;
 import by.imsha.server.ValidationConfiguration;
 import by.imsha.server.properties.ImshaProperties;
 import by.imsha.service.CityService;
-import by.imsha.service.DefaultCityService;
+import by.imsha.server.service.DefaultCityService;
 import by.imsha.service.MassService;
 import by.imsha.service.ParishService;
 import by.imsha.service.ScheduleFactory;

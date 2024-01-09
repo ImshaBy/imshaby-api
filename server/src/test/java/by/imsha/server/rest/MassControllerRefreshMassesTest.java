@@ -6,7 +6,7 @@ import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
 import by.imsha.properties.ImshaProperties;
 import by.imsha.service.CityService;
-import by.imsha.service.DefaultCityService;
+import by.imsha.server.service.DefaultCityService;
 import by.imsha.service.MassService;
 import by.imsha.service.ParishService;
 import by.imsha.service.ScheduleFactory;
