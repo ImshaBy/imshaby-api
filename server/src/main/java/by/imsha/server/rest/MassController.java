@@ -12,7 +12,7 @@ import by.imsha.domain.dto.mapper.MassInfoMapper;
 import by.imsha.exception.InvalidDateIntervalException;
 import by.imsha.exception.ResourceNotFoundException;
 import by.imsha.server.properties.ImshaProperties;
-import by.imsha.service.DefaultCityService;
+import by.imsha.server.service.DefaultCityService;
 import by.imsha.service.MassService;
 import by.imsha.service.ParishService;
 import by.imsha.service.ScheduleFactory;

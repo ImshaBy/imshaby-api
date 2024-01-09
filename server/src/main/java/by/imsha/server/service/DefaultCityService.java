@@ -1,4 +1,4 @@
-package by.imsha.service;
+package by.imsha.server.service;
 
 import by.imsha.domain.City;
 import by.imsha.exception.ResourceNotFoundException;
