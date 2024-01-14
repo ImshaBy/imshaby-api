@@ -1,1 +1,3 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=by.imsha.meilisearch.writer.config.MeilisearchWriterConfiguration
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+by.imsha.meilisearch.writer.config.MeilisearchWriterConfiguration,\
+by.imsha.meilisearch.writer.config.MeilisearchApiFeignClientConfiguration

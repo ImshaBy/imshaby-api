@@ -2,6 +2,8 @@ package by.imsha.meilisearch.writer.config;
 
 import by.imsha.meilisearch.writer.DefaultMeilisearchWriter;
 import by.imsha.meilisearch.writer.MeilisearchWriter;
+import by.imsha.meilisearch.writer.feign.MeilisearchApiFeignClient;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.meilisearch.sdk.Client;
 import com.meilisearch.sdk.Config;
 import com.meilisearch.sdk.model.Faceting;
@@ -31,11 +33,14 @@ public class MeilisearchWriterConfiguration {
 
     @Bean
     public MeilisearchWriter meilisearchWriter(final MeilisearchWriterProperties meilisearchReaderProperties,
-                                               final Settings settings) {
+                                               final Settings settings,
+                                               final MeilisearchApiFeignClient meilisearchApiFeignClient,
+                                               final ObjectMapper objectMapper) {
         final Config config = new Config(meilisearchReaderProperties.getHostUrl(), meilisearchReaderProperties.getApiKey());
         final Client client = new Client(config);
 
-        return new DefaultMeilisearchWriter(client, meilisearchReaderProperties.getIndexUid(), settings);
+        return new DefaultMeilisearchWriter(client, meilisearchReaderProperties.getIndexUid(), settings,
+                meilisearchApiFeignClient, objectMapper);
     }
 
     @Bean
