@@ -23,12 +23,16 @@ dependencyManagement {
     imports {
         mavenBom(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
     }
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudDependenciesVersion}"
+    }
 }
 
 dependencies {
     api project(':meilisearch:api')
 
     api 'jakarta.validation:jakarta.validation-api'
+    api 'org.springframework.cloud:spring-cloud-starter-openfeign'
 
     implementation 'org.springframework.boot:spring-boot-autoconfigure'
     implementation "com.meilisearch.sdk:meilisearch-java:${meilisearchSdkVersion}"
