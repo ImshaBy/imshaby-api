@@ -1,6 +1,10 @@
 package by.imsha.meilisearch.writer;
 
+import by.imsha.meilisearch.model.SearchRecord;
+
+import java.util.Collection;
+
 public interface MeilisearchWriter {
 
-    //TODO методы для записи, частичного и полного обновления
+    void refreshParishData(String parishId, Collection<SearchRecord> searchRecords);
 }
