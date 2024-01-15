@@ -9,8 +9,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -34,7 +32,7 @@ public class TimingTest {
                 .andExpect(status().isOk())
                 .andExpect(header().exists("Server-Timing"))
                 .andExpect(
-                        result -> result.getResponse().getHeader("Server-Timing").matches("^app=\\S+;controller=\\S+;service=\\S+;repository=\\S+$")
+                        result -> result.getResponse().getHeader("Server-Timing").matches("^app=\\d+;controller=\\d+;service=\\d+;$")
                 );
     }
 }

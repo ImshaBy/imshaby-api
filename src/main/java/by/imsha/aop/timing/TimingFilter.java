@@ -17,19 +17,12 @@ public class TimingFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        TimingService.startTime();
+        TimingService.startTime("app");
         ContentCachingResponseWrapper responseWrapper = new ContentCachingResponseWrapper(response);
         filterChain.doFilter(request, responseWrapper);
-        TimingService.stopTime();
+        TimingService.stopTime("app");
 
-        // Достаем содержимое ответа после его отправки
-        byte[] content = responseWrapper.getContentAsByteArray();
-
-        // Добавляем заголовок к оригинальному HttpServletResponse
-        response.addHeader("Server-Timing", TimingService.getResultServerTiming());
-
-        // Записываем измененное содержимое обратно в ответ
-        response.getOutputStream().write(content);
-        response.flushBuffer();
+        responseWrapper.addHeader("Server-Timing", TimingService.getResultServerTiming());
+        responseWrapper.copyBodyToResponse();
     }
 }

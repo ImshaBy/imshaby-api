@@ -1,9 +1,12 @@
 package by.imsha.aop.timing;
 
-public class TimingThreadLocal extends ThreadLocal<Timing> {
+import java.util.HashMap;
+import java.util.Map;
+
+public class TimingThreadLocal extends ThreadLocal<Map<String, Timing>> {
 
     @Override
-    protected Timing initialValue() {
-        return new Timing();
+    protected Map<String, Timing> initialValue() {
+        return new HashMap<>();
     }
 }
