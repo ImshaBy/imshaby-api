@@ -1,5 +1,6 @@
 package by.imsha.meilisearch.writer.config;
 
+import by.imsha.meilisearch.model.SearchRecord;
 import by.imsha.meilisearch.writer.DefaultMeilisearchWriter;
 import by.imsha.meilisearch.writer.MeilisearchWriter;
 import by.imsha.meilisearch.writer.feign.MeilisearchApiFeignClient;
@@ -12,7 +13,6 @@ import com.meilisearch.sdk.model.Settings;
 import com.meilisearch.sdk.model.TypoTolerance;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
@@ -21,7 +21,6 @@ import org.springframework.context.annotation.Bean;
  * (т.к. это не публичная библиотека, а только наша и при необходимости - доработаем)
  */
 @AutoConfiguration
-@ConditionalOnClass(Client.class)
 @Slf4j
 public class MeilisearchWriterConfiguration {
 
@@ -47,16 +46,10 @@ public class MeilisearchWriterConfiguration {
     public Settings defaultIndexSettings() {
         final Settings settings = new Settings();
 
-        settings.setFilterableAttributes(new String[]{
-                "_geo", //для сортировки по _geo
-                "parish.name", //для поиска и фасетов
-                "city.name",
-                "online",
-                "lang"
-        });
-        settings.setSortableAttributes(new String[]{"_geo"});
-        settings.setSearchableAttributes(new String[]{"parish.key"});
-        settings.setDisplayedAttributes(new String[]{"*"});
+        settings.setFilterableAttributes(SearchRecord.FILTERABLE_ATTRIBUTES);
+        settings.setSortableAttributes(SearchRecord.SORTABLE_ATTRIBUTES);
+        settings.setSearchableAttributes(SearchRecord.SEARCHABLE_ATTRIBUTES);
+        settings.setDisplayedAttributes(SearchRecord.DISPLAYED_ATTRIBUTES);
 
         settings.setTypoTolerance(new TypoTolerance().setEnabled(false));//мы не ищем по введенному слову, так что typoTolerance можно выключить
 
