@@ -41,8 +41,30 @@ public record SearchRecord(
         @JsonProperty("_geo")
         Geo geo) {
 
-        /**
-         * Название ключевого поля записи
-         */
-        public static final String PRIMARY_KEY_FIELD = "recordId";
+    /**
+     * Название ключевого поля записи
+     */
+    public static final String PRIMARY_KEY_FIELD = "recordId";
+    /**
+     * Атрибуты по которым возможна фильтрация
+     */
+    public static final String[] FILTERABLE_ATTRIBUTES = new String[]{
+            "_geo", //для сортировки по _geo
+            "parish.name", //для поиска и фасетов
+            "city.name",
+            "online",
+            "lang"
+    };
+    /**
+     * Атрибуты по которым возможна сортировка
+     */
+    public static final String[] SORTABLE_ATTRIBUTES = new String[]{"_geo"};
+    /**
+     * Атрибуты использующиеся при поиске
+     */
+    public static final String[] SEARCHABLE_ATTRIBUTES = new String[]{"parish.key"};
+    /**
+     * Атрибуты отображаемые в документах (* - все атрибуты)
+     */
+    public static final String[] DISPLAYED_ATTRIBUTES = new String[]{"*"};
 }
