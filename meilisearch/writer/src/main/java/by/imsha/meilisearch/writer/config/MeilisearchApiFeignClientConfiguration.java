@@ -7,14 +7,19 @@ import feign.Contract;
 import feign.Feign;
 import feign.codec.Decoder;
 import feign.codec.Encoder;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.cloud.openfeign.FeignClientsConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
-@AutoConfiguration
+@Configuration
 @Import(FeignClientsConfiguration.class)
 public class MeilisearchApiFeignClientConfiguration {
+
+    @Bean
+    feign.Client defaultFeignClient() {
+        return new Client.Default(null, null);
+    }
 
     @Bean
     MeilisearchApiFeignClient meilisearchApiFeignClient(final MeilisearchWriterProperties properties,

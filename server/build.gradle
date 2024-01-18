@@ -23,8 +23,18 @@ bootJar {
     }
 }
 
+dependencyManagement {
+    //немного странно, что для разрешения зависимостей дочернего проекта (meilisearch:writer) нужен импорт,
+    // но нет желания разбираться (т.к. не критично)
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudDependenciesVersion}"
+    }
+}
+
+
 dependencies {
     implementation project(':common')
+    implementation project(':meilisearch:writer')
 
     implementation 'org.springframework.boot:spring-boot-starter-tomcat'
     implementation 'org.springframework.boot:spring-boot-starter-validation'

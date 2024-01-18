@@ -3,6 +3,9 @@ package by.imsha.meilisearch.writer.feign;
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
 
+/**
+ * Интерцептор для добавления заголовка авторизации к запросам
+ */
 public class BearerAuthInterceptor implements RequestInterceptor {
 
     private static final String AUTHORIZATION_HEADER = "Authorization";

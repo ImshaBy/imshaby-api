@@ -2,8 +2,9 @@ package by.imsha.server.rest;
 
 import by.imsha.domain.EntityWebhook;
 import by.imsha.domain.dto.WebHookInfo;
+import by.imsha.rest.WebHookController;
 import by.imsha.server.TestTimeConfiguration;
-import by.imsha.server.ValidationConfiguration;
+import by.imsha.ValidationConfiguration;
 import by.imsha.service.EntityWebhookService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;

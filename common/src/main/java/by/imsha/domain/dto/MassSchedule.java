@@ -1,7 +1,7 @@
 package by.imsha.domain.dto;
 
-import by.imsha.domain.Mass;
 import by.imsha.domain.dto.mapper.MassInfoMapper;
+import by.imsha.domain.Mass;
 import by.imsha.serializers.LocalDateSerializer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;

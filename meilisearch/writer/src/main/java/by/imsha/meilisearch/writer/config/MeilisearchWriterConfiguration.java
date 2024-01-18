@@ -15,12 +15,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 /**
  * Конфигурация writer без возможности переопределения бинов
  * (т.к. это не публичная библиотека, а только наша и при необходимости - доработаем)
  */
-@AutoConfiguration
+@Configuration
 @Slf4j
 public class MeilisearchWriterConfiguration {
 

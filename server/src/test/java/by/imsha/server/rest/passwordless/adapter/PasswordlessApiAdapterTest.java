@@ -1,11 +1,12 @@
 package by.imsha.server.rest.passwordless.adapter;
 
+import by.imsha.rest.passwordless.adapter.PasswordlessApiAdapter;
 import by.imsha.server.TestTimeConfiguration;
-import by.imsha.server.ValidationConfiguration;
-import by.imsha.server.properties.PasswordlessApiProperties;
-import by.imsha.server.rest.passwordless.exception.PasswordlessApiException;
-import by.imsha.server.rest.passwordless.handler.LoginHandler;
-import by.imsha.server.rest.passwordless.handler.StartHandler;
+import by.imsha.ValidationConfiguration;
+import by.imsha.properties.PasswordlessApiProperties;
+import by.imsha.rest.passwordless.exception.PasswordlessApiException;
+import by.imsha.rest.passwordless.handler.LoginHandler;
+import by.imsha.rest.passwordless.handler.StartHandler;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
