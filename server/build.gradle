@@ -35,6 +35,7 @@ dependencyManagement {
 dependencies {
     implementation project(':common')
     implementation project(':meilisearch:writer')
+    implementation project(':meilisearch:reader')
 
     implementation 'org.springframework.boot:spring-boot-starter-tomcat'
     implementation 'org.springframework.boot:spring-boot-starter-validation'

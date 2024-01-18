@@ -5,6 +5,7 @@ import by.imsha.meilisearch.serialization.LocalDateTime2TimestampSerializer;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Builder;
+import lombok.experimental.UtilityClass;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -49,17 +50,18 @@ public record SearchRecord(
      * Атрибуты по которым возможна фильтрация
      */
     public static final String[] FILTERABLE_ATTRIBUTES = new String[]{
-            "_geo", //для сортировки по _geo
-            "parish.id", //для поиска и фасетов
-            "city.id",
-            "online",
-            "lang",
-            "rorate"
+            FilterableAttribute.DATE,
+            FilterableAttribute.GEO, //для сортировки по _geo
+            FilterableAttribute.PARISH_ID, //для фильтров и фасетов
+            FilterableAttribute.CITY_ID,
+            FilterableAttribute.ONLINE,
+            FilterableAttribute.LANG,
+            FilterableAttribute.RORATE
     };
     /**
      * Атрибуты по которым возможна сортировка
      */
-    public static final String[] SORTABLE_ATTRIBUTES = new String[]{"_geo"};
+    public static final String[] SORTABLE_ATTRIBUTES = new String[]{SortableAttribute.GEO};
     /**
      * Атрибуты использующиеся при поиске
      */
@@ -68,4 +70,21 @@ public record SearchRecord(
      * Атрибуты отображаемые в документах (* - все атрибуты)
      */
     public static final String[] DISPLAYED_ATTRIBUTES = new String[]{"*"};
+
+    @UtilityClass
+    public static class FilterableAttribute {
+        public static final String DATE = "date";
+        public static final String CITY_ID = "city.id";
+        public static final String PARISH_ID = "parish.id";
+        public static final String ONLINE = "online";
+        public static final String LANG = "lang";
+        public static final String RORATE = "RORATE";
+        public static final String GEO = "_geo";
+    }
+
+    @UtilityClass
+    public static class SortableAttribute {
+        public static final String GEO = "_geo";
+    }
+
 }

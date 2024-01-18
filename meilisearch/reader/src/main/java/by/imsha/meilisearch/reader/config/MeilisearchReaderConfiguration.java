@@ -2,8 +2,10 @@ package by.imsha.meilisearch.reader.config;
 
 import by.imsha.meilisearch.reader.DefaultMeilisearchReader;
 import by.imsha.meilisearch.reader.MeilisearchReader;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.meilisearch.sdk.Client;
 import com.meilisearch.sdk.Config;
+import com.meilisearch.sdk.exceptions.MeilisearchException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -24,10 +26,11 @@ public class MeilisearchReaderConfiguration {
     }
 
     @Bean
-    public MeilisearchReader meilisearchReader(final MeilisearchReaderProperties meilisearchReaderProperties) {
+    public MeilisearchReader meilisearchReader(final MeilisearchReaderProperties meilisearchReaderProperties,
+                                               final ObjectMapper objectMapper) throws MeilisearchException {
         final Config config = new Config(meilisearchReaderProperties.getHostUrl(), meilisearchReaderProperties.getApiKey());
         final Client client = new Client(config);
 
-        return new DefaultMeilisearchReader(client, meilisearchReaderProperties.getIndexUid());
+        return new DefaultMeilisearchReader(client, meilisearchReaderProperties.getIndexUid(), objectMapper);
     }
 }

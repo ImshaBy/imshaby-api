@@ -67,3 +67,7 @@ meilisearch:
     host-url: http://localhost:7700
     api-key: 8Yy6fAZCCIPDiQk4yay7_xrHoxconfRKC5HKhuoij8o
     index-uid: mass-index
+  reader:
+    host-url: http://localhost:7700
+    api-key: 8Yy6fAZCCIPDiQk4yay7_xrHoxconfRKC5HKhuoij8o
+    index-uid: mass-index
