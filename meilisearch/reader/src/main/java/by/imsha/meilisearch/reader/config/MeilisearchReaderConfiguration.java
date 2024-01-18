@@ -5,17 +5,15 @@ import by.imsha.meilisearch.reader.MeilisearchReader;
 import com.meilisearch.sdk.Client;
 import com.meilisearch.sdk.Config;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 /**
  * Конфигурация reader без возможности переопределения бинов
  * (т.к. это не публичная библиотека, а только наша и при необходимости - доработаем)
  */
-@AutoConfiguration
-@ConditionalOnClass(com.meilisearch.sdk.Client.class)
+@Configuration
 @Slf4j
 public class MeilisearchReaderConfiguration {
 

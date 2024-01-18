@@ -50,10 +50,11 @@ public record SearchRecord(
      */
     public static final String[] FILTERABLE_ATTRIBUTES = new String[]{
             "_geo", //для сортировки по _geo
-            "parish.name", //для поиска и фасетов
-            "city.name",
+            "parish.id", //для поиска и фасетов
+            "city.id",
             "online",
-            "lang"
+            "lang",
+            "rorate"
     };
     /**
      * Атрибуты по которым возможна сортировка
@@ -62,7 +63,7 @@ public record SearchRecord(
     /**
      * Атрибуты использующиеся при поиске
      */
-    public static final String[] SEARCHABLE_ATTRIBUTES = new String[]{"parish.key"};
+    public static final String[] SEARCHABLE_ATTRIBUTES = new String[]{};
     /**
      * Атрибуты отображаемые в документах (* - все атрибуты)
      */
