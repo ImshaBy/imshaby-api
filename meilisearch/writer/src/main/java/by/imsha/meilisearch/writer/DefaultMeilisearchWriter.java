@@ -11,6 +11,7 @@ import com.meilisearch.sdk.Index;
 import com.meilisearch.sdk.exceptions.MeilisearchApiException;
 import com.meilisearch.sdk.exceptions.MeilisearchException;
 import com.meilisearch.sdk.exceptions.MeilisearchTimeoutException;
+import com.meilisearch.sdk.model.IndexesQuery;
 import com.meilisearch.sdk.model.Settings;
 import com.meilisearch.sdk.model.SwapIndexesParams;
 import com.meilisearch.sdk.model.Task;
@@ -25,7 +26,9 @@ import java.util.stream.IntStream;
 
 import static by.imsha.meilisearch.model.SearchRecord.PRIMARY_KEY_FIELD;
 
-//TODO javadoc
+/**
+ * Стандартная реализация операций модификации индекса
+ */
 @Slf4j
 @RequiredArgsConstructor
 public class DefaultMeilisearchWriter implements MeilisearchWriter {
@@ -37,12 +40,14 @@ public class DefaultMeilisearchWriter implements MeilisearchWriter {
     private final ObjectMapper objectMapper;
 
     @Override
-    public void refreshParishData(final String parishId, final List<SearchRecord> searchRecords) {
+    public void refreshParishData(final String parishKey, final List<SearchRecord> searchRecords) {
         try {
+            final Index index = getIndex();
+
             final TaskInfo deleteDocumentsTaskInfo = meilisearchApiFeignClient.deleteDocuments(
                     indexUid,
                     DeleteDocumentsByFilterRequest.builder()
-                            .filter("parish.id = " + parishId)
+                            .filter("parish.key = " + parishKey)
                             .build()
             );
 
@@ -52,7 +57,7 @@ public class DefaultMeilisearchWriter implements MeilisearchWriter {
                         .formatted(indexUid, convertToJsonStringOrNull(deleteDocumentsTask)));
             }
 
-            addDocumentsInBatch(getIndex(), searchRecords, 100);
+            addDocumentsInBatch(index, searchRecords, 100);
         } catch (Exception exception) {
             throw new MeilisearchWriterException("Can't refresh index data. Index uid = '%s'".formatted(indexUid), exception);
         }
@@ -65,18 +70,23 @@ public class DefaultMeilisearchWriter implements MeilisearchWriter {
         addDocumentsInBatch(tempIndex, searchRecords, 100);
 
         try {
+            final Index index = getIndex();
+
             final TaskInfo swapIndexesTaskInfo = client.swapIndexes(
                     new SwapIndexesParams[]{
                             new SwapIndexesParams().setIndexes(
-                                    new String[]{tempIndex.getUid(), indexUid}
+                                    new String[]{tempIndex.getUid(), index.getUid()}
                             )
                     });
 
             final Task task = waitForTask(swapIndexesTaskInfo.getTaskUid(), 60000, 5000);
             if (task.getStatus() != TaskStatus.SUCCEEDED) {
                 throw new MeilisearchWriterException("Swap indexes failed. Index uids = ['%s', '%s']. Task = %s"
-                        .formatted(indexUid, tempIndex.getUid(), convertToJsonStringOrNull(task)));
+                        .formatted(index.getUid(), tempIndex.getUid(), convertToJsonStringOrNull(task)));
             }
+
+            //удаляем временный индекс в "бесшумном" режиме, т.к. удаление после обмена не критично
+            dropIndex(tempIndex.getUid(), true);
         } catch (MeilisearchWriterException exception) {
             throw exception;
         } catch (Exception exception) {
@@ -86,6 +96,13 @@ public class DefaultMeilisearchWriter implements MeilisearchWriter {
 
     }
 
+    /**
+     * Создать индекс с заданным uid и имеющимися настройками
+     *
+     * @param indexUid uid создаваемого индекса
+     * @return созданный индекс
+     * @throws MeilisearchException в случае ошибки создания индекса
+     */
     private Index createIndex(final String indexUid) throws MeilisearchException {
         final TaskInfo createIndexTask = client.createIndex(indexUid, PRIMARY_KEY_FIELD);
 
@@ -98,6 +115,11 @@ public class DefaultMeilisearchWriter implements MeilisearchWriter {
         return client.getIndex(indexUid);
     }
 
+    /**
+     * Получить, либо создать индекс с имеющимися настройками
+     *
+     * @return индекс
+     */
     private Index getIndex() {
         try {
             return client.getIndex(indexUid);
@@ -120,15 +142,15 @@ public class DefaultMeilisearchWriter implements MeilisearchWriter {
         }
     }
 
+    /**
+     * Удалить и создать новый временный индекс
+     *
+     * @return чистый индекс с имеющимися настройками
+     */
     private Index dropAndCreateTempIndex() {
-        final String tempIndexUid = indexUid + "Temp";
-
-        try {
-            final TaskInfo deleteTempIndexTask = client.deleteIndex(tempIndexUid);
-            waitForTask(deleteTempIndexTask.getTaskUid(), 60000, 5000);
-        } catch (Exception exception) {
-            throw new MeilisearchWriterException("Can't delete index with uid='%s'".formatted(tempIndexUid), exception);
-        }
+        final String tempIndexUid = indexUid + "-temp";
+        //удаляем индекс в обычном режиме (в случае если он не был удален - исключение)
+        dropIndex(tempIndexUid, false);
 
         try {
             return createIndex(tempIndexUid);
@@ -137,6 +159,60 @@ public class DefaultMeilisearchWriter implements MeilisearchWriter {
         }
     }
 
+    /**
+     * Удалить индекс
+     *
+     * @param indexUid Идентификатор удаляемого индекса
+     * @param silent   признак необходимости логирования исключения вместо проброса далее
+     */
+    private void dropIndex(final String indexUid, boolean silent) {
+        try {
+            final TaskInfo deleteTempIndexTaskInfo = client.deleteIndex(indexUid);
+            final Task deleteTempIndexTask = waitForTask(deleteTempIndexTaskInfo.getTaskUid(), 60000, 5000);
+
+            if (deleteTempIndexTask.getStatus() != TaskStatus.SUCCEEDED && checkIndexExists(indexUid)) {
+                if (silent) {
+                    log.info("Failed to delete index {}. Task = '{}'", indexUid, convertToJsonStringOrNull(deleteTempIndexTask));
+                } else {
+                    throw new MeilisearchWriterException("Can't delete index with uid='%s'. Task = '%s'".formatted(indexUid,
+                            convertToJsonStringOrNull(deleteTempIndexTask)));
+                }
+            }
+        } catch (Exception exception) {
+            if (silent) {
+                log.info("Can't delete index with uid='{}'", indexUid, exception);
+            } else {
+                throw new MeilisearchWriterException("Can't delete index with uid='%s'".formatted(indexUid), exception);
+            }
+        }
+    }
+
+    /**
+     * Проверить существование индекса
+     *
+     * @param indexUid идентификатор индекса
+     * @return {@code true} - если индекс существует, {@code false} - иначе
+     */
+    private boolean checkIndexExists(final String indexUid) {
+        try {
+            for (Index index : client.getIndexes(new IndexesQuery()).getResults()) {
+                if (indexUid.equals(index.getUid())) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (MeilisearchException exception) {
+            throw new MeilisearchWriterException("Can't get indexes", exception);
+        }
+    }
+
+    /**
+     * Пакетное сохранение документов
+     *
+     * @param index         индекс, в который добавляются документы
+     * @param searchRecords добавляемые документы
+     * @param batchSize     размер пакета
+     */
     private void addDocumentsInBatch(final Index index, final List<SearchRecord> searchRecords, final int batchSize) {
         final int[] taskUids = IntStream.iterate(0, i -> i < searchRecords.size(), i -> i + batchSize)
                 .mapToObj(i -> searchRecords.subList(i, Math.min(i + batchSize, searchRecords.size())))

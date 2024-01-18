@@ -1,7 +1,8 @@
 package by.imsha.server.rest;
 
+import by.imsha.rest.PingController;
 import by.imsha.server.TestTimeConfiguration;
-import by.imsha.server.ValidationConfiguration;
+import by.imsha.ValidationConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;

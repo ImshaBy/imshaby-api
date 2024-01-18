@@ -1,1 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=by.imsha.meilisearch.reader.config.MeilisearchReaderConfiguration

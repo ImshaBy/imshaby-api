@@ -6,6 +6,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+/**
+ * API для feign-клиента meilisearch
+ * <p>
+ * (реализует недостающие в sdk запросы)
+ */
 public interface MeilisearchApiFeignClient {
 
     @PostMapping("/indexes/{index_uid}/documents/delete")
