@@ -11,6 +11,9 @@ import by.imsha.domain.dto.UpdateMassInfo;
 import by.imsha.domain.dto.mapper.MassInfoMapper;
 import by.imsha.exception.InvalidDateIntervalException;
 import by.imsha.exception.ResourceNotFoundException;
+import by.imsha.meilisearch.model.SearchResultWrapper;
+import by.imsha.meilisearch.reader.MeilisearchReader;
+import by.imsha.meilisearch.reader.QueryData;
 import by.imsha.properties.ImshaProperties;
 import by.imsha.service.DefaultCityService;
 import by.imsha.service.MassService;
@@ -74,6 +77,9 @@ public class MassController {
 
     @Autowired
     private ImshaProperties imshaProperties;
+
+    @Autowired
+    private MeilisearchReader meilisearchReader;
 
     @PostMapping
     public ResponseEntity<Mass> createMass(@RequestBody final Mass mass) {
@@ -194,6 +200,30 @@ public class MassController {
         );
     }
 
+    @GetMapping("/week-indexed")
+    public ResponseEntity<MassSchedule> weekMassesFromMeilisearch(@CookieValue(value = "cityId", required = false) String cityId,
+                                                                  @DateTimeFormat(pattern = "dd-MM-yyyy")
+                                                                  @RequestParam(value = "date", required = false) LocalDate day,
+                                                                  @RequestParam(value = "parishId", required = false) String parishId,
+                                                                  @RequestParam(value = "online", required = false) Boolean online,
+                                                                  @RequestParam(value = "rorate", required = false) Boolean rorate,
+                                                                  @RequestParam(value = "massLang", required = false) String massLang,
+                                                                  //TODO show pending немного не вписывается, либо добавляем его в SearchRecord
+                                                                  @RequestHeader(name = "x-show-pending", required = false, defaultValue = "false") boolean showPending) {
+        final LocalDate fromDate = Optional.ofNullable(day).orElseGet(dateTimeProvider::today);
+
+        final SearchResultWrapper searchResult = meilisearchReader.search(QueryData.builder()
+                .dateFrom(fromDate)
+                .dateTo(fromDate.plusDays(6))
+                .cityId(cityId)
+                .parishId(parishId)
+                .lang(massLang)
+                .rorate(rorate)
+                .online(online)
+                .build());
+
+        //TODO конвертировать в MassSchedule
+    }
 
     @GetMapping("/week")
     public ResponseEntity<MassSchedule> weekMasses(@CookieValue(value = "cityId", required = false) String cityId,
