@@ -15,14 +15,6 @@ repositories {
     mavenCentral()
 }
 
-bootJar {
-    manifest {
-        attributes(
-                'Add-Opens': 'java.base/java.nio.charset'
-        )
-    }
-}
-
 dependencyManagement {
     //немного странно, что для разрешения зависимостей дочернего проекта (meilisearch:writer) нужен импорт,
     // но нет желания разбираться (т.к. не критично)
