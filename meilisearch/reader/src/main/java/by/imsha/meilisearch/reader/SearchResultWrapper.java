@@ -1,5 +1,6 @@
-package by.imsha.meilisearch.model;
+package by.imsha.meilisearch.reader;
 
+import by.imsha.meilisearch.model.SearchResultItem;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.List;
