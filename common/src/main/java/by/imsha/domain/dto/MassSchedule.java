@@ -1,7 +1,7 @@
 package by.imsha.domain.dto;
 
-import by.imsha.domain.dto.mapper.MassInfoMapper;
 import by.imsha.domain.Mass;
+import by.imsha.domain.dto.mapper.MassInfoMapper;
 import by.imsha.serializers.LocalDateSerializer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -23,6 +23,7 @@ import java.util.function.Predicate;
  */
 public class MassSchedule implements Serializable {
 
+    @Getter
     @JsonSerialize(using = LocalDateSerializer.class)
     private LocalDate startWeekDate;
 
@@ -30,50 +31,44 @@ public class MassSchedule implements Serializable {
     @Setter
     private MassNav nav;
 
+    /**
+     * Флаг установко которого гарантирует валидность месс (по датам начала и конца)
+     * <p>
+     * введен для добавление отдельных ветвей логики, при переходе на meilisearch
+     */
+    @JsonIgnore
+    private final boolean onlyValidMasses;
+
+    @Getter
+    private List<MassDay> schedule;
+
     public MassSchedule(LocalDate startDate) {
-        this.startWeekDate = startDate;
-        weekMasses = new HashMap<WeekDayTimeKey, List<Mass>>();
-        massesByDay = new HashMap<DayOfWeek, Map<LocalTime, List<MassInfo>>>();
-        schedule = new ArrayList<MassDay>();
+        this(startDate, false);
     }
 
+    public MassSchedule(LocalDate startDate, boolean onlyValidMasses) {
+        this.startWeekDate = startDate;
+        weekMasses = new HashMap<>();
+        massesByDay = new HashMap<>();
+        schedule = new ArrayList<>();
+        this.onlyValidMasses = onlyValidMasses;
+    }
+    @Getter
     @JsonIgnore
     private Map<WeekDayTimeKey, List<Mass>> weekMasses;
 
-    private List<MassDay> schedule;
-
-    public List<MassDay> getSchedule() {
-        return schedule;
-    }
-
-    public void setSchedule(List<MassDay> schedule) {
-        this.schedule = schedule;
-    }
-
+    @Getter
     @JsonIgnore
     private Map<DayOfWeek, Map<LocalTime, List<MassInfo>>> massesByDay;
 
-    public Map<DayOfWeek, Map<LocalTime, List<MassInfo>>> getMassesByDay() {
-        return massesByDay;
-    }
-
-    public LocalDate getStartWeekDate() {
-        return startWeekDate;
-    }
-
-    public Map<WeekDayTimeKey, List<Mass>> getWeekMasses() {
-        return weekMasses;
-    }
-
     public void populateContainers(Mass mass, DayOfWeek dayOfWeek, LocalTime time) {
-        // addToWeekMasses(mass, dayOfWeek, time);
         addToMassesByDay(mass, dayOfWeek, time);
     }
 
-
-    private void addToWeekMasses(Mass mass, DayOfWeek dayOfWeek, LocalTime time) {
-        WeekDayTimeKey weekTimeKey = new WeekDayTimeKey(dayOfWeek, time);
-        weekMasses.computeIfAbsent(weekTimeKey, v -> new ArrayList<Mass>()).add(mass);
+    public void populateContainers(final MassInfo massInfo, final DayOfWeek dayOfWeek, final LocalTime time) {
+        massesByDay.computeIfAbsent(dayOfWeek, v -> new HashMap<>())
+                .computeIfAbsent(time, v -> new ArrayList<>())
+                .add(massInfo);
     }
 
     private void addToMassesByDay(Mass mass, DayOfWeek dayOfWeek, LocalTime time) {
@@ -96,31 +91,40 @@ public class MassSchedule implements Serializable {
 
     private void createSchedule(LocalDate startDate) {
         int counter = 0;
+
         while (counter < 7) {
-            MassDay massDay = null;
             Map<LocalTime, List<MassInfo>> massHours = getMassesByDay().get(startDate.getDayOfWeek());
+
             if (massHours != null && massHours.size() > 0) {
-                massDay = new MassDay(startDate);
-                massDay.setMassHours(new ArrayList<MassDay.MassHour>(massHours.size()));
-                for (Map.Entry<LocalTime, List<MassInfo>> massHourEntry : massHours.entrySet()) {
-                    LocalTime hour = massHourEntry.getKey();
-                    List<MassInfo> data = massHourEntry.getValue();
-                    LocalDate date = massDay.getDate();
-                    Predicate<MassInfo> massInfoPredicate = massInfo ->
-                    {
-                        boolean result = false;
-                        if (massInfo.getStartDate() != null) {
-                            result = massInfo.getStartDate().isAfter(date);
+                final MassDay massDay = new MassDay(startDate);
+                massDay.setMassHours(new ArrayList<>(massHours.size()));
+
+                if (onlyValidMasses) {
+                    //
+                    massHours.forEach((time, massInfos) ->
+                            massDay.getMassHours().add(new MassDay.MassHour(time, massInfos)));
+                } else {
+
+                    for (Map.Entry<LocalTime, List<MassInfo>> massHourEntry : massHours.entrySet()) {
+                        LocalTime hour = massHourEntry.getKey();
+                        List<MassInfo> data = massHourEntry.getValue();
+                        LocalDate date = massDay.getDate();
+                        Predicate<MassInfo> massInfoPredicate = massInfo ->
+                        {
+                            boolean result = false;
+                            if (massInfo.getStartDate() != null) {
+                                result = massInfo.getStartDate().isAfter(date);
+                            }
+                            if (massInfo.getEndDate() != null && !result) {
+                                result = massInfo.getEndDate().isBefore(date);
+                            }
+                            return result;
+                        };
+                        data.removeIf(massInfoPredicate);
+                        if (data.size() > 0) {
+                            MassDay.MassHour massHour = new MassDay.MassHour(hour, data);
+                            massDay.getMassHours().add(massHour);
                         }
-                        if (massInfo.getEndDate() != null && !result) {
-                            result = massInfo.getEndDate().isBefore(date);
-                        }
-                        return result;
-                    };
-                    data.removeIf(massInfoPredicate);
-                    if (data.size() > 0) {
-                        MassDay.MassHour massHour = new MassDay.MassHour(hour, data);
-                        massDay.getMassHours().add(massHour);
                     }
                 }
                 if (massDay.getMassHours().size() > 0) {
