@@ -1,11 +1,12 @@
 package by.imsha.server.rest;
 
+import by.imsha.ValidationConfiguration;
 import by.imsha.domain.LocalizedMass;
 import by.imsha.domain.Mass;
+import by.imsha.meilisearch.reader.MeilisearchReader;
+import by.imsha.properties.ImshaProperties;
 import by.imsha.rest.MassController;
 import by.imsha.server.TestTimeConfiguration;
-import by.imsha.ValidationConfiguration;
-import by.imsha.properties.ImshaProperties;
 import by.imsha.service.CityService;
 import by.imsha.service.DefaultCityService;
 import by.imsha.service.MassService;
@@ -58,6 +59,8 @@ class MassControllerRetrieveMassTest {
     private ImshaProperties imshaProperties;
     @MockBean
     private DefaultCityService defaultCityService;
+    @MockBean
+    private MeilisearchReader meilisearchReader;
 
     @Test
     void whenMassNotFound_then404() throws Exception {

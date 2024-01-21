@@ -51,7 +51,7 @@ public class DefaultMeilisearchWriter implements MeilisearchWriter {
                             .build()
             );
 
-            final Task deleteDocumentsTask = waitForTask(deleteDocumentsTaskInfo.getTaskUid(), 60000, 5000);
+            final Task deleteDocumentsTask = waitForTask(deleteDocumentsTaskInfo.getTaskUid(), 60000, 1000);
             if (deleteDocumentsTask.getStatus() != TaskStatus.SUCCEEDED) {
                 throw new MeilisearchWriterException("Delete documents failed. Index uid = '%s'. Task = %s"
                         .formatted(indexUid, convertToJsonStringOrNull(deleteDocumentsTask)));
@@ -79,7 +79,7 @@ public class DefaultMeilisearchWriter implements MeilisearchWriter {
                             )
                     });
 
-            final Task task = waitForTask(swapIndexesTaskInfo.getTaskUid(), 60000, 5000);
+            final Task task = waitForTask(swapIndexesTaskInfo.getTaskUid(), 60000, 1000);
             if (task.getStatus() != TaskStatus.SUCCEEDED) {
                 throw new MeilisearchWriterException("Swap indexes failed. Index uids = ['%s', '%s']. Task = %s"
                         .formatted(index.getUid(), tempIndex.getUid(), convertToJsonStringOrNull(task)));
@@ -168,7 +168,7 @@ public class DefaultMeilisearchWriter implements MeilisearchWriter {
     private void dropIndex(final String indexUid, boolean silent) {
         try {
             final TaskInfo deleteTempIndexTaskInfo = client.deleteIndex(indexUid);
-            final Task deleteTempIndexTask = waitForTask(deleteTempIndexTaskInfo.getTaskUid(), 60000, 5000);
+            final Task deleteTempIndexTask = waitForTask(deleteTempIndexTaskInfo.getTaskUid(), 60000, 1000);
 
             if (deleteTempIndexTask.getStatus() != TaskStatus.SUCCEEDED && checkIndexExists(indexUid)) {
                 if (silent) {

@@ -1,6 +1,6 @@
 package by.imsha.meilisearch.reader;
 
-import by.imsha.meilisearch.model.SearchResultWrapper;
+import by.imsha.meilisearch.model.SearchResultItem;
 import by.imsha.meilisearch.reader.exception.MeilisearchReaderException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,6 +10,9 @@ import com.meilisearch.sdk.SearchRequest;
 import com.meilisearch.sdk.exceptions.MeilisearchException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static by.imsha.meilisearch.model.SearchRecord.FilterableAttribute.CITY_ID;
 import static by.imsha.meilisearch.model.SearchRecord.FilterableAttribute.LANG;
@@ -33,13 +36,48 @@ public class DefaultMeilisearchReader implements MeilisearchReader {
     }
 
     @Override
-    public SearchResultWrapper search(final QueryData queryData) {
-        final SearchRequest searchRequest = SearchRequest.builder()
+    public SearchResult search(final QueryData queryData) {
+        final int limit = DEFAULT_LIMIT;
+        final SearchRequest.SearchRequestBuilder searchRequestTemplate = SearchRequest.builder()
                 .filterArray(queryData.toFilterArray())
                 .facets(new String[]{CITY_ID, PARISH_ID, ONLINE, LANG, RORATE})
-                .limit(DEFAULT_LIMIT)
-                .build();
+                .limit(limit);
 
+        //загружаем все страницы
+        searchRequestTemplate.offset(0);
+        final SearchResultWrapper resultWrapper = search(searchRequestTemplate.build());
+
+        int limitUsed = limit;
+        int estimatedHits = resultWrapper.estimatedTotalHits();
+
+        if (limitUsed < estimatedHits) {
+            //если НЕ ВСЕ документы были загружены в первом запросе
+            searchRequestTemplate.facets(null);//для следующих (после первой) загрузок не нужны распределения
+            final List<SearchResultItem> allHits = new ArrayList<>(estimatedHits);
+            allHits.addAll(resultWrapper.hits());//результат первого запроса
+
+            do {
+                searchRequestTemplate.offset(limitUsed);
+                final SearchResultWrapper additionalSearchResultWrapper = search(searchRequestTemplate.build());
+                allHits.addAll(additionalSearchResultWrapper.hits());
+
+                limitUsed += limit;
+            } while (limitUsed < estimatedHits);
+
+            return SearchResult.builder()
+                    .hits(allHits)
+                    .facetDistribution(resultWrapper.facetDistribution())
+                    .build();
+        } else {
+            //если все документы были загружены в первом запросе
+            return SearchResult.builder()
+                    .hits(resultWrapper.hits())
+                    .facetDistribution(resultWrapper.facetDistribution())
+                    .build();
+        }
+    }
+
+    private SearchResultWrapper search(final SearchRequest searchRequest) {
         try {
             //результат поиска (json, т.к. sdk не подходит со своей реализацией)
             final String rawSearchResult = index.rawSearch(searchRequest);
