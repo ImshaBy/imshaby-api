@@ -11,9 +11,10 @@ import by.imsha.domain.dto.UpdateMassInfo;
 import by.imsha.domain.dto.mapper.MassInfoMapper;
 import by.imsha.exception.InvalidDateIntervalException;
 import by.imsha.exception.ResourceNotFoundException;
-import by.imsha.meilisearch.model.SearchResultWrapper;
+import by.imsha.meilisearch.model.SearchResultItem;
 import by.imsha.meilisearch.reader.MeilisearchReader;
 import by.imsha.meilisearch.reader.QueryData;
+import by.imsha.meilisearch.reader.SearchResult;
 import by.imsha.properties.ImshaProperties;
 import by.imsha.service.DefaultCityService;
 import by.imsha.service.MassService;
@@ -43,6 +44,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -203,18 +205,22 @@ public class MassController {
     @GetMapping("/week-indexed")
     public ResponseEntity<MassSchedule> weekMassesFromMeilisearch(@CookieValue(value = "cityId", required = false) String cityId,
                                                                   @DateTimeFormat(pattern = "dd-MM-yyyy")
-                                                                  @RequestParam(value = "date", required = false) LocalDate day,
+                                                                  @RequestParam(value = "date", required = false) LocalDate date,
                                                                   @RequestParam(value = "parishId", required = false) String parishId,
-                                                                  @RequestParam(value = "online", required = false) Boolean online,
-                                                                  @RequestParam(value = "rorate", required = false) Boolean rorate,
+                                                                  @RequestParam(value = "online", defaultValue = "false") boolean onlineOnly,
+                                                                  @RequestParam(value = "rorate", defaultValue = "false") boolean rorateOnly,
                                                                   @RequestParam(value = "massLang", required = false) String massLang,
                                                                   //TODO show pending немного не вписывается, либо добавляем его в SearchRecord
                                                                   @RequestHeader(name = "x-show-pending", required = false, defaultValue = "false") boolean showPending) {
-        final LocalDate fromDate = Optional.ofNullable(day).orElseGet(dateTimeProvider::today);
+        final LocalDate dateFrom = Optional.ofNullable(date).orElseGet(dateTimeProvider::today);
+        //за 7 дней (неделю), включая дату dateFrom
+        final LocalDate dateTo = dateFrom.plusDays(6);
+        final Boolean rorate = rorateOnly ? true : null;
+        final Boolean online = onlineOnly ? true : null;
 
-        final SearchResultWrapper searchResult = meilisearchReader.search(QueryData.builder()
-                .dateFrom(fromDate)
-                .dateTo(fromDate.plusDays(6))
+        final SearchResult searchResult = meilisearchReader.search(QueryData.builder()
+                .dateFrom(dateFrom)
+                .dateTo(dateTo)
                 .cityId(cityId)
                 .parishId(parishId)
                 .lang(massLang)
@@ -222,6 +228,10 @@ public class MassController {
                 .online(online)
                 .build());
 
+        final List<SearchResultItem> resultItems = searchResult.hits();
+        final Map<String, Map<String, Integer>> facetDistribution = searchResult.facetDistribution();
+
+        return ResponseEntity.ok().body(null);
         //TODO конвертировать в MassSchedule
     }
 

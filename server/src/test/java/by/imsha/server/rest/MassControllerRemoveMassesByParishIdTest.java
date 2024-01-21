@@ -1,11 +1,12 @@
 package by.imsha.server.rest;
 
+import by.imsha.ValidationConfiguration;
 import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
+import by.imsha.meilisearch.reader.MeilisearchReader;
+import by.imsha.properties.ImshaProperties;
 import by.imsha.rest.MassController;
 import by.imsha.server.TestTimeConfiguration;
-import by.imsha.ValidationConfiguration;
-import by.imsha.properties.ImshaProperties;
 import by.imsha.service.CityService;
 import by.imsha.service.DefaultCityService;
 import by.imsha.service.MassService;
@@ -56,6 +57,9 @@ class MassControllerRemoveMassesByParishIdTest {
     private ImshaProperties imshaProperties;
     @MockBean
     private DefaultCityService defaultCityService;
+    @MockBean
+    private MeilisearchReader meilisearchReader;
+
 
     @Test
     void whenMassIdNotSpecified_then400() throws Exception {
