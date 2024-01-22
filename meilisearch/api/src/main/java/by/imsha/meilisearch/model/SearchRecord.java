@@ -2,6 +2,7 @@ package by.imsha.meilisearch.model;
 
 import by.imsha.meilisearch.serialization.LocalDate2TimestampSerializer;
 import by.imsha.meilisearch.serialization.LocalDateTime2TimestampSerializer;
+import by.imsha.meilisearch.serialization.LocalTime2SecondsSerializer;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Builder;
@@ -9,27 +10,33 @@ import lombok.experimental.UtilityClass;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 /**
  * Запись в индексе (используется при сохранении в индекс)
  *
- * @param recordId   идентификатор записи
- * @param time       дата и время мессы
- * @param date       дата мессы
- * @param parish     данные парафии
- * @param notes      заметки (доп.инфо)
- * @param lang       язык мессы
- * @param online     признак трансляции мессы в онлайне
- * @param rorate     признак рорат
- * @param city       данные города
- * @param needUpdate признак необходимости обновления данных
- * @param geo        данные геолокации парафии
+ * @param recordId         идентификатор записи
+ * @param massId           идентификатор мессы
+ * @param duration         длительность мессы
+ * @param time             дата и время мессы
+ * @param date             дата мессы
+ * @param parish           данные парафии
+ * @param notes            заметки (доп.инфо)
+ * @param lang             язык мессы
+ * @param online           признак трансляции мессы в онлайне
+ * @param rorate           признак рорат
+ * @param city             данные города
+ * @param needUpdate       признак необходимости обновления данных
+ * @param geo              данные геолокации парафии
+ * @param lastModifiedDate дата и время последней модификации
  */
 @Builder
 public record SearchRecord(
         String recordId,
-        @JsonSerialize(using = LocalDateTime2TimestampSerializer.class)
-        LocalDateTime time,
+        String massId,
+        Integer duration,
+        @JsonSerialize(using = LocalTime2SecondsSerializer.class)
+        LocalTime time,
         @JsonSerialize(using = LocalDate2TimestampSerializer.class)
         LocalDate date,
         Parish parish,
@@ -39,6 +46,8 @@ public record SearchRecord(
         Boolean rorate,
         City city,
         Boolean needUpdate,
+        @JsonSerialize(using = LocalDateTime2TimestampSerializer.class)
+        LocalDateTime lastModifiedDate,
         @JsonProperty("_geo")
         Geo geo) {
 

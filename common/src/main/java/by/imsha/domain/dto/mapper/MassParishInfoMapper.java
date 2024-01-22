@@ -15,7 +15,7 @@ import static by.imsha.utils.UserLocaleHolder.getUserLocale;
 /**
  * @author Alena Misan
  */
-@Mapper(uses = {LocationInfoMapper.class})
+@Mapper(uses = LocationInfoMapper.class, componentModel = "spring")
 public interface MassParishInfoMapper {
     MassParishInfoMapper MAPPER = Mappers.getMapper(MassParishInfoMapper.class);
 

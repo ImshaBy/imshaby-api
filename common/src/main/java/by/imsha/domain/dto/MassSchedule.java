@@ -53,8 +53,10 @@ public class MassSchedule implements Serializable {
         schedule = new ArrayList<>();
         this.onlyValidMasses = onlyValidMasses;
     }
+
     @Getter
     @JsonIgnore
+    @Deprecated(forRemoval = true)
     private Map<WeekDayTimeKey, List<Mass>> weekMasses;
 
     @Getter
@@ -62,19 +64,13 @@ public class MassSchedule implements Serializable {
     private Map<DayOfWeek, Map<LocalTime, List<MassInfo>>> massesByDay;
 
     public void populateContainers(Mass mass, DayOfWeek dayOfWeek, LocalTime time) {
-        addToMassesByDay(mass, dayOfWeek, time);
+        populateContainers(MassInfoMapper.MAPPER.toMassInfo(mass), dayOfWeek, time);
     }
 
     public void populateContainers(final MassInfo massInfo, final DayOfWeek dayOfWeek, final LocalTime time) {
         massesByDay.computeIfAbsent(dayOfWeek, v -> new HashMap<>())
                 .computeIfAbsent(time, v -> new ArrayList<>())
                 .add(massInfo);
-    }
-
-    private void addToMassesByDay(Mass mass, DayOfWeek dayOfWeek, LocalTime time) {
-
-        massesByDay.computeIfAbsent(dayOfWeek, v -> new HashMap<LocalTime, List<MassInfo>>()).
-                computeIfAbsent(time, v -> new ArrayList<MassInfo>()).add(MassInfoMapper.MAPPER.toMassInfo(mass));
     }
 
 
@@ -139,6 +135,7 @@ public class MassSchedule implements Serializable {
     }
 
 
+    @Deprecated(forRemoval = true)
     private class WeekDayTimeKey {
         private DayOfWeek weekDay;
         private LocalTime time;
