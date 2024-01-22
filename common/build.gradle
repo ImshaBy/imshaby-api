@@ -35,6 +35,7 @@ dependencies {
     api 'org.apache.commons:commons-lang3'
     api "com.github.rutledgepaulv:rest-query-engine:${restQueryEngineVersion}"
     api "com.google.guava:guava:${guavaVersion}"
+    api project(':meilisearch:api')
 
 
     implementation 'org.projectlombok:lombok'
