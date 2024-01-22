@@ -8,6 +8,7 @@ import by.imsha.domain.dto.MassFilterValue;
 import by.imsha.domain.dto.MassInfo;
 import by.imsha.domain.dto.MassNav;
 import by.imsha.domain.dto.MassSchedule;
+import by.imsha.meilisearch.model.SearchRecord;
 import by.imsha.repository.MassRepository;
 import by.imsha.repository.ParishRepository;
 import by.imsha.utils.ServiceUtils;
@@ -38,8 +39,10 @@ import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -305,6 +308,104 @@ public class MassService {
         return oldestMass;
     }
 
+    public MassNav buildMassNavigationByFacetDistribution(final String cityId, final String parishId,
+                                                                                   final boolean online, final String massLang,
+                                                                                   final boolean rorate,
+                                                          final Map<String, Map<String, Integer>> facetDistribution) {
+        //--- Построение selected на основании переданных фильтров
+        final TreeMap<String, MassFilterValue> selectedValuesMap = new TreeMap<>();
+
+        if (StringUtils.isNotEmpty(cityId)) {
+            selectedValuesMap.put(MassFilterType.CITY.getName(), MassFilterValue.builder().type(MassFilterType.CITY)
+                    .name(MassFilterType.CITY.getName()).value(cityId).build());
+        }
+        if (StringUtils.isNotEmpty(parishId)) {
+            selectedValuesMap.put(MassFilterType.PARISH.getName(), MassFilterValue.builder().type(MassFilterType.PARISH)
+                    .name(MassFilterType.PARISH.getName()).value(parishId).build());
+        }
+        selectedValuesMap.put(MassFilterType.ONLINE.getName(), MassFilterValue.builder().type(MassFilterType.ONLINE)
+                .name(MassFilterType.ONLINE.getName()).value(Boolean.toString(online)).build());
+        if (StringUtils.isNotEmpty(massLang)) {
+            selectedValuesMap.put(MassFilterType.LANG.getName(), MassFilterValue.builder().type(MassFilterType.LANG)
+                    .name(MassFilterType.LANG.getName()).value(massLang).build());
+        }
+        selectedValuesMap.put(MassFilterType.RORATE.getName(), MassFilterValue.builder().type(MassFilterType.RORATE)
+                .name(MassFilterType.RORATE.getName()).value(String.valueOf(rorate)).build());
+
+        //--- Построение guided на основании полученных из индекса facet distribution
+        // FIXME и запросов(кэшированных) , тут можно заменить на запросы (2 запроса) facet distribution
+        //  по городам (1) и парафиям города (2)
+        final Set<MassFilterValue> massFilterValues = new HashSet<>();
+
+        facetDistribution.getOrDefault(SearchRecord.FilterableAttribute.ONLINE, Collections.emptyMap())
+                .keySet()
+                .forEach(value ->
+                        massFilterValues.add(MassFilterValue.builder()
+                                .type(MassFilterType.ONLINE)
+                                .name(value)
+                                .value(value)
+                                .build())
+                );
+
+        facetDistribution.getOrDefault(SearchRecord.FilterableAttribute.LANG, Collections.emptyMap())
+                .keySet()
+                .forEach(value ->
+                        massFilterValues.add(MassFilterValue.builder()
+                                .type(MassFilterType.LANG)
+                                .name(value)
+                                .value(value)
+                                .build())
+                );
+
+        facetDistribution.getOrDefault(SearchRecord.FilterableAttribute.RORATE, Collections.emptyMap())
+                .keySet()
+                .forEach(value ->
+                        massFilterValues.add(MassFilterValue.builder()
+                                .type(MassFilterType.RORATE)
+                                .name(value)
+                                .value(value)
+                                .build())
+                );
+
+        //TODO здесь не facet`ы , а отдельный запрос
+        //всегда должны быть доступны все парафии выбранного города (а не только одна выбранная)
+        final List<MassFilterValue> parishMassFilterValues = getAllApprovedParishesByCityAsMassFilterValues(cityId);
+        massFilterValues.addAll(parishMassFilterValues);
+
+        // TODO to consider contry or other region (no need to return all cities in the system)
+
+        List<City> cities = cityService.getAllCities();
+        Set<String> cityWithApprovedParishesIds = cityService.getCityWithApprovedParishesIds();
+
+        final String locale = getUserLocale().orElse(null);
+
+        //TODO здесь не facet`ы , а отдельный запрос
+        List<MassFilterValue> cityFilterValues = cities.stream()
+                .filter(city -> cityWithApprovedParishesIds.contains(city.getId()))
+                .map(city -> MassFilterValue.builder()
+                        .name(getLocalizedCityName(city, locale))
+                        .value(city.getId())
+                        .type(MassFilterType.CITY)
+                        .build())
+                .toList();
+        massFilterValues.addAll(cityFilterValues);
+
+        //сортируем значения на основании локали пользователя
+        final Comparator<MassFilterValue> comparator = COMPARATOR_CACHE.computeIfAbsent(locale, key -> {
+            final Collator collator = Collator.getInstance(new Locale(key));
+            return (first, second) -> collator.compare(first.getName().toLowerCase(), second.getName().toLowerCase());
+        });
+
+        final TreeMap<String, Set<MassFilterValue>> guidedValuesMap = massFilterValues.stream().collect(
+                Collectors.groupingBy(
+                        massFilterValue -> massFilterValue.getType().getName(),
+                        TreeMap::new,
+                        Collectors.toCollection(() -> new TreeSet<>(comparator))
+                )
+        );
+
+        return new MassNav(selectedValuesMap, guidedValuesMap);
+    }
 
     public MassNav buildMassNavigation(MassSchedule massSchedule, String cityId,
                                        String parishId, String online, String massLang,

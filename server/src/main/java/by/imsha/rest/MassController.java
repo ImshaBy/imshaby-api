@@ -246,6 +246,8 @@ public class MassController {
             massInfo.setLangCode(resultItem.lang());
             massInfo.setParish(
                     MassParishInfoMapper.MAPPER.toMassParishInfo(
+                            //здесь нужно кэшировать данные парафий (достать кэшированную все за раз),
+                            // но вроде и так getParish кэшированный
                             parishService.getParish(resultItem.parish().id()).get()
                     )
             );
@@ -264,7 +266,10 @@ public class MassController {
 
         massSchedule.createSchedule();
 
-        //TODO NAV
+        final MassNav massNav = massService.buildMassNavigationByFacetDistribution(cityId, parishId, onlineOnly,
+                massLang, rorateOnly, facetDistribution);
+
+        massSchedule.setNav(massNav);
 
         return ResponseEntity.ok().body(massSchedule);
     }
