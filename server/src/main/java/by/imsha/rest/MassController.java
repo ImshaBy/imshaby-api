@@ -3,12 +3,14 @@ package by.imsha.rest;
 import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
 import by.imsha.domain.dto.MassDay;
+import by.imsha.domain.dto.MassInfo;
 import by.imsha.domain.dto.MassNav;
 import by.imsha.domain.dto.MassSchedule;
 import by.imsha.domain.dto.UpdateEntitiesInfo;
 import by.imsha.domain.dto.UpdateEntityInfo;
 import by.imsha.domain.dto.UpdateMassInfo;
 import by.imsha.domain.dto.mapper.MassInfoMapper;
+import by.imsha.domain.dto.mapper.MassParishInfoMapper;
 import by.imsha.exception.InvalidDateIntervalException;
 import by.imsha.exception.ResourceNotFoundException;
 import by.imsha.meilisearch.model.SearchResultItem;
@@ -40,6 +42,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -231,8 +234,39 @@ public class MassController {
         final List<SearchResultItem> resultItems = searchResult.hits();
         final Map<String, Map<String, Integer>> facetDistribution = searchResult.facetDistribution();
 
-        return ResponseEntity.ok().body(null);
-        //TODO конвертировать в MassSchedule
+
+        final MassSchedule massSchedule = new MassSchedule(dateFrom, true);
+
+        //TODO вынести в маппер
+        resultItems.forEach(resultItem -> {
+            final DayOfWeek dayOfWeek = resultItem.date().getDayOfWeek();
+
+            final MassInfo massInfo = new MassInfo();
+            massInfo.setId(resultItem.massId());
+            massInfo.setLangCode(resultItem.lang());
+            massInfo.setParish(
+                    MassParishInfoMapper.MAPPER.toMassParishInfo(
+                            parishService.getParish(resultItem.parish().id()).get()
+                    )
+            );
+            massInfo.setDuration(resultItem.duration());
+            massInfo.setInfo(resultItem.info());//?? будем ли хранить для каждой локали?
+            massInfo.setDays(new int[]{dayOfWeek.getValue()});//берем день недели из текущей date
+            massInfo.setOnline(resultItem.online());
+            massInfo.setRorate(resultItem.rorate());
+            massInfo.setEndDate(resultItem.date());//дата одинаковая (нужно выяснить не скажется ли это на фронте)
+            massInfo.setStartDate(resultItem.date());//дата одинаковая (нужно выяснить не скажется ли это на фронте)
+            massInfo.setLastModifiedDate(resultItem.lastModifiedDate());
+
+            massSchedule.populateContainers(massInfo, dayOfWeek, resultItem.time());
+        });
+
+
+        massSchedule.createSchedule();
+
+        //TODO NAV
+
+        return ResponseEntity.ok().body(massSchedule);
     }
 
     @GetMapping("/week")
