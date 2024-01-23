@@ -8,7 +8,7 @@ import org.mapstruct.factory.Mappers;
 /**
  * @author Alena Misan
  */
-@Mapper
+@Mapper(componentModel = "spring")
 public interface LocationInfoMapper {
     LocationInfoMapper MAPPER = Mappers.getMapper(LocationInfoMapper.class);
 

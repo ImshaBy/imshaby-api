@@ -237,7 +237,7 @@ public class MassController {
 
         final MassSchedule massSchedule = new MassSchedule(dateFrom, true);
 
-        //TODO вынести в маппер
+        //TODO вынести в маппер SearchResultMapper
         resultItems.forEach(resultItem -> {
             final DayOfWeek dayOfWeek = resultItem.date().getDayOfWeek();
 
@@ -256,8 +256,6 @@ public class MassController {
             massInfo.setDays(new int[]{dayOfWeek.getValue()});//берем день недели из текущей date
             massInfo.setOnline(resultItem.online());
             massInfo.setRorate(resultItem.rorate());
-            massInfo.setEndDate(resultItem.date());//дата одинаковая (нужно выяснить не скажется ли это на фронте)
-            massInfo.setStartDate(resultItem.date());//дата одинаковая (нужно выяснить не скажется ли это на фронте)
             massInfo.setLastModifiedDate(resultItem.lastModifiedDate());
 
             massSchedule.populateContainers(massInfo, dayOfWeek, resultItem.time());
