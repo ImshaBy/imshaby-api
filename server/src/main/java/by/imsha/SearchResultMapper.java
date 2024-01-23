@@ -5,10 +5,10 @@ import by.imsha.meilisearch.reader.SearchResult;
 import org.mapstruct.Mapper;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 
-@Mapper(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
-        componentModel = "spring")
+//@Mapper(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
+//        componentModel = "spring")
 public interface SearchResultMapper {
 
-    TODO нужно самостоятельно составить такой объект, не используя существующие фабрики
-    MassSchedule toMassSchedule(SearchResult searchResult);
+//    TODO нужно самостоятельно составить такой объект, не используя существующие фабрики
+//    MassSchedule toMassSchedule(SearchResult searchResult);
 }
