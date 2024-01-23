@@ -22,7 +22,7 @@ public class TimingFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, responseWrapper);
         TimingService.stopTime("app");
 
-        responseWrapper.addHeader("Server-Timing", TimingService.getResultServerTiming());
+        responseWrapper.addHeader("Server-Timing", TimingService.getResultServerTimingAndRemove());
         responseWrapper.copyBodyToResponse();
     }
 }

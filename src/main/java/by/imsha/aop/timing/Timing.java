@@ -8,4 +8,15 @@ import lombok.Data;
 public class Timing {
     private Long time;
     private Integer level;
+
+    public void increaseLevel (){
+        level = level + 1;
+    }
+
+    public void decreaseLevel (){
+        level = level - 1;
+        if (level == 0) {
+            time = System.currentTimeMillis() - time;
+        }
+    }
 }
