@@ -40,12 +40,12 @@ public record SearchRecord(
         @JsonSerialize(using = LocalDate2TimestampSerializer.class)
         LocalDate date,
         Parish parish,
+        //TODO пока что у нас только в BY заметки
         String notes,
         String lang,
         Boolean online,
         Boolean rorate,
         City city,
-        Boolean needUpdate,
         @JsonSerialize(using = LocalDateTime2TimestampSerializer.class)
         LocalDateTime lastModifiedDate,
         @JsonProperty("_geo")

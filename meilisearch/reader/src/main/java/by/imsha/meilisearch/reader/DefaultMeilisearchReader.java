@@ -14,10 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.ArrayList;
 import java.util.List;
 
-import static by.imsha.meilisearch.model.SearchRecord.FilterableAttribute.CITY_ID;
 import static by.imsha.meilisearch.model.SearchRecord.FilterableAttribute.LANG;
 import static by.imsha.meilisearch.model.SearchRecord.FilterableAttribute.ONLINE;
-import static by.imsha.meilisearch.model.SearchRecord.FilterableAttribute.PARISH_ID;
 import static by.imsha.meilisearch.model.SearchRecord.FilterableAttribute.RORATE;
 
 @Slf4j
@@ -40,7 +38,7 @@ public class DefaultMeilisearchReader implements MeilisearchReader {
         final int limit = DEFAULT_LIMIT;
         final SearchRequest.SearchRequestBuilder searchRequestTemplate = SearchRequest.builder()
                 .filterArray(queryData.toFilterArray())
-                .facets(new String[]{CITY_ID, PARISH_ID, ONLINE, LANG, RORATE})
+                .facets(new String[]{ONLINE, LANG, RORATE})
                 .limit(limit);
 
         //загружаем все страницы

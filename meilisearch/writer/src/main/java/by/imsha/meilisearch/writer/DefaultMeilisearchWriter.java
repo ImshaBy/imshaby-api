@@ -40,14 +40,14 @@ public class DefaultMeilisearchWriter implements MeilisearchWriter {
     private final ObjectMapper objectMapper;
 
     @Override
-    public void refreshParishData(final String parishKey, final List<SearchRecord> searchRecords) {
+    public void refreshParishData(final String parishId, final List<SearchRecord> searchRecords) {
         try {
             final Index index = getIndex();
 
             final TaskInfo deleteDocumentsTaskInfo = meilisearchApiFeignClient.deleteDocuments(
                     indexUid,
                     DeleteDocumentsByFilterRequest.builder()
-                            .filter("parish.key = " + parishKey)
+                            .filter("parish.id = " + parishId)
                             .build()
             );
 
