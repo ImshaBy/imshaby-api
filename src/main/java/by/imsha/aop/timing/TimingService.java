@@ -5,11 +5,11 @@ import java.util.Map;
 
 public class TimingService {
 
-    private static ThreadLocal<Map<String, Timing>> timingThreadLocal = ThreadLocal.withInitial(HashMap::new);
+    private static final ThreadLocal<Map<String, Timing>> timingThreadLocal = ThreadLocal.withInitial(HashMap::new);
 
     public static void startTime(String name) {
         Map<String, Timing> timingMap = timingThreadLocal.get();
-        Timing timing = timingMap.computeIfAbsent(name, n -> new Timing(System.currentTimeMillis(), 1));
+        Timing timing = timingMap.computeIfAbsent(name, n -> new Timing(System.currentTimeMillis(), 0));
         timing.increaseLevel();
     }
 
