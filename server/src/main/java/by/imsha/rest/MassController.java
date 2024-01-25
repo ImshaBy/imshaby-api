@@ -234,33 +234,7 @@ public class MassController {
         final List<SearchResultItem> resultItems = searchResult.hits();
         final Map<String, Map<String, Integer>> facetDistribution = searchResult.facetDistribution();
 
-
-        final MassSchedule massSchedule = new MassSchedule(dateFrom, true);
-
-        //TODO вынести в маппер SearchResultMapper
-        resultItems.forEach(resultItem -> {
-            final DayOfWeek dayOfWeek = resultItem.date().getDayOfWeek();
-
-            final MassInfo massInfo = new MassInfo();
-            massInfo.setId(resultItem.massId());
-            massInfo.setLangCode(resultItem.lang());
-            massInfo.setParish(
-                    MassParishInfoMapper.MAPPER.toMassParishInfo(
-                            //здесь нужно кэшировать данные парафий (достать кэшированную все за раз),
-                            // но вроде и так getParish кэшированный
-                            parishService.getParish(resultItem.parish().id()).get()
-                    )
-            );
-            massInfo.setDuration(resultItem.duration());
-            massInfo.setInfo(resultItem.info());//?? будем ли хранить для каждой локали?
-            massInfo.setDays(new int[]{dayOfWeek.getValue()});//берем день недели из текущей date
-            massInfo.setOnline(resultItem.online());
-            massInfo.setRorate(resultItem.rorate());
-            massInfo.setLastModifiedDate(resultItem.lastModifiedDate());
-
-            massSchedule.populateContainers(massInfo, dayOfWeek, resultItem.time());
-        });
-
+        final MassSchedule massSchedule = scheduleFactory.build(dateFrom, resultItems);
 
         massSchedule.createSchedule();
 

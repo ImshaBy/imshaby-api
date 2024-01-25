@@ -26,7 +26,6 @@ import java.time.LocalTime;
  * @param online           признак трансляции мессы в онлайне
  * @param rorate           признак рорат
  * @param city             данные города
- * @param needUpdate       признак необходимости обновления данных
  * @param geo              данные геолокации парафии
  * @param lastModifiedDate дата и время последней модификации
  */
