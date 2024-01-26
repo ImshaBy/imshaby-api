@@ -86,7 +86,7 @@ public record SearchRecord(
         public static final String PARISH_ID = "parish.id";
         public static final String ONLINE = "online";
         public static final String LANG = "lang";
-        public static final String RORATE = "RORATE";
+        public static final String RORATE = "rorate";
         public static final String GEO = "_geo";
     }
 
