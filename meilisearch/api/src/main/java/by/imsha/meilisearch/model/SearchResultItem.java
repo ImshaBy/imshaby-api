@@ -1,11 +1,10 @@
 package by.imsha.meilisearch.model;
 
-import by.imsha.meilisearch.serialization.LocalDateTime2TimestampSerializer;
 import by.imsha.meilisearch.serialization.Seconds2LocalTimeDeserializer;
 import by.imsha.meilisearch.serialization.Timestamp2LocalDateDeserializer;
+import by.imsha.meilisearch.serialization.Timestamp2LocalDateTimeDeserializer;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -30,8 +29,7 @@ public record SearchResultItem(
         Boolean online,
         Boolean rorate,
         City city,
-        Boolean needUpdate,
-        @JsonSerialize(using = LocalDateTime2TimestampSerializer.class)
+        @JsonDeserialize(using = Timestamp2LocalDateTimeDeserializer.class)
         LocalDateTime lastModifiedDate,
         @JsonProperty("_geo")
         Geo geo,
