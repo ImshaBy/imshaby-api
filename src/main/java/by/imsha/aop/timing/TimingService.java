@@ -1,5 +1,6 @@
 package by.imsha.aop.timing;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -23,9 +24,7 @@ public class TimingService {
     public static String getResultServerTimingAndRemove() {
         Map<String, Timing> timingMap = timingThreadLocal.get();
         String result = timingMap.entrySet().stream()
-                .sorted((r1, r2) ->
-                        r2.getValue().getTime().compareTo(r1.getValue().getTime())
-                )
+                .sorted(Comparator.<Map.Entry<String, Timing>>comparingLong(r -> r.getValue().getTime()).reversed())
                 .map(r -> r.getKey() + "=" + r.getValue().getTime() + ";")
                 .collect(Collectors.joining());
         timingThreadLocal.remove();
