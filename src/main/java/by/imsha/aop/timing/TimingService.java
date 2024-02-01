@@ -25,8 +25,8 @@ public class TimingService {
         Map<String, Timing> timingMap = timingThreadLocal.get();
         String result = timingMap.entrySet().stream()
                 .sorted(Comparator.<Map.Entry<String, Timing>>comparingLong(r -> r.getValue().getTime()).reversed())
-                .map(r -> r.getKey() + "=" + r.getValue().getTime() + ";")
-                .collect(Collectors.joining());
+                .map(r -> r.getKey() + "=" + r.getValue().getTime())
+                .collect(Collectors.joining(";"));
         timingThreadLocal.remove();
         return result;
     }

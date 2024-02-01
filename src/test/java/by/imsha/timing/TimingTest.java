@@ -20,13 +20,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @EnableAspectJAutoProxy
 @WebMvcTest({ControllerTest.class, ServiceTest.class, TimingAspect.class, ValidationConfiguration.class, TestTimeConfiguration.class})
-public class TimingTest {
+class TimingTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Test
-    public void testServerTiming_then200() throws Exception {
+    void testServerTiming_then200() throws Exception {
         MockHttpServletResponse response = mockMvc.perform(get("/test/timing")
                         .with(csrf())
                         .with(jwt()))
@@ -35,6 +35,6 @@ public class TimingTest {
                 .andExpect(header().exists("Server-Timing"))
                 .andReturn().getResponse();
 
-        assertThat(response.getHeader("Server-Timing")).matches("^app=\\d+;controller=\\d+;service=\\d+;$");
+        assertThat(response.getHeader("Server-Timing")).matches("^app=\\d+;controller=\\d+;service=\\d+$");
     }
 }
