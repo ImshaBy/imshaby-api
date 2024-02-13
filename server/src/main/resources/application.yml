@@ -61,3 +61,9 @@ app:
         start: ${PASSWORDLESS_URI_START:https://localhost:9091/api/passwordless/start}
         send: ${PASSWORDLESS_URI_SEND:https://localhost:9091/api/passwordless/send}
         login: ${PASSWORDLESS_URI_LOGIN:https://localhost:9091/api/passwordless/login}
+
+meilisearch:
+  reader:
+    host-url: http://localhost:7700
+    api-key: 8Yy6fAZCCIPDiQk4yay7_xrHoxconfRKC5HKhuoij8o
+    index-uid: mass-index
