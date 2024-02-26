@@ -29,16 +29,16 @@ public class ParishTest {
     public void testNeedUpdate(){
         Parish parish = new Parish();
         parish.setUpdatePeriodInDays(14);
-        LocalDateTime lastModifiedDate = LocalDateTime.parse("2018-06-23T00:27:16", DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        parish.setLastModifiedDate(lastModifiedDate);
+        LocalDateTime lastConfirmRelevance = LocalDateTime.parse("2018-06-23T00:27:16", DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        parish.setLastConfirmRelevance(lastConfirmRelevance);
         assertThat(parish.isNeedUpdate(), equalTo(Boolean.TRUE));
     }
 
     @Test
-    public void testNeedUpdateIfLastModifiedDateIsNull(){
+    public void testNeedUpdateIfLastConfirmRelevanceIsNull(){
         Parish parish = new Parish();
         parish.setUpdatePeriodInDays(14);
-        parish.setLastModifiedDate(null);
+        parish.setLastConfirmRelevance(null);
         assertThat(parish.isNeedUpdate(), equalTo(Boolean.TRUE));
     }
 

@@ -2,7 +2,6 @@ package by.imsha.domain.dto;
 
 import by.imsha.rest.serializers.CustomLocalDateTimeSerializer;
 import by.imsha.rest.serializers.LocalDateSerializer;
-import by.imsha.utils.ServiceUtils;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Data;
 
@@ -33,9 +32,5 @@ public class MassInfo implements Serializable{
 
     @JsonSerialize(using= CustomLocalDateTimeSerializer.class)
     private LocalDateTime lastModifiedDate;
-
-    public boolean isNeedUpdate() {
-        return ServiceUtils.needUpdateFromNow(lastModifiedDate, parish.getUpdatePeriodInDays()) && parish.isNeedUpdate();
-    }
 
 }

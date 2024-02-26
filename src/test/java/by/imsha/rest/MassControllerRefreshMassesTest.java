@@ -3,12 +3,14 @@ package by.imsha.rest;
 import by.imsha.TestTimeConfiguration;
 import by.imsha.ValidationConfiguration;
 import by.imsha.domain.Mass;
+import by.imsha.domain.Parish;
 import by.imsha.properties.ImshaProperties;
 import by.imsha.service.CityService;
 import by.imsha.service.MassService;
 import by.imsha.service.ParishService;
 import by.imsha.service.ScheduleFactory;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -16,8 +18,10 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Optional;
 
 import static by.imsha.TestTimeConfiguration.ERROR_TIMESTAMP;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.mockito.Mockito.mock;
@@ -53,50 +57,29 @@ class MassControllerRefreshMassesTest {
 
     @Test
     void whenParishHasNoMasses_then200() throws Exception {
-        when(massService.getMassByParish("123")).thenReturn(Collections.emptyList());
+        final ArgumentCaptor<Parish> parishArgumentCaptor = org.mockito.ArgumentCaptor.forClass(Parish.class);
+        final Parish parish = new Parish();
+        parish.setId("any_id");
 
-        mockMvc.perform(put(REFRESH_MASSES_BY_PARISH_ID_END_POINT_PATH + "?parishId=123")
+        when(parishService.getParish("any_id")).thenReturn(Optional.of(parish));
+
+        mockMvc.perform(put(REFRESH_MASSES_BY_PARISH_ID_END_POINT_PATH + "?parishId=any_id")
                         .with(csrf())
                         .with(jwt()))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(
                         matchAll(
-                                jsonPath("$.entities", hasSize(0)),
+                                jsonPath("$.entities").value("any_id"),
                                 jsonPath("$.status").value("UPDATED")
                         )
                 );
 
-        verify(massService).getMassByParish("123");
-        verifyNoMoreInteractions(massService);
-    }
+        verify(parishService).getParish("any_id");
+        verify(parishService).updateParish(parishArgumentCaptor.capture());
+        verifyNoMoreInteractions(parishService);
 
-    @Test
-    void whenParishHasMasses_then200() throws Exception {
-        final Mass firstMass = mock(Mass.class);
-        final Mass secondMass = mock(Mass.class);
-
-        when(massService.getMassByParish("123")).thenReturn(Arrays.asList(firstMass, secondMass));
-        when(firstMass.getId()).thenReturn("firstMassId");
-        when(secondMass.getId()).thenReturn("secondMassId");
-
-        mockMvc.perform(put(REFRESH_MASSES_BY_PARISH_ID_END_POINT_PATH + "?parishId=123")
-                        .with(csrf())
-                        .with(jwt()))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(
-                        matchAll(
-                                jsonPath("$.entities", hasSize(2)),
-                                jsonPath("$.entities", containsInAnyOrder("firstMassId", "secondMassId")),
-                                jsonPath("$.status").value("UPDATED")
-                        )
-                );
-
-        verify(massService).getMassByParish("123");
-        verify(massService).updateMass(firstMass);
-        verify(massService).updateMass(secondMass);
-        verifyNoMoreInteractions(massService);
+        assertThat(parishArgumentCaptor.getValue().getLastConfirmRelevance()).isNotNull();
     }
 
     @Test

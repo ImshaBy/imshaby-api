@@ -18,7 +18,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.Valid;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -66,6 +66,7 @@ public class ParishController {
     @PostMapping
     public ResponseEntity<Parish> createParish(@Valid @RequestBody Parish parish) {
         parish.setState(Parish.State.PENDING);
+        parish.setLastConfirmRelevance(dateTimeProvider.now());
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(parishService.createParish(parish));
@@ -109,6 +110,7 @@ public class ParishController {
                 .orElseThrow(ResourceNotFoundException::new);
 
         parish.setState(parishStateInfo.getState());
+        parish.setLastConfirmRelevance(dateTimeProvider.now());
 
         final Parish updatedParish = parishService.updateParish(parish);
         return ResponseEntity.ok(
@@ -210,7 +212,7 @@ public class ParishController {
                 .collect(Collectors.toList());
 
         Set<ParishKeyUpdateInfo> parishKeys = weekMasses.stream()
-                .filter(massInfo -> massInfo.isNeedUpdate())
+                .filter(massInfo -> massInfo.getParish().isNeedUpdate())
                 .map(massInfo -> ParishService.extractParishKeyUpdateInfo(massInfo.getParish().getParishId()))
                 .collect(Collectors.toSet());
         return ResponseEntity.ok(
@@ -228,6 +230,19 @@ public class ParishController {
 
         return ResponseEntity.ok(
                 parishService.search(filter, page, perPage, sorting)
+        );
+    }
+
+    @PutMapping("/{parishId}/confirm/relevance")
+    public ResponseEntity<UpdateEntitiesInfo> confirmRelevance(@PathVariable("parishId") String parishId) {
+
+        Parish parish = parishService.getParish(parishId).orElseThrow(ResourceNotFoundException::new);
+        parish.setLastConfirmRelevance(dateTimeProvider.now());
+        parishService.updateParish(parish);
+
+        return ResponseEntity.ok(
+                new UpdateEntitiesInfo(Collections.singletonList(parish.getId()),
+                        UpdateEntitiesInfo.STATUS.UPDATED)
         );
     }
 

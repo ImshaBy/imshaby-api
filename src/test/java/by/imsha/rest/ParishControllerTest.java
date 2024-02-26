@@ -223,7 +223,8 @@ class ParishControllerTest {
                 () -> verify(parishService).createParish(valueForStore),
                 () -> assertThat(valueForStore.getId()).isNull(),
                 () -> assertThat(valueForStore.getName()).isEqualTo("testName"),
-                () -> assertThat(valueForStore.getCityId()).isEqualTo("testCityId")
+                () -> assertThat(valueForStore.getCityId()).isEqualTo("testCityId"),
+                () -> assertThat(valueForStore.getLastConfirmRelevance()).isNotNull()
         );
     }
 
@@ -917,6 +918,61 @@ class ParishControllerTest {
 
         verify(parishService).getParish("any_id");
         verify(parishService).updateParish(parish);
+    }
+
+    @Test
+    void whenConfirmRelevanceRequestValid_then200() throws Exception {
+
+        final String testUri = ROOT_PATH + "/any_id/confirm/relevance";
+        final ArgumentCaptor<Parish> parishArgumentCaptor = ArgumentCaptor.forClass(Parish.class);
+        final Parish parish = new Parish();
+        parish.setId("any_id");
+
+        when(parishService.getParish("any_id")).thenReturn(Optional.of(parish));
+
+        mockMvc.perform(put(testUri)
+                        .with(csrf())
+                        .with(jwt()))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(
+                        matchAll(
+                                jsonPath("$.entities").value("any_id"),
+                                jsonPath("$.status").value("UPDATED")
+                        )
+                );
+
+        verify(parishService).getParish("any_id");
+        verify(parishService).updateParish(parishArgumentCaptor.capture());
+        verifyNoMoreInteractions(parishService);
+
+        assertThat(parishArgumentCaptor.getValue().getLastConfirmRelevance()).isNotNull();
+    }
+
+    @Test
+    void whenConfirmRelevanceRequestValid_andParishNotFound_then404() throws Exception {
+
+        final String testUri = ROOT_PATH + "/any_id/confirm/relevance";
+
+        when(parishService.getParish("any_id")).thenReturn(Optional.empty());
+
+        mockMvc.perform(put(testUri)
+                        .contentType("application/json")
+                        .content("{}")
+                        .with(csrf())
+                        .with(jwt()))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(
+                        matchAll(
+                                jsonPath("$.timestamp").value(ERROR_TIMESTAMP),
+                                jsonPath("$.requestInfo.uri").value(testUri),
+                                jsonPath("$.requestInfo.method").value("PUT"),
+                                jsonPath("$.requestInfo.pathInfo").value(testUri),
+                                jsonPath("$.requestInfo.query").isEmpty(),
+                                jsonPath("$.errors").isEmpty()
+                        )
+                );
     }
 
 }

@@ -6,6 +6,7 @@ import by.imsha.service.MassService;
 import by.imsha.utils.ServiceUtils;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.mongodb.lang.Nullable;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -58,9 +59,14 @@ public class Parish {
     @LastModifiedDate
     @JsonSerialize(using = CustomLocalDateTimeSerializer.class)
     private LocalDateTime lastModifiedDate;
+    @Nullable
+    @JsonSerialize(using = CustomLocalDateTimeSerializer.class)
+    private LocalDateTime  lastConfirmRelevance;
 
+    //TODO В дальнейшем нужно удалить метод и передавать lastConfirmRelevance
+    @Deprecated
     public boolean isNeedUpdate() {
-        return ServiceUtils.needUpdateFromNow(lastModifiedDate, getUpdatePeriodInDays());
+        return ServiceUtils.needUpdateFromNow(lastConfirmRelevance, getUpdatePeriodInDays());
     }
 
     public String getName() {
