@@ -110,7 +110,6 @@ public class ParishController {
                 .orElseThrow(ResourceNotFoundException::new);
 
         parish.setState(parishStateInfo.getState());
-        parish.setLastConfirmRelevance(dateTimeProvider.now());
 
         final Parish updatedParish = parishService.updateParish(parish);
         return ResponseEntity.ok(
