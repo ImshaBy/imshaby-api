@@ -122,7 +122,7 @@ public class MassController {
         );
     }
 
-    //TODO Нужно использовать /api/parish/{parishId}/confirm/relevance
+    //TODO Нужно использовать /api/parish/{parishId}/confirm-relevance
     @Deprecated
     @PutMapping(params = "parishId")
     public ResponseEntity<UpdateEntitiesInfo> refreshMasses(@RequestParam("parishId") String parishId) {

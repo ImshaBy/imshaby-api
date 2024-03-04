@@ -33,4 +33,9 @@ public class MassInfo implements Serializable{
     @JsonSerialize(using= CustomLocalDateTimeSerializer.class)
     private LocalDateTime lastModifiedDate;
 
+    @Deprecated
+    public boolean isNeedUpdate() {
+        return parish.isNeedUpdate();
+    }
+
 }

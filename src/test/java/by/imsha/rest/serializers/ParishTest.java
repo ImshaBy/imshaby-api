@@ -5,6 +5,7 @@ import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
 import by.imsha.domain.Ping;
 import by.imsha.domain.dto.EntityWebHookType;
+import by.imsha.domain.dto.MassParishInfo;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
@@ -40,6 +41,15 @@ public class ParishTest {
         parish.setUpdatePeriodInDays(14);
         parish.setLastConfirmRelevance(null);
         assertThat(parish.isNeedUpdate(), equalTo(Boolean.TRUE));
+    }
+
+    @Test
+    public void testMassParishInfoNeedUpdate(){
+        MassParishInfo massParishInfo = new MassParishInfo();
+        massParishInfo.setUpdatePeriodInDays(14);
+        LocalDateTime lastConfirmRelevance = LocalDateTime.parse("2018-06-23T00:27:16", DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        massParishInfo.setLastConfirmRelevance(lastConfirmRelevance);
+        assertThat(massParishInfo.isNeedUpdate(), equalTo(Boolean.TRUE));
     }
 
 }

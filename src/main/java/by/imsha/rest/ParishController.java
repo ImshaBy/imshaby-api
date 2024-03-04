@@ -211,7 +211,7 @@ public class ParishController {
                 .collect(Collectors.toList());
 
         Set<ParishKeyUpdateInfo> parishKeys = weekMasses.stream()
-                .filter(massInfo -> massInfo.getParish().isNeedUpdate())
+                .filter(MassInfo::isNeedUpdate)
                 .map(massInfo -> ParishService.extractParishKeyUpdateInfo(massInfo.getParish().getParishId()))
                 .collect(Collectors.toSet());
         return ResponseEntity.ok(
@@ -232,7 +232,7 @@ public class ParishController {
         );
     }
 
-    @PutMapping("/{parishId}/confirm/relevance")
+    @PostMapping("/{parishId}/confirm-relevance")
     public ResponseEntity<UpdateEntitiesInfo> confirmRelevance(@PathVariable("parishId") String parishId) {
 
         Parish parish = parishService.getParish(parishId).orElseThrow(ResourceNotFoundException::new);

@@ -923,14 +923,14 @@ class ParishControllerTest {
     @Test
     void whenConfirmRelevanceRequestValid_then200() throws Exception {
 
-        final String testUri = ROOT_PATH + "/any_id/confirm/relevance";
+        final String testUri = ROOT_PATH + "/any_id/confirm-relevance";
         final ArgumentCaptor<Parish> parishArgumentCaptor = ArgumentCaptor.forClass(Parish.class);
         final Parish parish = new Parish();
         parish.setId("any_id");
 
         when(parishService.getParish("any_id")).thenReturn(Optional.of(parish));
 
-        mockMvc.perform(put(testUri)
+        mockMvc.perform(post(testUri)
                         .with(csrf())
                         .with(jwt()))
                 .andDo(print())
@@ -952,11 +952,11 @@ class ParishControllerTest {
     @Test
     void whenConfirmRelevanceRequestValid_andParishNotFound_then404() throws Exception {
 
-        final String testUri = ROOT_PATH + "/any_id/confirm/relevance";
+        final String testUri = ROOT_PATH + "/any_id/confirm-relevance";
 
         when(parishService.getParish("any_id")).thenReturn(Optional.empty());
 
-        mockMvc.perform(put(testUri)
+        mockMvc.perform(post(testUri)
                         .contentType("application/json")
                         .content("{}")
                         .with(csrf())
@@ -967,7 +967,7 @@ class ParishControllerTest {
                         matchAll(
                                 jsonPath("$.timestamp").value(ERROR_TIMESTAMP),
                                 jsonPath("$.requestInfo.uri").value(testUri),
-                                jsonPath("$.requestInfo.method").value("PUT"),
+                                jsonPath("$.requestInfo.method").value("POST"),
                                 jsonPath("$.requestInfo.pathInfo").value(testUri),
                                 jsonPath("$.requestInfo.query").isEmpty(),
                                 jsonPath("$.errors").isEmpty()
