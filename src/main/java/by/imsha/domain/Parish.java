@@ -19,6 +19,7 @@ import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Represent Parish class
@@ -66,7 +67,7 @@ public class Parish {
     //TODO В дальнейшем нужно удалить метод и передавать lastConfirmRelevance
     @Deprecated
     public boolean isNeedUpdate() {
-        return ServiceUtils.needUpdateFromNow(lastConfirmRelevance, getUpdatePeriodInDays());
+        return ServiceUtils.needUpdateFromNow(Optional.ofNullable(lastConfirmRelevance).orElse(lastModifiedDate), getUpdatePeriodInDays());
     }
 
     public String getName() {

@@ -6,6 +6,7 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 /**
  * @author Alena Misan
@@ -21,13 +22,13 @@ public class MassParishInfo implements Serializable {
     private String broadcastUrl;
 
 
-    @JsonIgnore
     private Integer updatePeriodInDays;
-    @JsonIgnore
     private LocalDateTime lastConfirmRelevance;
+    @JsonIgnore
+    private LocalDateTime lastModifiedDate;
 
     public boolean isNeedUpdate() {
-        return ServiceUtils.needUpdateFromNow(lastConfirmRelevance, updatePeriodInDays);
+        return ServiceUtils.needUpdateFromNow(Optional.ofNullable(lastConfirmRelevance).orElse(lastModifiedDate), updatePeriodInDays);
     }
 
 

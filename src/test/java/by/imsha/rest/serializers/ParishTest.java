@@ -52,4 +52,13 @@ public class ParishTest {
         assertThat(massParishInfo.isNeedUpdate(), equalTo(Boolean.TRUE));
     }
 
+    @Test
+    public void testMassParishInfoNeedUpdateWithLastModifiedDate(){
+        MassParishInfo massParishInfo = new MassParishInfo();
+        massParishInfo.setUpdatePeriodInDays(14);
+        massParishInfo.setLastConfirmRelevance(null);
+        massParishInfo.setLastModifiedDate(LocalDateTime.parse("2018-06-23T00:27:16", DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        assertThat(massParishInfo.isNeedUpdate(), equalTo(Boolean.TRUE));
+    }
+
 }
