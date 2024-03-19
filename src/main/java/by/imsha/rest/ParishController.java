@@ -66,7 +66,7 @@ public class ParishController {
     @PostMapping
     public ResponseEntity<Parish> createParish(@Valid @RequestBody Parish parish) {
         parish.setState(Parish.State.PENDING);
-        parish.setLastConfirmRelevance(dateTimeProvider.now());
+        parish.setLastConfirmRelevance(dateTimeProvider.nowSystemDefaultZone());
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(parishService.createParish(parish));
@@ -86,7 +86,7 @@ public class ParishController {
 
         final Parish updatedParish = this.parishService.updateParish(parishInfo, parishToUpdate);
         //TODO FIXME фронт на админке должен вызывать другое API, удалить после исправления
-        updatedParish.setLastConfirmRelevance(dateTimeProvider.now());
+        updatedParish.setLastConfirmRelevance(dateTimeProvider.nowSystemDefaultZone());
         this.parishService.updateParish(parishToUpdate);
 
         return ResponseEntity.ok(
@@ -239,7 +239,7 @@ public class ParishController {
     public ResponseEntity<UpdateEntitiesInfo> confirmRelevance(@PathVariable("parishId") String parishId) {
 
         Parish parish = parishService.getParish(parishId).orElseThrow(ResourceNotFoundException::new);
-        parish.setLastConfirmRelevance(dateTimeProvider.now());
+        parish.setLastConfirmRelevance(dateTimeProvider.nowSystemDefaultZone());
         parishService.updateParish(parish);
 
         return ResponseEntity.ok(

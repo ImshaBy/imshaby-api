@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 @Component
@@ -28,6 +29,13 @@ public class DateTimeProvider {
      */
     public LocalDateTime now() {
         return LocalDateTime.now(clock);
+    }
+
+    /**
+     * Получить текущее время и дату в зоне по умолчанию
+     */
+    public LocalDateTime nowSystemDefaultZone() {
+        return LocalDateTime.now(ZoneId.systemDefault());
     }
 
     /**

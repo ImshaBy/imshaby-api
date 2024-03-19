@@ -128,7 +128,7 @@ public class MassController {
     public ResponseEntity<UpdateEntitiesInfo> refreshMasses(@RequestParam("parishId") String parishId) {
 
         Parish parish = parishService.getParish(parishId).orElseThrow(ResourceNotFoundException::new);
-        parish.setLastConfirmRelevance(dateTimeProvider.now());
+        parish.setLastConfirmRelevance(dateTimeProvider.nowSystemDefaultZone());
         parishService.updateParish(parish);
 
         return ResponseEntity.ok(
