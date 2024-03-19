@@ -85,6 +85,9 @@ public class ParishController {
                 .orElseThrow(ResourceNotFoundException::new);
 
         final Parish updatedParish = this.parishService.updateParish(parishInfo, parishToUpdate);
+        //TODO FIXME фронт на админке должен вызывать другое API, удалить после исправления
+        updatedParish.setLastConfirmRelevance(dateTimeProvider.now());
+        this.parishService.updateParish(parishToUpdate);
 
         return ResponseEntity.ok(
                 new UpdateEntityInfo(updatedParish.getId(), UpdateEntityInfo.STATUS.UPDATED)
