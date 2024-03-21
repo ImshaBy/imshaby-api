@@ -5,6 +5,7 @@ import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
 import by.imsha.domain.Ping;
 import by.imsha.domain.dto.EntityWebHookType;
+import by.imsha.domain.dto.MassParishInfo;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
@@ -29,17 +30,35 @@ public class ParishTest {
     public void testNeedUpdate(){
         Parish parish = new Parish();
         parish.setUpdatePeriodInDays(14);
-        LocalDateTime lastModifiedDate = LocalDateTime.parse("2018-06-23T00:27:16", DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        parish.setLastModifiedDate(lastModifiedDate);
+        LocalDateTime lastConfirmRelevance = LocalDateTime.parse("2018-06-23T00:27:16", DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        parish.setLastConfirmRelevance(lastConfirmRelevance);
         assertThat(parish.isNeedUpdate(), equalTo(Boolean.TRUE));
     }
 
     @Test
-    public void testNeedUpdateIfLastModifiedDateIsNull(){
+    public void testNeedUpdateIfLastConfirmRelevanceIsNull(){
         Parish parish = new Parish();
         parish.setUpdatePeriodInDays(14);
-        parish.setLastModifiedDate(null);
+        parish.setLastConfirmRelevance(null);
         assertThat(parish.isNeedUpdate(), equalTo(Boolean.TRUE));
+    }
+
+    @Test
+    public void testMassParishInfoNeedUpdate(){
+        MassParishInfo massParishInfo = new MassParishInfo();
+        massParishInfo.setUpdatePeriodInDays(14);
+        LocalDateTime lastConfirmRelevance = LocalDateTime.parse("2018-06-23T00:27:16", DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        massParishInfo.setLastConfirmRelevance(lastConfirmRelevance);
+        assertThat(massParishInfo.isNeedUpdate(), equalTo(Boolean.TRUE));
+    }
+
+    @Test
+    public void testMassParishInfoNeedUpdateWithLastModifiedDate(){
+        MassParishInfo massParishInfo = new MassParishInfo();
+        massParishInfo.setUpdatePeriodInDays(14);
+        massParishInfo.setLastConfirmRelevance(null);
+        massParishInfo.setLastModifiedDate(LocalDateTime.parse("2018-06-23T00:27:16", DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        assertThat(massParishInfo.isNeedUpdate(), equalTo(Boolean.TRUE));
     }
 
 }

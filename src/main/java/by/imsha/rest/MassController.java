@@ -122,17 +122,17 @@ public class MassController {
         );
     }
 
+    //TODO Нужно использовать /api/parish/{parishId}/confirm-relevance
+    @Deprecated
     @PutMapping(params = "parishId")
     public ResponseEntity<UpdateEntitiesInfo> refreshMasses(@RequestParam("parishId") String parishId) {
-        final List<Mass> massesToRefresh = massService.getMassByParish(parishId);
 
-        for (Mass massForUpdate : massesToRefresh) {
-            MassInfoMapper.MAPPER.updateMassFromDTO(new UpdateMassInfo(), massForUpdate);
-            this.massService.updateMass(massForUpdate);
-        }
+        Parish parish = parishService.getParish(parishId).orElseThrow(ResourceNotFoundException::new);
+        parish.setLastConfirmRelevance(dateTimeProvider.nowSystemDefaultZone());
+        parishService.updateParish(parish);
 
         return ResponseEntity.ok(
-                new UpdateEntitiesInfo(massesToRefresh.stream().map(Mass::getId).collect(Collectors.toList()),
+                new UpdateEntitiesInfo(Collections.singletonList(parish.getId()),
                         UpdateEntitiesInfo.STATUS.UPDATED)
         );
     }
