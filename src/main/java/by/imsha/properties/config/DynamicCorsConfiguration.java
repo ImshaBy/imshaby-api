@@ -18,7 +18,7 @@ public class DynamicCorsConfiguration extends CorsConfiguration {
             return null;
         }
         String lowerCaseRequestOrigin = requestOrigin.toLowerCase();
-        Set<String> allowedOrigins = corsConfigService.getOriginsToLowerCase();
+        Set<String> allowedOrigins = corsConfigService.getLowerCaseOrigins();
         if (!ObjectUtils.isEmpty(allowedOrigins)) {
             if (allowedOrigins.contains(ALL)) {
                 validateAllowCredentials();

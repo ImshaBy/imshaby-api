@@ -32,7 +32,7 @@ class CorsConfigServiceTest {
                 .build();
         when(corsConfigRepository.findAll()).thenReturn(Collections.singletonList(origin));
 
-        Set<String> originsToLowerCase = corsConfigService.getOriginsToLowerCase();
+        Set<String> originsToLowerCase = corsConfigService.getLowerCaseOrigins();
 
         assertAll(
                 () -> verify(corsConfigRepository).findAll(),
@@ -44,7 +44,7 @@ class CorsConfigServiceTest {
     void testGetOriginsIsEmpty() {
         when(corsConfigRepository.findAll()).thenReturn(Collections.emptyList());
 
-        Set<String> originsToLowerCase = corsConfigService.getOriginsToLowerCase();
+        Set<String> originsToLowerCase = corsConfigService.getLowerCaseOrigins();
 
         assertAll(
                 () -> verify(corsConfigRepository).findAll(),

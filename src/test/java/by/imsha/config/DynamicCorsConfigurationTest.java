@@ -32,12 +32,12 @@ class DynamicCorsConfigurationTest {
         Set<String> origins = new HashSet<>();
         origins.add("http://imsha.by");
 
-        when(corsConfigService.getOriginsToLowerCase()).thenReturn(origins);
+        when(corsConfigService.getLowerCaseOrigins()).thenReturn(origins);
 
         String checkOrigin = dynamicCorsConfiguration.checkOrigin(requestOrigin);
 
         assertAll(
-                () -> verify(corsConfigService).getOriginsToLowerCase(),
+                () -> verify(corsConfigService).getLowerCaseOrigins(),
                 () -> assertThat(checkOrigin).isEqualTo(requestOrigin)
         );
     }
@@ -48,12 +48,12 @@ class DynamicCorsConfigurationTest {
         Set<String> origins = new HashSet<>();
         origins.add("*");
 
-        when(corsConfigService.getOriginsToLowerCase()).thenReturn(origins);
+        when(corsConfigService.getLowerCaseOrigins()).thenReturn(origins);
 
         String checkOrigin = dynamicCorsConfiguration.checkOrigin(requestOrigin);
 
         assertAll(
-                () -> verify(corsConfigService).getOriginsToLowerCase(),
+                () -> verify(corsConfigService).getLowerCaseOrigins(),
                 () -> assertThat(checkOrigin).isEqualTo("*")
         );
     }
@@ -65,7 +65,7 @@ class DynamicCorsConfigurationTest {
         String checkOrigin = dynamicCorsConfiguration.checkOrigin(requestOrigin);
 
         assertAll(
-                () -> verify(corsConfigService, times(0)).getOriginsToLowerCase(),
+                () -> verify(corsConfigService, times(0)).getLowerCaseOrigins(),
                 () -> assertThat(checkOrigin).isNull()
         );
     }
@@ -77,7 +77,7 @@ class DynamicCorsConfigurationTest {
         String checkOrigin = dynamicCorsConfiguration.checkOrigin(requestOrigin);
 
         assertAll(
-                () -> verify(corsConfigService, times(0)).getOriginsToLowerCase(),
+                () -> verify(corsConfigService, times(0)).getLowerCaseOrigins(),
                 () -> assertThat(checkOrigin).isNull()
         );
     }

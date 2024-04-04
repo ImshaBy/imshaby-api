@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 public class AppPropertiesConfig {
 
     @Bean
+    @ConfigurationProperties(prefix = "app.cors")
     public DynamicCorsConfiguration corsConfiguration() {
         return new DynamicCorsConfiguration();
     }

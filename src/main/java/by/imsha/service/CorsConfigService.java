@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.cors.CorsConfiguration;
 
 import java.util.HashSet;
 import java.util.List;
@@ -20,12 +21,12 @@ public class CorsConfigService {
     private final CorsConfigRepository corsConfigRepository;
 
     @Cacheable("corsConfiguration")
-    public Set<String> getOriginsToLowerCase() {
+    public Set<String> getLowerCaseOrigins() {
         List<Cors> corsConfigs = corsConfigRepository.findAll();
 
         if (corsConfigs.isEmpty()) {
             Set<String> origins = new HashSet<>();
-            origins.add("*");
+            origins.add(CorsConfiguration.ALL);
             return origins;
         }
         return corsConfigs.stream()
