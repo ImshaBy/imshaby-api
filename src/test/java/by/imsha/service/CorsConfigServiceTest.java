@@ -28,7 +28,7 @@ class CorsConfigServiceTest {
     @Test
     void testGetOriginsSuccess() {
         Cors origin = Cors.builder()
-                .origin("ORIGIN")
+                .origin("http://IMSHA.by")
                 .build();
         when(corsConfigRepository.findAll()).thenReturn(Collections.singletonList(origin));
 
@@ -36,7 +36,7 @@ class CorsConfigServiceTest {
 
         assertAll(
                 () -> verify(corsConfigRepository).findAll(),
-                () -> assertThat(originsToLowerCase.contains("origin")).isTrue()
+                () -> assertThat(originsToLowerCase.contains("http://imsha.by")).isTrue()
         );
     }
 

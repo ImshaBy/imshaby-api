@@ -1,0 +1,84 @@
+package by.imsha.config;
+
+import by.imsha.properties.config.DynamicCorsConfiguration;
+import by.imsha.service.CorsConfigService;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class DynamicCorsConfigurationTest {
+
+    @InjectMocks
+    DynamicCorsConfiguration dynamicCorsConfiguration;
+
+    @Mock
+    CorsConfigService corsConfigService;
+
+    @Test
+    void testCheckOriginSuccess() {
+        String requestOrigin = "http://IMSHA.by";
+        Set<String> origins = new HashSet<>();
+        origins.add("http://imsha.by");
+
+        when(corsConfigService.getOriginsToLowerCase()).thenReturn(origins);
+
+        String checkOrigin = dynamicCorsConfiguration.checkOrigin(requestOrigin);
+
+        assertAll(
+                () -> verify(corsConfigService).getOriginsToLowerCase(),
+                () -> assertThat(checkOrigin).isEqualTo(requestOrigin)
+        );
+    }
+
+    @Test
+    void testCheckOriginWithAll() {
+        String requestOrigin = "http://IMSHA.by";
+        Set<String> origins = new HashSet<>();
+        origins.add("*");
+
+        when(corsConfigService.getOriginsToLowerCase()).thenReturn(origins);
+
+        String checkOrigin = dynamicCorsConfiguration.checkOrigin(requestOrigin);
+
+        assertAll(
+                () -> verify(corsConfigService).getOriginsToLowerCase(),
+                () -> assertThat(checkOrigin).isEqualTo("*")
+        );
+    }
+
+    @Test
+    void testCheckOriginWithRequestOriginIsEmpty() {
+        String requestOrigin = "";
+
+        String checkOrigin = dynamicCorsConfiguration.checkOrigin(requestOrigin);
+
+        assertAll(
+                () -> verify(corsConfigService, times(0)).getOriginsToLowerCase(),
+                () -> assertThat(checkOrigin).isNull()
+        );
+    }
+
+    @Test
+    void testCheckOriginWithRequestOriginIsNull() {
+        String requestOrigin = null;
+
+        String checkOrigin = dynamicCorsConfiguration.checkOrigin(requestOrigin);
+
+        assertAll(
+                () -> verify(corsConfigService, times(0)).getOriginsToLowerCase(),
+                () -> assertThat(checkOrigin).isNull()
+        );
+    }
+}

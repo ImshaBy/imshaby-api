@@ -24,9 +24,9 @@ public class CorsConfigService {
         List<Cors> corsConfigs = corsConfigRepository.findAll();
 
         if (corsConfigs.isEmpty()) {
-            Set<String> origin = new HashSet<>();
-            origin.add("*");
-            return origin;
+            Set<String> origins = new HashSet<>();
+            origins.add("*");
+            return origins;
         }
         return corsConfigs.stream()
                 .map(cors -> cors.getOrigin().toLowerCase())
