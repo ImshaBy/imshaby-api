@@ -6,9 +6,12 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.cors.CorsConfiguration;
 
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class DynamicCorsConfiguration extends CorsConfiguration {
+
     @Autowired
     private CorsConfigService corsConfigService;
 
@@ -19,14 +22,22 @@ public class DynamicCorsConfiguration extends CorsConfiguration {
         }
         String lowerCaseRequestOrigin = requestOrigin.toLowerCase();
         Set<String> allowedOrigins = corsConfigService.getLowerCaseOrigins();
-        if (!ObjectUtils.isEmpty(allowedOrigins)) {
-            if (allowedOrigins.contains(ALL)) {
-                validateAllowCredentials();
-                return ALL;
+        if (ObjectUtils.isEmpty(allowedOrigins)) {
+            List<String> defaultAllowedOrigins = getAllowedOrigins();
+            if (ObjectUtils.isEmpty(defaultAllowedOrigins)) {
+                return null;
             }
-            if (allowedOrigins.contains(lowerCaseRequestOrigin)) {
-                return requestOrigin;
-            }
+            allowedOrigins = defaultAllowedOrigins.stream()
+                    .map(String::toLowerCase)
+                    .collect(Collectors.toSet());
+
+        }
+        if (allowedOrigins.contains(ALL)) {
+            validateAllowCredentials();
+            return ALL;
+        }
+        if (allowedOrigins.contains(lowerCaseRequestOrigin)) {
+            return requestOrigin;
         }
         return null;
     }

@@ -39,16 +39,4 @@ class CorsConfigServiceTest {
                 () -> assertThat(originsToLowerCase.contains("http://imsha.by")).isTrue()
         );
     }
-
-    @Test
-    void testGetOriginsIsEmpty() {
-        when(corsConfigRepository.findAll()).thenReturn(Collections.emptyList());
-
-        Set<String> originsToLowerCase = corsConfigService.getLowerCaseOrigins();
-
-        assertAll(
-                () -> verify(corsConfigRepository).findAll(),
-                () -> assertThat(originsToLowerCase.contains("*")).isTrue()
-        );
-    }
 }

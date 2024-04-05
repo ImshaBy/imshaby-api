@@ -8,6 +8,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -46,6 +47,7 @@ class DynamicCorsConfigurationTest {
     void testCheckOriginWithAll() {
         String requestOrigin = "http://IMSHA.by";
         Set<String> origins = new HashSet<>();
+        origins.add("http://imsha.by");
         origins.add("*");
 
         when(corsConfigService.getLowerCaseOrigins()).thenReturn(origins);
@@ -55,6 +57,36 @@ class DynamicCorsConfigurationTest {
         assertAll(
                 () -> verify(corsConfigService).getLowerCaseOrigins(),
                 () -> assertThat(checkOrigin).isEqualTo("*")
+        );
+    }
+
+    @Test
+    void testCheckOriginWithOriginsEmpty() {
+        String requestOrigin = "http://IMSHA.by";
+        dynamicCorsConfiguration.setAllowedOrigins(Collections.singletonList("http://IMsha.by"));
+
+        when(corsConfigService.getLowerCaseOrigins()).thenReturn(new HashSet<>());
+
+        String checkOrigin = dynamicCorsConfiguration.checkOrigin(requestOrigin);
+
+        assertAll(
+                () -> verify(corsConfigService).getLowerCaseOrigins(),
+                () -> assertThat(checkOrigin).isEqualTo(requestOrigin)
+        );
+    }
+
+    @Test
+    void testCheckOriginWithAllowedOriginsEmpty() {
+        String requestOrigin = "http://IMSHA.by";
+        dynamicCorsConfiguration.setAllowedOrigins(Collections.emptyList());
+
+        when(corsConfigService.getLowerCaseOrigins()).thenReturn(new HashSet<>());
+
+        String checkOrigin = dynamicCorsConfiguration.checkOrigin(requestOrigin);
+
+        assertAll(
+                () -> verify(corsConfigService).getLowerCaseOrigins(),
+                () -> assertThat(checkOrigin).isNull()
         );
     }
 
