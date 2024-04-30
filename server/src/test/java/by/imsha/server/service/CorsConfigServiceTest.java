@@ -1,7 +1,8 @@
-package by.imsha.service;
+package by.imsha.server.service;
 
 import by.imsha.domain.Cors;
 import by.imsha.repository.CorsConfigRepository;
+import by.imsha.service.CorsConfigService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

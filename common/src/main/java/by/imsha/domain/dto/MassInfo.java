@@ -1,7 +1,7 @@
 package by.imsha.domain.dto;
 
-import by.imsha.rest.serializers.CustomLocalDateTimeSerializer;
-import by.imsha.rest.serializers.LocalDateSerializer;
+import by.imsha.serializers.CustomLocalDateTimeSerializer;
+import by.imsha.serializers.LocalDateSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Data;
 

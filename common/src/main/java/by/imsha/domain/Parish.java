@@ -1,21 +1,20 @@
 package by.imsha.domain;
 
-import by.imsha.rest.serializers.CustomLocalDateTimeSerializer;
-import by.imsha.rest.serializers.TrimStringDeserializer;
-import by.imsha.service.MassService;
+import by.imsha.serializers.CustomLocalDateTimeSerializer;
+import by.imsha.serializers.TrimStringDeserializer;
 import by.imsha.utils.ServiceUtils;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.mongodb.lang.Nullable;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,7 +40,7 @@ public class Parish {
     private String address;
     private Coordinate gps;
     @JsonDeserialize(using = TrimStringDeserializer.class)
-    @Indexed(unique=true)
+    @Indexed(unique = true)
     private String key;
     private Integer updatePeriodInDays = 14;
     private Map<String, LocalizedBaseInfo> localizedInfo = new HashMap<>();
@@ -68,33 +67,6 @@ public class Parish {
     @Deprecated
     public boolean isNeedUpdate() {
         return ServiceUtils.needUpdateFromNow(Optional.ofNullable(lastConfirmRelevance).orElse(lastModifiedDate), getUpdatePeriodInDays());
-    }
-
-    public String getName() {
-        LocalizedBaseInfo localizedBaseInfo = getLocalizedInfo().get(ServiceUtils.fetchUserLangFromHttpRequest());
-        String calculatedName = name;
-        if(localizedBaseInfo != null){
-            calculatedName = ((LocalizedParish) localizedBaseInfo).getName();
-        }
-        return calculatedName;
-    }
-
-    public String getShortName() {
-        LocalizedBaseInfo localizedBaseInfo = getLocalizedInfo().get(ServiceUtils.fetchUserLangFromHttpRequest());
-        String calculatedShortName = shortName;
-        if(localizedBaseInfo != null){
-            calculatedShortName = ((LocalizedParish) localizedBaseInfo).getShortName();
-        }
-        return calculatedShortName;
-    }
-
-    public String getAddress() {
-        LocalizedBaseInfo localizedBaseInfo = getLocalizedInfo().get(ServiceUtils.fetchUserLangFromHttpRequest());
-        String calcAddress = address;
-        if(localizedBaseInfo != null){
-            calcAddress = ((LocalizedParish)localizedBaseInfo).getAddress();
-        }
-        return calcAddress;
     }
 
     /**

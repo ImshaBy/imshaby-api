@@ -11,6 +11,7 @@ import by.imsha.domain.dto.MassSchedule;
 import by.imsha.domain.dto.ParishInfo;
 import by.imsha.domain.dto.ParishKeyUpdateInfo;
 import by.imsha.domain.dto.ParishStateInfo;
+import by.imsha.domain.dto.UpdateEntitiesInfo;
 import by.imsha.domain.dto.UpdateEntityInfo;
 import by.imsha.exception.ResourceNotFoundException;
 import by.imsha.repository.projection.ParishExpirationInfo;
