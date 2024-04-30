@@ -1,12 +1,13 @@
-package by.imsha.rest;
+package by.imsha.server.rest;
 
-import by.imsha.TestTimeConfiguration;
 import by.imsha.ValidationConfiguration;
-import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
+import by.imsha.meilisearch.reader.MeilisearchReader;
 import by.imsha.properties.ImshaProperties;
+import by.imsha.rest.MassController;
+import by.imsha.server.TestTimeConfiguration;
 import by.imsha.service.CityService;
-import by.imsha.server.service.DefaultCityService;
+import by.imsha.service.DefaultCityService;
 import by.imsha.service.MassService;
 import by.imsha.service.ParishService;
 import by.imsha.service.ScheduleFactory;
@@ -17,15 +18,10 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Optional;
 
-import static by.imsha.TestTimeConfiguration.ERROR_TIMESTAMP;
+import static by.imsha.server.TestTimeConfiguration.ERROR_TIMESTAMP;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -57,6 +53,8 @@ class MassControllerRefreshMassesTest {
     private ImshaProperties imshaProperties;
     @MockBean
     private DefaultCityService defaultCityService;
+    @MockBean
+    private MeilisearchReader meilisearchReader;
 
     @Test
     void whenParishHasNoMasses_then200() throws Exception {

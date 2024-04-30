@@ -1,0 +1,6 @@
+app:
+  imsha:
+    api-keys: TEST_API_KEY
+    internal-api-keys: TEST_INTERNAL_API_KEY
+    zone-id: Europe/Minsk
+    parish-week-api-keys: ${PARISH_WEEK_API_KEYS:}

@@ -1,4 +1,4 @@
-package by.imsha.config;
+package by.imsha.server.properties.config;
 
 import by.imsha.properties.config.DynamicCorsConfiguration;
 import by.imsha.service.CorsConfigService;

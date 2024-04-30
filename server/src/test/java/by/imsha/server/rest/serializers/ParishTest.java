@@ -1,22 +1,11 @@
-package by.imsha.rest.serializers;
+package by.imsha.server.rest.serializers;
 
-import by.imsha.domain.EntityWebhook;
-import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
-import by.imsha.domain.Ping;
-import by.imsha.domain.dto.EntityWebHookType;
 import by.imsha.domain.dto.MassParishInfo;
 import org.junit.jupiter.api.Test;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
