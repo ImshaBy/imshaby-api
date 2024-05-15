@@ -1,9 +1,13 @@
 package by.imsha.domain.dto;
 
-import lombok.Data;
+import lombok.Builder;
+import lombok.Value;
+import lombok.extern.jackson.Jacksonized;
 
-@Data
+@Value
+@Builder
+@Jacksonized
 public class CorsInfo {
 
-    private String origin;
+    String origin;
 }

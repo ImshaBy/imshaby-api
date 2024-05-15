@@ -25,7 +25,7 @@ public class CorsConfigService {
 
     private final CorsConfigRepository corsConfigRepository;
 
-    public Cors createCors(final @Valid Cors cors) {
+    public Cors create(final @Valid Cors cors) {
         return corsConfigRepository.save(cors);
     }
 
@@ -33,17 +33,17 @@ public class CorsConfigService {
         return corsConfigRepository.findById(id);
     }
 
-    public Page<Cors> getAllCors(Integer page, Integer size) {
+    public Page<Cors> getAll(Integer page, Integer size) {
         return corsConfigRepository.findAll(PageRequest.of(page, size));
     }
 
-    public Cors updateCors(Cors cors) {
+    public Cors update(@Valid Cors cors) {
         return corsConfigRepository.save(cors);
     }
     @Caching(evict = {
             @CacheEvict(cacheNames = "corsConfiguration", allEntries = true)
     })
-    public void removeCors(String id) {
+    public void remove(String id) {
         corsConfigRepository.deleteById(id);
     }
 

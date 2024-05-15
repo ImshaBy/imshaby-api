@@ -60,7 +60,7 @@ class CorsControllerTest {
 
     @ParameterizedTest
     @CsvSource({"{}", "{\"origin\":\"\"}"})
-    void whenCreateRequestHasNoOrigin_then400_andCITY001(final String requestBody) throws Exception {
+    void whenCreateRequestHasNoOrigin_then400_andCORS001(final String requestBody) throws Exception {
 
         mockMvc.perform(post(ROOT_PATH)
                         .contentType("application/json")
@@ -255,6 +255,40 @@ class CorsControllerTest {
                                 jsonPath("$.requestInfo.pathInfo").value(testUri),
                                 jsonPath("$.requestInfo.query").isEmpty(),
                                 jsonPath("$.errors").isEmpty()
+                        )
+                );
+    }
+
+    @Test
+    void whenUpdateRequestHasNoOrigin_then400_andCORS001() throws Exception {
+
+        final String testUri = ROOT_PATH + "/any_id";
+
+        final Cors cors = Cors.builder()
+                .id("any_id")
+                .origin("")
+                .build();
+
+        when(corsConfigRepository.findById("any_id")).thenReturn(Optional.of(cors));
+
+        mockMvc.perform(put(testUri)
+                        .contentType("application/json")
+                        .content("{}")
+                        .with(csrf())
+                        .with(jwt()))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(
+                        matchAll(
+                                jsonPath("$.timestamp").value(ERROR_TIMESTAMP),
+                                jsonPath("$.requestInfo.uri").value(testUri),
+                                jsonPath("$.requestInfo.method").value("PUT"),
+                                jsonPath("$.requestInfo.pathInfo").value(testUri),
+                                jsonPath("$.requestInfo.query").isEmpty(),
+                                jsonPath("$.errors", hasSize(1)),
+                                jsonPath("$.errors[0].field").value("origin"),
+                                jsonPath("$.errors[0].code").value("CORS.001"),
+                                jsonPath("$.errors[0].payload").isEmpty()
                         )
                 );
     }

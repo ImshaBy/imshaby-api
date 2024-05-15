@@ -21,10 +21,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.servlet.http.HttpServletRequest;
 
 
 @RestController
@@ -40,11 +37,10 @@ public class CorsController {
     private CorsMapper corsMapper;
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<Cors> createCors(@RequestBody CorsInfo corsInfo) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(
-                        this.corsConfigService.createCors(
+                        this.corsConfigService.create(
                                 Cors.builder()
                                         .origin(corsInfo.getOrigin())
                                         .build()
@@ -55,11 +51,10 @@ public class CorsController {
     @GetMapping
     public ResponseEntity<Page<Cors>> getAllCors(
             final @RequestParam(value = "page", defaultValue = Constants.DEFAULT_PAGE_NUM) int page,
-            final @RequestParam(value = "size", defaultValue = Constants.DEFAULT_PAGE_SIZE) int size,
-            final HttpServletRequest request) {
+            final @RequestParam(value = "size", defaultValue = Constants.DEFAULT_PAGE_SIZE) int size) {
 
         return ResponseEntity.ok(
-                this.corsConfigService.getAllCors(page, size)
+                this.corsConfigService.getAll(page, size)
         );
     }
 
@@ -71,13 +66,13 @@ public class CorsController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UpdateEntityInfo> updateCity(final @PathVariable("id") String id, final @RequestBody CorsInfo corsInfo) {
+    public ResponseEntity<UpdateEntityInfo> updateCors(final @PathVariable("id") String id, final @RequestBody CorsInfo corsInfo) {
         final Cors cors = this.corsConfigService.getCors(id)
                 .orElseThrow(ResourceNotFoundException::new);
 
         corsMapper.updateCorsFromDTO(corsInfo, cors);
 
-        final Cors updateCors = this.corsConfigService.updateCors(cors);
+        final Cors updateCors = this.corsConfigService.update(cors);
 
         return ResponseEntity.ok(
                 new UpdateEntityInfo(updateCors.getId(), UpdateEntityInfo.STATUS.UPDATED)
@@ -85,12 +80,12 @@ public class CorsController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<UpdateEntityInfo> deleteCity(final @PathVariable("id") String id) {
+    public ResponseEntity<UpdateEntityInfo> deleteCors(final @PathVariable("id") String id) {
         if (!this.corsConfigService.getCors(id).isPresent()) {
             throw new ResourceNotFoundException();
         }
 
-        this.corsConfigService.removeCors(id);
+        this.corsConfigService.remove(id);
 
         return ResponseEntity.ok(
                 new UpdateEntityInfo(id, UpdateEntityInfo.STATUS.DELETED)
