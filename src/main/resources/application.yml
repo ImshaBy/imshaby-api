@@ -7,6 +7,13 @@ logging:
   level:
     org.springframework.data.mongodb.core.MongoTemplate: INFO
 
+#http://localhost:8080/swagger-ui/index.html
+#http://localhost:8080/v3/api-docs - json
+#http://localhost:8080/v3/api-docs.yaml - yaml
+springdoc:
+  swagger-ui:
+    enabled: true
+
 spring:
   data:
     mongodb:
