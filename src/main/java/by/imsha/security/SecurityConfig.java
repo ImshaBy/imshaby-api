@@ -74,6 +74,7 @@ public class SecurityConfig {
                     .antMatchers(HttpMethod.GET, "/hook/parish").permitAll()
                     .antMatchers(HttpMethod.GET, "/hook/mass").permitAll()
                     .antMatchers(HttpMethod.GET, "/status").permitAll()
+                    .antMatchers("/swagger-ui/**", "/v3/api-docs/**", "/v3/api-docs.yaml").permitAll()
                     .anyRequest().authenticated();
 
             //обработку токенов добавляем только при необходимости авторизации запросов
