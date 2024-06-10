@@ -10,6 +10,7 @@ import by.imsha.domain.dto.mapper.MassParishInfoMapper;
 import by.imsha.domain.dto.mapper.ParishInfoMapper;
 import by.imsha.domain.dto.mapper.ParishKeyUpdateInfoMapper;
 import by.imsha.repository.ParishRepository;
+import by.imsha.repository.projection.ParishExpirationInfo;
 import by.imsha.utils.ServiceUtils;
 import com.github.rutledgepaulv.qbuilders.builders.GeneralQueryBuilder;
 import com.github.rutledgepaulv.qbuilders.conditions.Condition;
@@ -24,6 +25,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -146,5 +148,9 @@ public class ParishService {
 
     public Optional<Parish> findParishByKey(final String key) {
         return parishRepository.findParishByKey(key);
+    }
+
+    public ParishExpirationInfo getParishExpirationInfo() {
+        return parishRepository.getParishExpirationData(LocalDateTime.now());
     }
 }

@@ -6,6 +6,7 @@ import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
 import by.imsha.domain.dto.*;
 import by.imsha.exception.ResourceNotFoundException;
+import by.imsha.repository.projection.ParishExpirationInfo;
 import by.imsha.service.CityService;
 import by.imsha.service.MassService;
 import by.imsha.service.ParishService;
@@ -182,6 +183,12 @@ public class ParishController {
         return Optional.ofNullable(this.parishService.getParishByUser(userId))
                 .map(ResponseEntity::ok)
                 .orElseThrow(ResourceNotFoundException::new);
+    }
+
+    @GetMapping("/expired")
+    public ResponseEntity<ParishExpirationInfo> getParishExpirationInfo() {
+
+        return ResponseEntity.ok(this.parishService.getParishExpirationInfo());
     }
 
     //TODO вынести логику в сервис и тогда покрыть контроллер тестами
