@@ -61,13 +61,13 @@ public class CorsController {
     @GetMapping("/{id}")
     public ResponseEntity<Cors> getCors(final @PathVariable("id") String id) {
         return ResponseEntity.ok(
-                this.corsConfigService.getCors(id)
+                this.corsConfigService.get(id)
                         .orElseThrow(ResourceNotFoundException::new));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<UpdateEntityInfo> updateCors(final @PathVariable("id") String id, final @RequestBody CorsInfo corsInfo) {
-        final Cors cors = this.corsConfigService.getCors(id)
+        final Cors cors = this.corsConfigService.get(id)
                 .orElseThrow(ResourceNotFoundException::new);
 
         corsMapper.updateCorsFromDTO(corsInfo, cors);
@@ -81,7 +81,7 @@ public class CorsController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<UpdateEntityInfo> deleteCors(final @PathVariable("id") String id) {
-        if (!this.corsConfigService.getCors(id).isPresent()) {
+        if (!this.corsConfigService.get(id).isPresent()) {
             throw new ResourceNotFoundException();
         }
 

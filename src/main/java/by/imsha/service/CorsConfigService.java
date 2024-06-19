@@ -29,7 +29,7 @@ public class CorsConfigService {
         return corsConfigRepository.save(cors);
     }
 
-    public Optional<Cors> getCors(String id) {
+    public Optional<Cors> get(String id) {
         return corsConfigRepository.findById(id);
     }
 
