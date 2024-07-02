@@ -280,8 +280,8 @@ public class MassService {
 
     //TODO flush massCache by mass id
     @Caching(evict = {
-            @CacheEvict(cacheNames = "massCache", key = "'massesByParish:' + #p0.parishId"),
-            @CacheEvict(cacheNames = "massCache", key = "'oldestMass:' + #p0.parishId")
+            @CacheEvict(cacheNames = "massCache", key = "'massesByParish:' + #p0"),
+            @CacheEvict(cacheNames = "massCache", key = "'oldestMass:' + #p0")
     })
     public List<Mass> removeMasses(String parishId){
         return massRepository.deleteByParishId(parishId);
