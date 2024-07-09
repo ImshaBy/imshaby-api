@@ -32,6 +32,10 @@ dependencies {
     implementation "org.cache2k:cache2k-spring:${cache2kVersion}"
     implementation 'org.projectlombok:lombok'
     implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+    implementation "ch.qos.logback.contrib:logback-jackson:${logbackVersion}"
+    implementation "ch.qos.logback.contrib:logback-json-classic:${logbackVersion}"
+    implementation "org.codehaus.janino:janino:${janinoVersion}"
+    implementation "org.springdoc:springdoc-openapi-ui:${springdocVersion}"
 
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"

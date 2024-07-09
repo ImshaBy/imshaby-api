@@ -75,7 +75,7 @@ public class SecurityConfig {
                             .requestMatchers(HttpMethod.GET, "/hook/parish").permitAll()
                             .requestMatchers(HttpMethod.GET, "/hook/mass").permitAll()
                             .requestMatchers(HttpMethod.GET, "/status").permitAll()
-                            .requestMatchers(HttpMethod.GET, "/swagger-ui/**", "/v3/api-docs/**", "/v3/api-docs.yaml").permitAll()
+                            .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/v3/api-docs.yaml").permitAll()
                             .anyRequest().authenticated()
                     )
                     .oauth2ResourceServer(oauth2ResourceServer ->
