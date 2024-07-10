@@ -35,7 +35,7 @@ dependencies {
     implementation "ch.qos.logback.contrib:logback-jackson:${logbackVersion}"
     implementation "ch.qos.logback.contrib:logback-json-classic:${logbackVersion}"
     implementation "org.codehaus.janino:janino:${janinoVersion}"
-    implementation "org.springdoc:springdoc-openapi-ui:${springdocVersion}"
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
 
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
