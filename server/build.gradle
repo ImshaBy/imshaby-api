@@ -11,6 +11,10 @@ java {
     sourceCompatibility = '21'
 }
 
+compileJava { //TODO проверить, необходима ли ещё?
+    options.compilerArgs << '-parameters'
+}
+
 repositories {
     mavenCentral()
 }
@@ -42,8 +46,27 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     annotationProcessor "org.projectlombok:lombok-mapstruct-binding:${lombokMapstructBindingVersion}"
 
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'io.rest-assured:rest-assured'
+
+    testImplementation 'org.junit.platform:junit-platform-suite'
+    testImplementation 'io.cucumber:cucumber-java:7.15.0'
+    testImplementation 'io.cucumber:cucumber-junit-platform-engine:7.15.0'
+    testImplementation 'io.cucumber:cucumber-spring:7.15.0'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter'
+    testImplementation 'org.springframework.boot:spring-boot-starter-json'
+    testImplementation 'org.testcontainers:junit-jupiter'
+
+    testImplementation 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+
+    testImplementation 'org.mongodb:mongodb-driver-sync' //TODO хз зачем он, проверить
+}
+
+processTestResources {
+    // для профиля local необходима директория (заменяем projectBuildDir на путь к директории)
+    expand(["projectBuildDir": layout.buildDirectory.getAsFile().get().getAbsolutePath()])
 }
 
 test {
