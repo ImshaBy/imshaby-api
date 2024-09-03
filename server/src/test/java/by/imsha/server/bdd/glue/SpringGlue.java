@@ -30,7 +30,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @see io.cucumber.spring.ScenarioScope
  */
 @CucumberContextConfiguration
-@ActiveProfiles("local")
+@ActiveProfiles({"local", "test"})
 @SpringBootTest(classes = Application.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class SpringGlue {
 

@@ -42,16 +42,19 @@ public class MassSchedule implements Serializable {
     @Getter
     private List<MassDay> schedule;
 
-    public MassSchedule(LocalDate startDate) {
-        this(startDate, false);
+    private MassInfoMapper massInfoMapper;
+
+    public MassSchedule(LocalDate startDate, MassInfoMapper massInfoMapper) {
+        this(startDate, massInfoMapper, false);
     }
 
-    public MassSchedule(LocalDate startDate, boolean onlyValidMasses) {
+    public MassSchedule(LocalDate startDate, MassInfoMapper massInfoMapper, boolean onlyValidMasses) {
         this.startWeekDate = startDate;
         weekMasses = new HashMap<>();
         massesByDay = new HashMap<>();
         schedule = new ArrayList<>();
         this.onlyValidMasses = onlyValidMasses;
+        this.massInfoMapper = massInfoMapper;
     }
 
     @Getter
@@ -64,7 +67,7 @@ public class MassSchedule implements Serializable {
     private Map<DayOfWeek, Map<LocalTime, List<MassInfo>>> massesByDay;
 
     public void populateContainers(Mass mass, DayOfWeek dayOfWeek, LocalTime time) {
-        populateContainers(MassInfoMapper.MAPPER.toMassInfo(mass), dayOfWeek, time);
+        populateContainers(massInfoMapper.toMassInfo(mass), dayOfWeek, time);
     }
 
     public void populateContainers(final MassInfo massInfo, final DayOfWeek dayOfWeek, final LocalTime time) {

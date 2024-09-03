@@ -3,12 +3,8 @@ package by.imsha.service;
 
 import by.imsha.domain.LocalizedParish;
 import by.imsha.domain.Parish;
-import by.imsha.domain.dto.MassParishInfo;
 import by.imsha.domain.dto.ParishInfo;
-import by.imsha.domain.dto.ParishKeyUpdateInfo;
-import by.imsha.domain.dto.mapper.MassParishInfoMapper;
 import by.imsha.domain.dto.mapper.ParishInfoMapper;
-import by.imsha.domain.dto.mapper.ParishKeyUpdateInfoMapper;
 import by.imsha.repository.ParishRepository;
 import by.imsha.repository.projection.ParishExpirationInfo;
 import by.imsha.utils.ServiceUtils;
@@ -16,7 +12,6 @@ import com.github.rutledgepaulv.qbuilders.builders.GeneralQueryBuilder;
 import com.github.rutledgepaulv.qbuilders.conditions.Condition;
 import com.github.rutledgepaulv.qbuilders.visitors.MongoVisitor;
 import com.github.rutledgepaulv.rqe.pipes.QueryConversionPipeline;
-import jakarta.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,23 +33,8 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 @Service
 public class ParishService {
 
-    private static ParishService INSTANCE;
-
-    @PostConstruct
-    public void initInstance(){
-        INSTANCE = this;
-    }
-
-    public static MassParishInfo extractMassParishInfo(String parishId){
-        Parish parish = INSTANCE.getParish(parishId).get();
-        return MassParishInfoMapper.MAPPER.toMassParishInfo(parish);
-    }
-
-    public static ParishKeyUpdateInfo extractParishKeyUpdateInfo(String parishId){
-        Parish parish = INSTANCE.getParish(parishId).get();
-        return ParishKeyUpdateInfoMapper.MAPPER.toParishKeyUpdateInfo(parish);
-    }
-
+    @Autowired
+    private ParishInfoMapper parishInfoMapper;
 
     private static Logger logger = LoggerFactory.getLogger(ParishService.class);
 
@@ -107,7 +87,7 @@ public class ParishService {
 
     //    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public Parish updateParish(ParishInfo parishInfo, Parish parishToUpdate){
-        ParishInfoMapper.MAPPER.updateParishFromDTO(parishInfo, parishToUpdate);
+        parishInfoMapper.updateParishFromDTO(parishInfo, parishToUpdate);
         return parishRepository.save(parishToUpdate);
     }
 
@@ -118,7 +98,7 @@ public class ParishService {
     public Parish updateLocalizedParishInfo(LocalizedParish localizedParishInput, Parish parish){
         LocalizedParish currentParishInfo = (LocalizedParish)parish.getLocalizedInfo().get(localizedParishInput.getLang());
         if(currentParishInfo != null){
-            ParishInfoMapper.MAPPER.updateLocalizedParishFromDTO(localizedParishInput, currentParishInfo);
+            parishInfoMapper.updateLocalizedParishFromDTO(localizedParishInput, currentParishInfo);
         }else{
             parish.getLocalizedInfo().put(localizedParishInput.getLang(), localizedParishInput);
         }

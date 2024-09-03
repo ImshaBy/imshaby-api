@@ -18,7 +18,7 @@ import java.util.Optional;
 public class LocalizedUtils {
 
     public static String getLocalizedCityName(final City city, final String locale) {
-        return Optional.of(city.getLocalizedInfo().get(locale))
+        return Optional.ofNullable(city.getLocalizedInfo().get(locale))
                 .map(localizedBaseInfo -> ((LocalizedCity) localizedBaseInfo).getName())
                 .orElseGet(city::getName);
     }
@@ -35,19 +35,19 @@ public class LocalizedUtils {
     }
 
     public static String getLocalizedParishName(final Parish parish, final String locale) {
-        return Optional.of(parish.getLocalizedInfo().get(locale))
+        return Optional.ofNullable(parish.getLocalizedInfo().get(locale))
                 .map(localizedBaseInfo -> ((LocalizedParish) localizedBaseInfo).getName())
                 .orElseGet(parish::getName);
     }
 
     public static String getLocalizedParishShortName(final Parish parish, final String locale) {
-        return Optional.of(parish.getLocalizedInfo().get(locale))
+        return Optional.ofNullable(parish.getLocalizedInfo().get(locale))
                 .map(localizedBaseInfo -> ((LocalizedParish) localizedBaseInfo).getShortName())
                 .orElseGet(parish::getShortName);
     }
 
     public static String getLocalizedParishAddress(final Parish parish, final String locale) {
-        return Optional.of(parish.getLocalizedInfo().get(locale))
+        return Optional.ofNullable(parish.getLocalizedInfo().get(locale))
                 .map(localizedBaseInfo -> ((LocalizedParish) localizedBaseInfo).getAddress())
                 .orElseGet(parish::getAddress);
     }

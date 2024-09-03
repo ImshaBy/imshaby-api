@@ -9,7 +9,6 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.mapstruct.NullValueCheckStrategy;
 import org.mapstruct.NullValuePropertyMappingStrategy;
-import org.mapstruct.factory.Mappers;
 
 import static by.imsha.utils.LocalizedUtils.getLocalizedParishAddress;
 import static by.imsha.utils.LocalizedUtils.getLocalizedParishName;
@@ -21,9 +20,9 @@ import static by.imsha.utils.UserLocaleHolder.getUserLocale;
  */
 @Mapper(uses = {LocationInfoMapper.class},
         nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS,
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
+        componentModel = "spring")
 public interface ParishInfoMapper {
-    ParishInfoMapper MAPPER = Mappers.getMapper(ParishInfoMapper.class);
 
     @Mapping(source = "parish", target = "name", qualifiedByName = "convertToLocalizedName")
     @Mapping(source = "parish", target = "shortName", qualifiedByName = "convertToLocalizedShortName")

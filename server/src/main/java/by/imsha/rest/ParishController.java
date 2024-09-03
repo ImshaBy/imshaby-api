@@ -13,6 +13,7 @@ import by.imsha.domain.dto.ParishKeyUpdateInfo;
 import by.imsha.domain.dto.ParishStateInfo;
 import by.imsha.domain.dto.UpdateEntitiesInfo;
 import by.imsha.domain.dto.UpdateEntityInfo;
+import by.imsha.domain.dto.mapper.ParishKeyUpdateInfoMapper;
 import by.imsha.exception.ResourceNotFoundException;
 import by.imsha.repository.projection.ParishExpirationInfo;
 import by.imsha.service.CityService;
@@ -71,6 +72,9 @@ public class ParishController {
 
     @Autowired
     private DateTimeProvider dateTimeProvider;
+
+    @Autowired
+    private ParishKeyUpdateInfoMapper parishKeyUpdateInfoMapper;
 
     @PostMapping
     public ResponseEntity<Parish> createParish(@Valid @RequestBody Parish parish) {
@@ -230,7 +234,7 @@ public class ParishController {
 
         Set<ParishKeyUpdateInfo> parishKeys = weekMasses.stream()
                 .filter(MassInfo::isNeedUpdate)
-                .map(massInfo -> ParishService.extractParishKeyUpdateInfo(massInfo.getParish().getParishId()))
+                .map(massInfo -> extractParishKeyUpdateInfo(massInfo.getParish().getParishId()))
                 .collect(Collectors.toSet());
         return ResponseEntity.ok(
                 parishKeys
@@ -263,4 +267,8 @@ public class ParishController {
         );
     }
 
+    private ParishKeyUpdateInfo extractParishKeyUpdateInfo(String parishId){
+        Parish parish = parishService.getParish(parishId).get();
+        return parishKeyUpdateInfoMapper.toParishKeyUpdateInfo(parish);
+    }
 }

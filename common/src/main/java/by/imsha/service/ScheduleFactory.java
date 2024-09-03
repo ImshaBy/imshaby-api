@@ -4,6 +4,7 @@ import by.imsha.domain.Mass;
 import by.imsha.domain.dto.MassInfo;
 import by.imsha.domain.dto.MassParishInfo;
 import by.imsha.domain.dto.MassSchedule;
+import by.imsha.domain.dto.mapper.MassInfoMapper;
 import by.imsha.domain.dto.mapper.MassParishInfoMapper;
 import by.imsha.meilisearch.model.SearchResultItem;
 import by.imsha.utils.ServiceUtils;
@@ -12,7 +13,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.*;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,12 +30,15 @@ public class ScheduleFactory {
 
     protected final Logger log = LoggerFactory.getLogger(this.getClass());
 
-
+    @Autowired
+    private MassParishInfoMapper massParishInfoMapper;
+    @Autowired
+    private MassInfoMapper massInfoMapper;
     @Autowired
     private ParishService parishService;
 
     private MassSchedule build(List<Mass> masses, LocalDate startDate, LocalDate endDate) {
-        MassSchedule schedule =  new MassSchedule(startDate);
+        MassSchedule schedule =  new MassSchedule(startDate, massInfoMapper);
         for (Mass mass : masses) {
             long singleStartTimestamp = mass.getSingleStartTimestamp();
             // TODO get ZONE from parish : to support
@@ -81,7 +88,7 @@ public class ScheduleFactory {
     }
 
     public MassSchedule build(final LocalDate dateFrom, final List<SearchResultItem> resultItems) {
-        final MassSchedule massSchedule = new MassSchedule(dateFrom, true);
+        final MassSchedule massSchedule = new MassSchedule(dateFrom, massInfoMapper, true);
 
         final Map<String, MassParishInfo> parishInfoCache = new HashMap<>();
 
@@ -95,7 +102,7 @@ public class ScheduleFactory {
                     parishInfoCache.computeIfAbsent(
                             resultItem.parish().id(),
                             parishId -> parishService.getParish(parishId)
-                                    .map(MassParishInfoMapper.MAPPER::toMassParishInfo)
+                                    .map(massParishInfoMapper::toMassParishInfo)
                                     .orElse(null))
             );
             massInfo.setDuration(resultItem.duration());

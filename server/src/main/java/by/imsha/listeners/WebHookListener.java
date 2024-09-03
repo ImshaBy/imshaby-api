@@ -41,6 +41,9 @@ public class WebHookListener implements AfterSaveCallback<Mass> {
     private EntityWebhookService webhookService;
     @Autowired
     private ImshaProperties imshaProperties;
+    @Lazy
+    @Autowired
+    private MassInfoMapper massInfoMapper;
 
     @Override
     public Mass onAfterSave(Mass mass, Document document, String s) {
@@ -83,7 +86,7 @@ public class WebHookListener implements AfterSaveCallback<Mass> {
                 .uri(url)
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + imshaProperties.getWebHookToken())
-                .body(Mono.just(MassInfoMapper.MAPPER.toMassInfo(mass)), MassInfo.class)
+                .body(Mono.just(massInfoMapper.toMassInfo(mass)), MassInfo.class)
                 .retrieve()
                 .bodyToMono(String.class)
                 .onErrorResume(e -> Mono.just("Error " + e.getMessage()));

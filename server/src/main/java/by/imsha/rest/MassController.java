@@ -3,14 +3,12 @@ package by.imsha.rest;
 import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
 import by.imsha.domain.dto.MassDay;
-import by.imsha.domain.dto.MassInfo;
 import by.imsha.domain.dto.MassNav;
 import by.imsha.domain.dto.MassSchedule;
 import by.imsha.domain.dto.UpdateEntitiesInfo;
 import by.imsha.domain.dto.UpdateEntityInfo;
 import by.imsha.domain.dto.UpdateMassInfo;
 import by.imsha.domain.dto.mapper.MassInfoMapper;
-import by.imsha.domain.dto.mapper.MassParishInfoMapper;
 import by.imsha.exception.InvalidDateIntervalException;
 import by.imsha.exception.ResourceNotFoundException;
 import by.imsha.meilisearch.model.SearchResultItem;
@@ -42,7 +40,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -86,6 +83,9 @@ public class MassController {
     @Autowired
     private MeilisearchReader meilisearchReader;
 
+    @Autowired
+    private MassInfoMapper massInfoMapper;
+
     @PostMapping
     public ResponseEntity<Mass> createMass(@RequestBody final Mass mass) {
         return ResponseEntity
@@ -125,7 +125,7 @@ public class MassController {
             massInfo = new UpdateMassInfo();
         }
         //TODO переделать мапперы на componentModel = "spring"
-        MassInfoMapper.MAPPER.updateMassFromDTO(massInfo, massToUpdate);
+        massInfoMapper.updateMassFromDTO(massInfo, massToUpdate);
         final Mass updatedMass = this.massService.updateMass(massToUpdate);
 
         return ResponseEntity.ok(

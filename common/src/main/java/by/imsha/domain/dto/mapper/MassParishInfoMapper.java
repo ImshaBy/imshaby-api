@@ -5,7 +5,6 @@ import by.imsha.domain.dto.MassParishInfo;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
-import org.mapstruct.factory.Mappers;
 
 import static by.imsha.utils.LocalizedUtils.getLocalizedParishAddress;
 import static by.imsha.utils.LocalizedUtils.getLocalizedParishName;
@@ -17,7 +16,6 @@ import static by.imsha.utils.UserLocaleHolder.getUserLocale;
  */
 @Mapper(uses = LocationInfoMapper.class, componentModel = "spring")
 public interface MassParishInfoMapper {
-    MassParishInfoMapper MAPPER = Mappers.getMapper(MassParishInfoMapper.class);
 
     @Mapping(source = "id", target = "parishId")
     @Mapping(source = "parish", target = "name", qualifiedByName = "convertToLocalizedName")
