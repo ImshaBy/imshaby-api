@@ -28,6 +28,11 @@ jobs:
         with:
           ref: ${{ needs.create_tag.outputs.tag }}
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
       - name: Build server
         run: |
           ./gradlew :server:build
