@@ -21,6 +21,15 @@ jobs:
         with:
           ref: ${{ github.ref_name}}
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Build server
+        run: |
+          ./gradlew :server:build
+
       # Runs a single command using the runners shell
       - name: Yandex Cloud CR "Login" Action for GitHub Actions
         uses: yc-actions/yc-cr-login@v0.1-alpha
