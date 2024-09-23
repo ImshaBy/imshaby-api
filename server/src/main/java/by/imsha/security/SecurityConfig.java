@@ -52,6 +52,9 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource(CorsConfiguration corsConfiguration) {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration parishWeekRequestConfig = new CorsConfiguration().applyPermitDefaultValues();
+        parishWeekRequestConfig.addAllowedMethod(HttpMethod.GET);
+        source.registerCorsConfiguration("/api/mass/parish-week", parishWeekRequestConfig);
         source.registerCorsConfiguration("/**", corsConfiguration);
         return source;
     }
