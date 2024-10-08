@@ -5,29 +5,28 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.web.servlet.support.RequestContextUtils;
+import org.springframework.web.servlet.LocaleResolver;
 
 import java.io.IOException;
+import java.util.Locale;
 
 /**
  * Фильтр, для заполнения локали пользователя в {@link UserLocaleHolder}
+ *
+ * TODO переделать работу с локалями в целом (нужно выбрать какой-то конкретный способ конфигурации)
  */
 @Component
+@Deprecated(forRemoval = true)
+@RequiredArgsConstructor
 public class UserLocaleManagingFilter extends OncePerRequestFilter {
 
     private static final String LANG_PARAM_NAME = "lang";
 
-    private static String fetchUserLangFromHttpRequest(HttpServletRequest httpServletRequest) {
-        String paramLang = httpServletRequest.getParameter(LANG_PARAM_NAME);
-        if (StringUtils.isEmpty(paramLang)) {
-            //it's ok to determine lang as part of locale as fallback user language
-            paramLang = RequestContextUtils.getLocale(httpServletRequest).getLanguage();
-        }
-        return paramLang;
-    }
+    private final LocaleResolver localeResolver;
 
     @Override
     protected void doFilterInternal(
@@ -41,5 +40,17 @@ public class UserLocaleManagingFilter extends OncePerRequestFilter {
         } finally {
             UserLocaleHolder.resetUserLocale();
         }
+    }
+
+    private String fetchUserLangFromHttpRequest(HttpServletRequest httpServletRequest) {
+        String paramLang = httpServletRequest.getParameter(LANG_PARAM_NAME);
+        if (StringUtils.isEmpty(paramLang)) {
+            Locale locale = localeResolver.resolveLocale(httpServletRequest);
+            if (locale == null) {
+                locale = httpServletRequest.getLocale();
+            }
+            paramLang = locale.getLanguage();
+        }
+        return paramLang;
     }
 }
