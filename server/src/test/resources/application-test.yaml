@@ -11,3 +11,8 @@ app:
     api-keys: TEST_API_KEY
     internal-api-keys: TEST_INTERNAL_API_KEY
     parish-week-api-keys: "123:123"
+
+fusionAuth:
+  host-url: https://identity.imsha.by
+  authorization-token: LVkhGbFBTQuvnZgm3OCgS3uAGHJ55QZBxh43GN94RZ6aLDW2pZL2bUo8
+  user-search-pagination: 3
