@@ -22,6 +22,7 @@ public class MassParishInfo implements Serializable {
     private LocationInfo gps;
     private String address;
     private String broadcastUrl;
+    private Boolean volunteerNeeded;
 
 
     private Integer updatePeriodInDays;
