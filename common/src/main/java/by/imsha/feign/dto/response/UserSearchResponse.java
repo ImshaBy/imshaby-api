@@ -1,23 +1,28 @@
 package by.imsha.feign.dto.response;
 
-import lombok.Value;
+import lombok.Data;
 
 import java.util.List;
 import java.util.Map;
 
-@Value
+@Data
 public class UserSearchResponse {
     Integer total;
     List<User> users;
 
-    @Value
+    @Data
     public static class User {
-        Data data;
+        ParishData data;
+        List<Registration> registrations;
     }
 
-    @Value
-    public static class Data {
-        boolean superAdmin;
+    @Data
+    public static class ParishData {
         Map<String, String> parishes;
+    }
+
+    @Data
+    public static class Registration {
+        List<String> roles;
     }
 }

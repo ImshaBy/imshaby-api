@@ -49,9 +49,9 @@ public class VolunteerService {
 
             userSearchResponse.getUsers().stream()
                     .flatMap(user -> Optional.ofNullable(user)
+                            .filter(u -> !u.getRegistrations().getFirst().getRoles().contains("Admin"))
                             .map(UserSearchResponse.User::getData)
-                            .filter(data -> !data.isSuperAdmin())
-                            .map(UserSearchResponse.Data::getParishes).stream())
+                            .map(UserSearchResponse.ParishData::getParishes).stream())
                     .flatMap(map -> map.values().stream())
                     .forEach(name -> {
                         Boolean volunteerNeeded = volunteerNeededInParish.computeIfPresent(name, (k, v) -> true);
