@@ -18,6 +18,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class VolunteerService {
 
+    private static final String ROLE_ADMIN = "Admin";
+
     private final FusionAuthApiFeignClient fusionAuthApiFeignClient;
 
     @Lazy
@@ -26,9 +28,10 @@ public class VolunteerService {
 
     @Value("${fusionAuth.authorization-token}")
     private String authorization;
-
     @Value("${fusionAuth.user-search-pagination}")
     private Integer pagination;
+    @Value("${fusionAuth.application-id}")
+    private String applicationId;
 
     public Boolean volunteerNeededByParishName(final String parishName) {
         return self.getVolunteerNeededMap().get(parishName);
@@ -49,7 +52,9 @@ public class VolunteerService {
 
             userSearchResponse.getUsers().stream()
                     .flatMap(user -> Optional.ofNullable(user)
-                            .filter(u -> !u.getRegistrations().getFirst().getRoles().contains("Admin"))
+                            .filter(u -> u.getRegistrations().stream()
+                                    .filter(registration -> registration.getApplicationId().equals(applicationId))
+                                    .map(registration -> !registration.getRoles().contains(ROLE_ADMIN)).findFirst().get())
                             .map(UserSearchResponse.User::getData)
                             .map(UserSearchResponse.ParishData::getParishes).stream())
                     .flatMap(map -> map.values().stream())
@@ -60,7 +65,7 @@ public class VolunteerService {
                         }
                     });
             startRow += pagination;
-        } while (userSearchResponse.getUsers().size() < pagination);
+        } while (userSearchResponse.getUsers().size() >= pagination);
         return volunteerNeededInParish;
     }
 }

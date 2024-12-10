@@ -23,6 +23,7 @@ public class UserSearchResponse {
 
     @Data
     public static class Registration {
+        String applicationId;
         List<String> roles;
     }
 }
