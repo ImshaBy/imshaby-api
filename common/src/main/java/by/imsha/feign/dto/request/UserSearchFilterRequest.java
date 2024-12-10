@@ -9,11 +9,11 @@ import java.util.List;
 @Builder
 public class UserSearchFilterRequest {
 
-    searchFilter search;
+    SearchFilter search;
 
     @Value
     @Builder
-    public static class searchFilter {
+    public static class SearchFilter {
         Integer numberOfResults;
         String queryString;
         List<SortField> sortFields;

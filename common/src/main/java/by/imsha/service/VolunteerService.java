@@ -37,17 +37,21 @@ public class VolunteerService {
     @Cacheable(cacheNames = "volunteerNeededMap")
     public Map<String, Boolean> getVolunteerNeededMap() {
         Map<String, Boolean> volunteerNeededInParish = new HashMap<>();
+        UserSearchResponse userSearchResponse;
         int startRow = 0;
-        while (true) {
-            UserSearchResponse userSearchResponse = fusionAuthApiFeignClient.usersSearch(UserSearchFilterRequest.builder()
-                    .search(UserSearchFilterRequest.searchFilter.builder()
+        do {
+            userSearchResponse = fusionAuthApiFeignClient.usersSearch(UserSearchFilterRequest.builder()
+                    .search(UserSearchFilterRequest.SearchFilter.builder()
                             .numberOfResults(pagination)
                             .queryString("*")
                             .startRow(startRow)
                             .build()).build(), authorization);
 
             userSearchResponse.getUsers().stream()
-                    .flatMap(u -> Optional.ofNullable(u.getData().getParishes()).stream())
+                    .flatMap(user -> Optional.ofNullable(user)
+                            .map(UserSearchResponse.User::getData)
+                            .filter(data -> !data.isSuperAdmin())
+                            .map(UserSearchResponse.Data::getParishes).stream())
                     .flatMap(map -> map.values().stream())
                     .forEach(name -> {
                         Boolean volunteerNeeded = volunteerNeededInParish.computeIfPresent(name, (k, v) -> true);
@@ -55,12 +59,8 @@ public class VolunteerService {
                             volunteerNeededInParish.put(name, false);
                         }
                     });
-
-            if (userSearchResponse.getUsers().size() < pagination) {
-                break;
-            }
             startRow += pagination;
-        }
+        } while (userSearchResponse.getUsers().size() < pagination);
         return volunteerNeededInParish;
     }
 }

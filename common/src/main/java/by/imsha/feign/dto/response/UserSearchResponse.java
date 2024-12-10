@@ -12,13 +12,12 @@ public class UserSearchResponse {
 
     @Value
     public static class User {
-        boolean active;
         Data data;
     }
 
     @Value
     public static class Data {
-        String defaultParish;
+        boolean superAdmin;
         Map<String, String> parishes;
     }
 }
