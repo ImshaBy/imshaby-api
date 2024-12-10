@@ -18,7 +18,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class VolunteerService {
 
-    private static final String ROLE_ADMIN = "Admin";
+    private static final String ROLE_VOLUNTEER = "Volunteer";
 
     private final FusionAuthApiFeignClient fusionAuthApiFeignClient;
 
@@ -54,7 +54,7 @@ public class VolunteerService {
                     .flatMap(user -> Optional.ofNullable(user)
                             .filter(u -> u.getRegistrations().stream()
                                     .filter(registration -> registration.getApplicationId().equals(applicationId)).findFirst()
-                                    .map(registration -> !registration.getRoles().contains(ROLE_ADMIN)).get())
+                                    .map(registration -> registration.getRoles().contains(ROLE_VOLUNTEER)).get())
                             .map(UserSearchResponse.User::getData)
                             .map(UserSearchResponse.ParishData::getParishes).stream())
                     .flatMap(map -> map.values().stream())
