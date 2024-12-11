@@ -35,8 +35,8 @@ public class VolunteerService {
     @Value("${fusionAuth.application-id}")
     private String applicationId;
 
-    public Boolean volunteerNeededByParishName(final String parishName) {
-        return self.getVolunteerNeededMap().get(parishName);
+    public boolean volunteerNeededByParishName(final String parishName, final boolean defaultValue) {
+        return self.getVolunteerNeededMap().getOrDefault(parishName, defaultValue);
     }
 
     @Cacheable(cacheNames = "volunteerNeededMap")
