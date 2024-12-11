@@ -11,9 +11,11 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -71,8 +73,81 @@ public class VolunteerService {
             } while (userSearchResponse.getUsers().size() >= pagination);
         } catch (Exception e) {
             log.error("При получении volunteerNeededMap произошла ошибка: ", e);
-            return Map.of();
+            return new VolunteerNotNeededStubMap();
         }
         return volunteerNeededInParish;
+    }
+
+    /**
+     * Заглушка, возвращающая всегда false
+     * <p>
+     * Необходима, если мы не смогли загрузить данные из fusionAuth
+     */
+    private static class VolunteerNotNeededStubMap implements Map<String, Boolean> {
+
+        @Override
+        public Boolean getOrDefault(Object key, Boolean defaultValue) {
+            return false;
+        }
+
+        @Override
+        public int size() {
+            return 0;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return false;
+        }
+
+        @Override
+        public boolean containsKey(Object key) {
+            return false;
+        }
+
+        @Override
+        public boolean containsValue(Object value) {
+            return false;
+        }
+
+        @Override
+        public Boolean get(Object key) {
+            return null;
+        }
+
+        @Override
+        public Boolean put(String key, Boolean value) {
+            return null;
+        }
+
+        @Override
+        public Boolean remove(Object key) {
+            return null;
+        }
+
+        @Override
+        public void putAll(Map<? extends String, ? extends Boolean> m) {
+
+        }
+
+        @Override
+        public void clear() {
+
+        }
+
+        @Override
+        public Set<String> keySet() {
+            return null;
+        }
+
+        @Override
+        public Collection<Boolean> values() {
+            return null;
+        }
+
+        @Override
+        public Set<Entry<String, Boolean>> entrySet() {
+            return null;
+        }
     }
 }
