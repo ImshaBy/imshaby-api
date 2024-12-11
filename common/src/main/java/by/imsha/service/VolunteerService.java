@@ -39,7 +39,7 @@ public class VolunteerService {
         return self.getVolunteerNeededMap().get(parishName);
     }
 
-    @Cacheable(cacheNames = "volunteerNeededMap")
+    @Cacheable(cacheNames = "volunteerNeededMap", sync = true)
     public Map<String, Boolean> getVolunteerNeededMap() {
         Map<String, Boolean> volunteerNeededInParish = new HashMap<>();
         UserSearchResponse userSearchResponse;
@@ -62,9 +62,9 @@ public class VolunteerService {
                                 .map(UserSearchResponse.ParishData::getParishes).stream())
                         .flatMap(map -> map.values().stream())
                         .forEach(name -> {
-                            Boolean volunteerNeeded = volunteerNeededInParish.computeIfPresent(name, (k, v) -> true);
+                            Boolean volunteerNeeded = volunteerNeededInParish.computeIfPresent(name, (k, v) -> false);
                             if (volunteerNeeded == null) {
-                                volunteerNeededInParish.put(name, false);
+                                volunteerNeededInParish.put(name, true);
                             }
                         });
                 startRow += pagination;
