@@ -8,3 +8,5 @@ app:
       - "http://localhost:4200"
       - "http://localhost:8080"
       - "http://localhost:3000"
+      - "http://test.imsha.by"
+      - "http://test.imsha.by:3000"
