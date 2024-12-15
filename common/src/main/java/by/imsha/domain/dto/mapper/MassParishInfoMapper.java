@@ -46,6 +46,6 @@ public abstract class MassParishInfoMapper {
 
     @Named("convertToVolunteerNeeded")
     public Boolean convertToVolunteerNeeded(final Parish parish) {
-        return volunteerService.volunteerNeededByParishName(parish.getName(), true);
+        return volunteerService.volunteerNeededByParishName(parish.getKey(), true);
     }
 }
