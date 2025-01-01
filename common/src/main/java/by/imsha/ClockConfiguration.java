@@ -1,6 +1,6 @@
 package by.imsha;
 
-import by.imsha.properties.ImshaProperties;
+import by.imsha.properties.CommonProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -13,7 +13,7 @@ public class ClockConfiguration {
      * Часы, для работы со временем в системе
      */
     @Bean
-    public Clock clock(final ImshaProperties imshaProperties) {
+    public Clock clock(final CommonProperties imshaProperties) {
         return Clock.system(imshaProperties.getZoneId());
     }
 }
