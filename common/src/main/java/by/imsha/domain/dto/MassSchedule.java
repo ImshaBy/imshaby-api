@@ -84,14 +84,22 @@ public class MassSchedule implements Serializable {
 //        LocalDate startDate = LocalDate.of(getStartWeekDate().getYear(), getStartWeekDate().getMonth(), getStartWeekDate().getDayOfMonth()).minusDays(getStartWeekDate().getDayOfWeek().getValue() - 1)
 //                .minusDays(getStartWeekDate().getDayOfWeek().getValue() - 1);
 
-        createSchedule(getStartWeekDate());
+        createSchedule(getStartWeekDate(), 7);
         return this;
     }
 
-    private void createSchedule(LocalDate startDate) {
+    /**
+     * Build schedule for week from provided startWeekDate;
+     */
+    public MassSchedule createSchedule(int days) {
+        createSchedule(getStartWeekDate(), days);
+        return this;
+    }
+
+    private void createSchedule(LocalDate startDate, int days) {
         int counter = 0;
 
-        while (counter < 7) {
+        while (counter < days) {
             Map<LocalTime, List<MassInfo>> massHours = getMassesByDay().get(startDate.getDayOfWeek());
 
             if (massHours != null && massHours.size() > 0) {

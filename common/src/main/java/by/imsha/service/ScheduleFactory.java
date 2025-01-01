@@ -37,7 +37,7 @@ public class ScheduleFactory {
     @Autowired
     private ParishService parishService;
 
-    private MassSchedule build(List<Mass> masses, LocalDate startDate, LocalDate endDate) {
+    public MassSchedule build(List<Mass> masses, LocalDate startDate, LocalDate endDate) {
         MassSchedule schedule =  new MassSchedule(startDate, massInfoMapper);
         for (Mass mass : masses) {
             long singleStartTimestamp = mass.getSingleStartTimestamp();
