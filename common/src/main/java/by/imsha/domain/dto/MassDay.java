@@ -61,7 +61,7 @@ public class MassDay implements Serializable {
         this.massHours = massHours;
     }
 
-    static class MassHour {
+    public static class MassHour {
 
         @JsonSerialize(using = LocalTimeSerializer.class)
         private LocalTime hour;
