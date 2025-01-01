@@ -40,6 +40,9 @@ dependencies {
     api "org.springframework.cloud:spring-cloud-starter-openfeign"
     api "com.github.rutledgepaulv:rest-query-engine:${restQueryEngineVersion}"
     api "com.google.guava:guava:${guavaVersion}"
+    api "org.cache2k:cache2k-api:${cache2kVersion}"
+    api "org.cache2k:cache2k-core:${cache2kVersion}"
+    api "org.cache2k:cache2k-spring:${cache2kVersion}"
     api project(':meilisearch:api')
 
 
