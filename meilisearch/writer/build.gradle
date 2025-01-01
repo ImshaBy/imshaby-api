@@ -33,9 +33,9 @@ dependencies {
 
     api 'jakarta.validation:jakarta.validation-api'
     api 'org.springframework.cloud:spring-cloud-starter-openfeign'
+    api "com.meilisearch.sdk:meilisearch-java:${meilisearchSdkVersion}"
 
     implementation 'org.springframework.boot:spring-boot-autoconfigure'
-    implementation "com.meilisearch.sdk:meilisearch-java:${meilisearchSdkVersion}"
     implementation "org.slf4j:slf4j-api"
 
     implementation 'org.projectlombok:lombok'
