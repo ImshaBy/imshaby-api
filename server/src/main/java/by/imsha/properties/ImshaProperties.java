@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
 
-import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -17,11 +16,6 @@ import java.util.Set;
 @Validated
 public class ImshaProperties {
 
-    /**
-     * Идентификатор временной зоны
-     */
-    @NotNull
-    private ZoneId zoneId;
     /**
      * Токен аутентификации (куда-то?)
      */
