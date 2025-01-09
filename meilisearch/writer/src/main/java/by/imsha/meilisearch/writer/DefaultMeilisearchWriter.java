@@ -4,24 +4,27 @@ import by.imsha.meilisearch.model.SearchRecord;
 import by.imsha.meilisearch.writer.exception.MeilisearchWriterException;
 import by.imsha.meilisearch.writer.feign.MeilisearchApiFeignClient;
 import by.imsha.meilisearch.writer.feign.dto.request.DeleteDocumentsByFilterRequest;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.meilisearch.sdk.Client;
 import com.meilisearch.sdk.Index;
 import com.meilisearch.sdk.exceptions.MeilisearchApiException;
 import com.meilisearch.sdk.exceptions.MeilisearchException;
-import com.meilisearch.sdk.exceptions.MeilisearchTimeoutException;
-import com.meilisearch.sdk.model.IndexesQuery;
+import com.meilisearch.sdk.model.DeleteTasksQuery;
 import com.meilisearch.sdk.model.Settings;
 import com.meilisearch.sdk.model.SwapIndexesParams;
 import com.meilisearch.sdk.model.Task;
 import com.meilisearch.sdk.model.TaskInfo;
 import com.meilisearch.sdk.model.TaskStatus;
+import com.meilisearch.sdk.model.TasksQuery;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.IntStream;
 
 import static by.imsha.meilisearch.model.SearchRecord.PRIMARY_KEY_FIELD;
@@ -33,6 +36,7 @@ import static by.imsha.meilisearch.model.SearchRecord.PRIMARY_KEY_FIELD;
 @RequiredArgsConstructor
 public class DefaultMeilisearchWriter implements MeilisearchWriter {
 
+    public static final String DOCUMENT_ADDITION_OR_UPDATE_TASK_TYPE = "documentAdditionOrUpdate";
     private final Client client;
     private final String indexUid;
     private final Settings settings;
@@ -51,11 +55,7 @@ public class DefaultMeilisearchWriter implements MeilisearchWriter {
                             .build()
             );
 
-            final Task deleteDocumentsTask = waitForTask(deleteDocumentsTaskInfo.getTaskUid(), 60000, 1000);
-            if (deleteDocumentsTask.getStatus() != TaskStatus.SUCCEEDED) {
-                throw new MeilisearchWriterException("Delete documents failed. Index uid = '%s'. Task = %s"
-                        .formatted(indexUid, convertToJsonStringOrNull(deleteDocumentsTask)));
-            }
+            waitForTask(deleteDocumentsTaskInfo.getTaskUid(), 60000, 500);
 
             addDocumentsInBatch(index, searchRecords, 100);
         } catch (Exception exception) {
@@ -65,9 +65,14 @@ public class DefaultMeilisearchWriter implements MeilisearchWriter {
 
     @Override
     public void refreshAllData(final List<SearchRecord> searchRecords) {
-        final Index tempIndex = dropAndCreateTempIndex();
+        final Index tempIndex = createTempIndex();
 
-        addDocumentsInBatch(tempIndex, searchRecords, 100);
+        try {
+            addDocumentsInBatch(tempIndex, searchRecords, 1000);
+        } catch (MeilisearchWriterException exception) {
+            dropIndex(tempIndex.getUid(), true);
+            throw exception;
+        }
 
         try {
             final Index index = getIndex();
@@ -77,23 +82,19 @@ public class DefaultMeilisearchWriter implements MeilisearchWriter {
                             new SwapIndexesParams().setIndexes(
                                     new String[]{tempIndex.getUid(), index.getUid()}
                             )
-                    });
+                    }
+            );
 
-            final Task task = waitForTask(swapIndexesTaskInfo.getTaskUid(), 60000, 1000);
-            if (task.getStatus() != TaskStatus.SUCCEEDED) {
-                throw new MeilisearchWriterException("Swap indexes failed. Index uids = ['%s', '%s']. Task = %s"
-                        .formatted(index.getUid(), tempIndex.getUid(), convertToJsonStringOrNull(task)));
-            }
-
-            //удаляем временный индекс в "бесшумном" режиме, т.к. удаление после обмена не критично
-            dropIndex(tempIndex.getUid(), true);
+            waitForTask(swapIndexesTaskInfo.getTaskUid(), 60000, 500);
         } catch (MeilisearchWriterException exception) {
             throw exception;
         } catch (Exception exception) {
             throw new MeilisearchWriterException("Swap indexes failed. Index uids = ['%s', '%s']."
                     .formatted(indexUid, tempIndex.getUid()), exception);
+        } finally {
+            //удаляем временный индекс в "бесшумном" режиме, т.к. удаление после обмена не критично
+            dropIndex(tempIndex.getUid(), true);
         }
-
     }
 
     /**
@@ -143,14 +144,12 @@ public class DefaultMeilisearchWriter implements MeilisearchWriter {
     }
 
     /**
-     * Удалить и создать новый временный индекс
+     * Создать новый временный индекс
      *
      * @return чистый индекс с имеющимися настройками
      */
-    private Index dropAndCreateTempIndex() {
-        final String tempIndexUid = indexUid + "-temp";
-        //удаляем индекс в обычном режиме (в случае если он не был удален - исключение)
-        dropIndex(tempIndexUid, false);
+    private Index createTempIndex() {
+        final String tempIndexUid = indexUid + "-" + UUID.randomUUID();
 
         try {
             return createIndex(tempIndexUid);
@@ -168,41 +167,13 @@ public class DefaultMeilisearchWriter implements MeilisearchWriter {
     private void dropIndex(final String indexUid, boolean silent) {
         try {
             final TaskInfo deleteTempIndexTaskInfo = client.deleteIndex(indexUid);
-            final Task deleteTempIndexTask = waitForTask(deleteTempIndexTaskInfo.getTaskUid(), 60000, 1000);
-
-            if (deleteTempIndexTask.getStatus() != TaskStatus.SUCCEEDED && checkIndexExists(indexUid)) {
-                if (silent) {
-                    log.info("Failed to delete index {}. Task = '{}'", indexUid, convertToJsonStringOrNull(deleteTempIndexTask));
-                } else {
-                    throw new MeilisearchWriterException("Can't delete index with uid='%s'. Task = '%s'".formatted(indexUid,
-                            convertToJsonStringOrNull(deleteTempIndexTask)));
-                }
-            }
+            waitForTask(deleteTempIndexTaskInfo.getTaskUid(), 60000, 500);
         } catch (Exception exception) {
             if (silent) {
                 log.info("Can't delete index with uid='{}'", indexUid, exception);
             } else {
                 throw new MeilisearchWriterException("Can't delete index with uid='%s'".formatted(indexUid), exception);
             }
-        }
-    }
-
-    /**
-     * Проверить существование индекса
-     *
-     * @param indexUid идентификатор индекса
-     * @return {@code true} - если индекс существует, {@code false} - иначе
-     */
-    private boolean checkIndexExists(final String indexUid) {
-        try {
-            for (Index index : client.getIndexes(new IndexesQuery()).getResults()) {
-                if (indexUid.equals(index.getUid())) {
-                    return true;
-                }
-            }
-            return false;
-        } catch (MeilisearchException exception) {
-            throw new MeilisearchWriterException("Can't get indexes", exception);
         }
     }
 
@@ -216,6 +187,7 @@ public class DefaultMeilisearchWriter implements MeilisearchWriter {
     private void addDocumentsInBatch(final Index index, final List<SearchRecord> searchRecords, final int batchSize) {
         final int[] taskUids = IntStream.iterate(0, i -> i < searchRecords.size(), i -> i + batchSize)
                 .mapToObj(i -> searchRecords.subList(i, Math.min(i + batchSize, searchRecords.size())))
+                .parallel()
                 .map(searchRecordsBatch -> {
                     try {
                         return index.addDocuments(objectMapper.writeValueAsString(searchRecordsBatch), PRIMARY_KEY_FIELD);
@@ -226,62 +198,96 @@ public class DefaultMeilisearchWriter implements MeilisearchWriter {
                 .mapToInt(TaskInfo::getTaskUid)
                 .toArray();
 
-        for (int taskUid : taskUids) {
-            final Task task;
-            try {
-                task = waitForTask(taskUid, 60000, 5000);
-            } catch (Exception exception) {
-                throw new MeilisearchWriterException("Add documents failed. Index uid = '%s'. Task uid = '%d'"
-                        .formatted(indexUid, taskUid));
-            }
-
-            if (task.getStatus() != TaskStatus.SUCCEEDED) {
-                throw new MeilisearchWriterException("Add documents failed. Index uid = '%s'. Task = %s"
-                        .formatted(indexUid, convertToJsonStringOrNull(task)));
-            }
-        }
+        wailForAllTasksMatch(taskUids, new TasksQuery()
+                        .setTypes(new String[]{DOCUMENT_ADDITION_OR_UPDATE_TASK_TYPE})
+                        .setIndexUids(new String[]{index.getUid()})
+                        .setStatuses(new String[]{TaskStatus.SUCCEEDED.taskStatus})
+                        .setLimit(50),
+                30_000, 500
+        );
     }
 
     /**
-     * FIXME взял пока реализацию из meilisearch sdk
-     * <p>
      * Waits for a task to be processed
      *
      * @param taskUid      Identifier of the Task
      * @param timeoutInMs  number of milliseconds before throwing an Exception
      * @param intervalInMs number of milliseconds before requesting the status again
-     * @throws MeilisearchException if timeout is reached
      */
-    private Task waitForTask(int taskUid, int timeoutInMs, int intervalInMs) throws MeilisearchException {
-        Task task = null;
-        TaskStatus status = null;
+    private void waitForTask(int taskUid, int timeoutInMs, int intervalInMs) {
+        int[] taskUids = {taskUid};
+        wailForAllTasksMatch(taskUids,
+                new TasksQuery()
+                        .setUids(taskUids)
+                        .setStatuses(new String[]{TaskStatus.SUCCEEDED.taskStatus}),
+                timeoutInMs,
+                intervalInMs
+        );
+    }
+
+    private void wailForAllTasksMatch(int[] taskUids, TasksQuery repeatableTasksQuery,
+                                      int timeoutInMs, int intervalInMs) {
         long startTime = new Date().getTime();
         long elapsedTime = 0;
 
-        while (status == null
-                || (!status.equals(TaskStatus.SUCCEEDED) && !status.equals(TaskStatus.FAILED))) {
-            if (elapsedTime >= timeoutInMs) {
-                throw new MeilisearchTimeoutException();
-            }
-            task = this.client.getTask(taskUid);
-            status = task.getStatus();
-            try {
-                Thread.sleep(intervalInMs);
-            } catch (Exception e) {
-                throw new MeilisearchTimeoutException(e);
-            }
-            elapsedTime = new Date().getTime() - startTime;
+        Set<Integer> taskUidSet = new HashSet<>();
+        for (int taskUid : taskUids) {
+            taskUidSet.add(taskUid);
         }
 
-        return task;
+        while (true) {
+            if (elapsedTime >= timeoutInMs) {
+                throw new MeilisearchWriterException("Waiting for tasks completion timed out. Task uids: %s. Query: %s."
+                        .formatted(
+                                Arrays.toString(taskUids),
+                                repeatableTasksQuery
+                        ));
+            }
+
+            try {
+                removeProcessedTasks(taskUidSet, repeatableTasksQuery);
+            } catch (MeilisearchException exception) {
+                throw new MeilisearchWriterException(
+                        "Error during waiting for tasks completion. Task uids: %s. Query: %s."
+                                .formatted(
+                                        Arrays.toString(taskUids),
+                                        repeatableTasksQuery
+                                ),
+                        exception
+                );
+            }
+
+            if (taskUidSet.isEmpty()) {
+                break;
+            }
+
+            try {
+                Thread.sleep(intervalInMs);
+            } catch (Exception exception) {
+                log.error("Thread sleep failed!", exception);
+                Thread.currentThread().interrupt();
+            }
+
+            elapsedTime = new Date().getTime() - startTime;
+        }
     }
 
-    private String convertToJsonStringOrNull(final Object object) {
-        try {
-            return objectMapper.writeValueAsString(object);
-        } catch (JsonProcessingException e) {
-            log.error("Failed to convert object to json. Object - {}", object);
-            return null;
+    private void removeProcessedTasks(Set<Integer> taskUidSet, TasksQuery repeatableTasksQuery) throws MeilisearchException {
+        int[] processedTaskUids = Arrays.stream(
+                        this.client.getTasks(repeatableTasksQuery).getResults()
+                )
+                .mapToInt(Task::getUid)
+                .toArray();
+
+        for (int processedTaskUid : processedTaskUids) {
+            taskUidSet.remove(processedTaskUid);
+        }
+
+        if (processedTaskUids.length != 0) {
+            this.client.deleteTasks(
+                    new DeleteTasksQuery()
+                            .setUids(processedTaskUids)
+            );
         }
     }
 }
