@@ -65,6 +65,7 @@ public class MassIndexService {
                                                         .id(city.getId())
                                                         .build()
                                         )
+                                        .lastModifiedDate(massInfo.getLastModifiedDate())
                                         .build()
                         );
                     }
