@@ -25,6 +25,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 
 /**
  * @author Alena Misan
@@ -51,8 +52,18 @@ public class SecurityConfig {
 
     @Bean
     CorsConfigurationSource corsConfigurationSource(CorsConfiguration corsConfiguration) {
+        //конфигурация, для разрешения запроса /api/mass/parish-week с любыми origin
+        //по-умолчанию allowCredentials = false, т.к. с '*' это единственный вариант
+        //если нужно будет allowCredentials = true, то нужно костылить в source получения конфига и
+        //подбрасывать в allowedOrigins значение origin из текущего запроса
+        CorsConfiguration allowAnyRequestCorsConfiguration = new CorsConfiguration();
+        allowAnyRequestCorsConfiguration.setAllowedOrigins(List.of("*"));
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+
+        source.registerCorsConfiguration("/api/mass/parish-week", allowAnyRequestCorsConfiguration);
         source.registerCorsConfiguration("/**", corsConfiguration);
+
         return source;
     }
 

@@ -327,7 +327,7 @@ public class MassController {
      * @param paramsApiKey ключ парафии из параметра запроса (отличает этот эндпоинт от
      *                     {@link MassController#weekMasses(String, LocalDate, String, boolean, boolean, String, boolean)} )
      */
-    @GetMapping(value = "/week", params = "apiKey")
+    @GetMapping(value = "/parish-week", params = "apiKey")
     public ResponseEntity<List<MassDay>> scheduleByParishKeyFromParams(@RequestParam(value = "apiKey") final String paramsApiKey) {
         return privateParishScheduleByApiKey(paramsApiKey);
     }
@@ -338,7 +338,7 @@ public class MassController {
      * @param apiKey ключ парафии из заголовка запроса (отличает этот эндпоинт от
      *               {@link MassController#weekMasses(String, LocalDate, String, boolean, boolean, String, boolean)} )
      */
-    @GetMapping(value = "/week", headers = "parish-week-api-key")
+    @GetMapping(value = "/parish-week", headers = "parish-week-api-key")
     public ResponseEntity<List<MassDay>> scheduleByParishKeyFromHeaders(@RequestHeader(value = "parish-week-api-key") final String apiKey) {
         return privateParishScheduleByApiKey(apiKey);
     }
