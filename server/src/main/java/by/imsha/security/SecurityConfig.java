@@ -82,6 +82,7 @@ public class SecurityConfig {
                             .requestMatchers(HttpMethod.POST, "/api/passwordless/start").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/passwordless/login").permitAll()
                             .requestMatchers(HttpMethod.GET, "/api/mass/week").permitAll()
+                            .requestMatchers(HttpMethod.GET, "/api/mass/parish-week").permitAll()
                             .requestMatchers(HttpMethod.GET, "/api/parish/*/state").permitAll()
                             .requestMatchers(HttpMethod.GET, "/hook/parish").permitAll()
                             .requestMatchers(HttpMethod.GET, "/hook/mass").permitAll()
