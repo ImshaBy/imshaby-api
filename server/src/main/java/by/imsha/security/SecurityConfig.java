@@ -58,6 +58,8 @@ public class SecurityConfig {
         //подбрасывать в allowedOrigins значение origin из текущего запроса
         CorsConfiguration allowAnyRequestCorsConfiguration = new CorsConfiguration();
         allowAnyRequestCorsConfiguration.setAllowedOrigins(List.of("*"));
+        allowAnyRequestCorsConfiguration.setAllowedHeaders(List.of("*"));
+        allowAnyRequestCorsConfiguration.setAllowedMethods(List.of("*"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 
