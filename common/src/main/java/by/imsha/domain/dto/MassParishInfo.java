@@ -10,6 +10,8 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import static by.imsha.utils.ServiceUtils.BEL_ZONE_ID;
+
 /**
  * @author Alena Misan
  */
@@ -32,7 +34,8 @@ public class MassParishInfo implements Serializable {
     private LocalDateTime lastModifiedDate;
 
     public boolean isNeedUpdate() {
-        return ServiceUtils.needUpdateFromNow(Optional.ofNullable(lastConfirmRelevance).orElse(lastModifiedDate), updatePeriodInDays);
+        return ServiceUtils.needUpdateFromNow(Optional.ofNullable(lastConfirmRelevance).orElse(lastModifiedDate),
+                LocalDateTime.now(BEL_ZONE_ID), updatePeriodInDays);
     }
 
 

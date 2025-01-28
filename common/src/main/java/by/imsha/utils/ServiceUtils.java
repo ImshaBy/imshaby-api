@@ -137,16 +137,11 @@ public class ServiceUtils {
     /**
      *
      * */
-    public static boolean needUpdateFromNow(LocalDateTime pLastModifiedDate, int pUpdatePeriodInDays) {
-        LocalDateTime now = LocalDateTime.now();
-        boolean result;
-        ZonedDateTime nowTime = ServiceUtils.localDateTimeToZoneDateTime(now, ZoneId.systemDefault(), BEL_ZONE_ID);
-        if(pLastModifiedDate == null){
-            result = true;
-        }else{
-            result = Math.abs(ChronoUnit.DAYS.between(nowTime.toLocalDate(), pLastModifiedDate.toLocalDate().minusDays(1))) > pUpdatePeriodInDays;
-        }
-        return result;
+    public static boolean needUpdateFromNow(LocalDateTime pLastModifiedDate,
+                                            LocalDateTime now,
+                                            int pUpdatePeriodInDays) {
+        return pLastModifiedDate == null ||
+                !pLastModifiedDate.plusDays(pUpdatePeriodInDays).isAfter(now);
     }
 
     public static long hourDiff(LocalDateTime localDateTimeFrom, LocalDateTime localDateTimeTo){
