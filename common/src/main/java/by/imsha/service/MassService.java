@@ -329,8 +329,10 @@ public class MassService {
             selectedValuesMap.put(MassFilterType.LANG.getName(), MassFilterValue.builder().type(MassFilterType.LANG)
                     .name(MassFilterType.LANG.getName()).value(massLang).build());
         }
-        selectedValuesMap.put(MassFilterType.RORATE.getName(), MassFilterValue.builder().type(MassFilterType.RORATE)
-                .name(MassFilterType.RORATE.getName()).value(String.valueOf(rorate)).build());
+        if (rorate) {
+            selectedValuesMap.put(MassFilterType.RORATE.getName(), MassFilterValue.builder().type(MassFilterType.RORATE)
+                    .name(MassFilterType.RORATE.getName()).value(String.valueOf(rorate)).build());
+        }
 
         //--- Построение guided на основании полученных из индекса facet distribution
         // FIXME и запросов(кэшированных) , тут можно заменить на запросы (2 запроса) facet distribution

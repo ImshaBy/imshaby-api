@@ -220,6 +220,7 @@ public class MassController {
         final LocalDate dateTo = dateFrom.plusDays(6);
         final Boolean rorate = rorateOnly ? true : null;
         final Boolean online = onlineOnly ? true : null;
+        cityId = defaultCityService.getCityIdOrDefault(cityId);
 
         final SearchResult searchResult = meilisearchReader.search(QueryData.builder()
                 .dateFrom(dateFrom)
