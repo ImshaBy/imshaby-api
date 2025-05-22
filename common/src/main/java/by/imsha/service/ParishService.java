@@ -113,12 +113,12 @@ public class ParishService {
 
 
     @Cacheable(cacheNames = "pendingParishes", key = "'parishCity:' + #cityId")
-    public Set<String> getPendingParishIds(final String cityId) {
+    public Set<String> getNotApprovedParishIds(final String cityId) {
         Query query = new Query();
         query.fields()
                 .include("id");
         query.addCriteria(
-                where("state").is(Parish.State.PENDING).and("cityId").is(cityId)
+                where("state").ne(Parish.State.APPROVED).and("cityId").is(cityId)
         );
 
         return parishRepository.search(query, Parish.class).stream()

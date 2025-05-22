@@ -261,7 +261,8 @@ public class MassController {
             Optional<Parish> parishOptional = parishService.getParish(parishId);
 
             if (!showPending) {
-                parishOptional = parishOptional.filter(parish -> Parish.State.PENDING != parish.getState());
+                //только APPROVED
+                parishOptional = parishOptional.filter(parish -> Parish.State.APPROVED == parish.getState());
             }
 
             if (parishOptional.isPresent()) {
@@ -275,8 +276,8 @@ public class MassController {
             masses = this.massService.getMassByCity(cityId); // TODO filter by date as well
 
             if (!showPending) {
-                final Set<String> pendingParishIds = parishService.getPendingParishIds(cityId);
-                masses = masses.stream().filter(mass -> !pendingParishIds.contains(mass.getParishId()))
+                final Set<String> notApprovedParishIds = parishService.getNotApprovedParishIds(cityId);
+                masses = masses.stream().filter(mass -> !notApprovedParishIds.contains(mass.getParishId()))
                         .collect(Collectors.toList());
             }
         }
