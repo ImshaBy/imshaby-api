@@ -77,6 +77,10 @@ public class Parish {
      */
     public enum State {
         /**
+         * Исходное состояние
+         */
+        INITIAL,
+        /**
          * Ожидает подтверждения
          */
         PENDING,

@@ -78,7 +78,7 @@ public class ParishController {
 
     @PostMapping
     public ResponseEntity<Parish> createParish(@Valid @RequestBody Parish parish) {
-        parish.setState(Parish.State.PENDING);
+        parish.setState(Parish.State.INITIAL);
         parish.setLastConfirmRelevance(dateTimeProvider.nowSystemDefaultZone());
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -208,15 +208,15 @@ public class ParishController {
             @RequestParam(value = "date", required = false) LocalDate date) {
 
         List<City> allCities = cityService.getAllCities();
-        Set<String> allPendingParishes = allCities.stream()
-                .map(city -> parishService.getPendingParishIds(city.getId()))
+        Set<String> allNotActiveParishes = allCities.stream()
+                .map(city -> parishService.getNotApprovedParishIds(city.getId()))
                 .flatMap(parishIds -> parishIds.stream())
                 .collect(Collectors.toSet());
 
         List<Mass> allMasses = allCities.stream()
                 .map(city -> massService.getMassByCity(city.getId()))
                 .flatMap(masses -> masses.stream())
-                .filter(mass -> !allPendingParishes.contains(mass.getParishId()))
+                .filter(mass -> !allNotActiveParishes.contains(mass.getParishId()))
                 .collect(Collectors.toList());
 
         if (date == null) {
