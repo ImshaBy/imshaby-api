@@ -28,7 +28,8 @@ public class CachingConfig {
                         b -> b.name("pendingParishes").expireAfterWrite(14, TimeUnit.DAYS),
                         b -> b.name("citiesWithParishCache").entryCapacity(1).expireAfterWrite(1, TimeUnit.DAYS),
                         b -> b.name("corsConfiguration").expireAfterWrite(1, TimeUnit.HOURS),
-                        b -> b.name("volunteerNeededMap").expireAfterWrite(1, TimeUnit.DAYS)
+                        b -> b.name("volunteerNeededMap").expireAfterWrite(1, TimeUnit.DAYS),
+                        b -> b.name("notApprovedParishesMassCoordinates").entryCapacity(1).expireAfterWrite(10, TimeUnit.MINUTES)
                 );
     }
 

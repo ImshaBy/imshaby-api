@@ -6,6 +6,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.data.mongodb.repository.Aggregation;
+import org.springframework.data.mongodb.repository.Query;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -41,6 +42,8 @@ public interface ParishRepository extends QuerableMongoRepository<Parish, String
     Optional<Parish> findParishByKey(String key);
 
     List<Parish> findByState(Parish.State state);
+    @Query("{ state : { $ne: 'APPROVED' } }")
+    List<Parish> findAllNotApproved();
 
     List<Parish> findByCityIdAndState(String cityId, Parish.State state);
 

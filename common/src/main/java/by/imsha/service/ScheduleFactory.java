@@ -93,7 +93,7 @@ public class ScheduleFactory {
         final Map<String, MassParishInfo> parishInfoCache = new HashMap<>();
 
         resultItems.forEach(resultItem -> {
-            final DayOfWeek dayOfWeek = resultItem.date().getDayOfWeek();
+            final DayOfWeek dayOfWeek = resultItem.dateTime().getDayOfWeek();
 
             final MassInfo massInfo = new MassInfo();
             massInfo.setId(resultItem.massId());
@@ -112,7 +112,7 @@ public class ScheduleFactory {
             massInfo.setRorate(resultItem.rorate());
             massInfo.setLastModifiedDate(resultItem.lastModifiedDate());
 
-            massSchedule.populateContainers(massInfo, dayOfWeek, resultItem.time());
+            massSchedule.populateContainers(massInfo, dayOfWeek, resultItem.dateTime().toLocalTime());
         });
 
         return massSchedule;

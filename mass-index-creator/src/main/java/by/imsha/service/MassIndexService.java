@@ -5,6 +5,7 @@ import by.imsha.domain.Mass;
 import by.imsha.domain.dto.MassDay;
 import by.imsha.domain.dto.MassInfo;
 import by.imsha.domain.dto.MassSchedule;
+import by.imsha.meilisearch.model.Geo;
 import by.imsha.meilisearch.model.Parish;
 import by.imsha.meilisearch.model.SearchRecord;
 import by.imsha.meilisearch.writer.MeilisearchWriter;
@@ -13,8 +14,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -43,8 +46,8 @@ public class MassIndexService {
 
         for (City city : cityService.getAllCities()) {
             List<Mass> masses = massService.getMassByCity(city.getId());
-            //исключаем парафии с состоянием "Ожидает подтверждения"
-            final Set<String> pendingParishIds = parishService.getPendingParishIds(city.getId());
+            //исключаем парафии с состоянием "Ожидает подтверждения" и "Исходное состояние"
+            final Set<String> pendingParishIds = parishService.getNotApprovedParishIds(city.getId());
             if (!pendingParishIds.isEmpty()) {
                 masses = masses.stream()
                         .filter(mass -> !pendingParishIds.contains(mass.getParishId()))
@@ -72,16 +75,28 @@ public class MassIndexService {
         for (MassDay massDay : schedule) {
             for (MassDay.MassHour massHour : massDay.getMassHours()) {
                 for (MassInfo massInfo : massHour.getData()) {
+                    Geo geo = Optional.ofNullable(massInfo.getParish().getGps())
+                            .map(locationInfo ->
+                                    Geo.builder()
+                                            .lat((double) locationInfo.getLatitude())
+                                            .lng((double) locationInfo.getLongitude())
+                                            .build()
+                            )
+                            .orElse(null);
                     searchRecords.add(
                             SearchRecord.builder()
                                     .recordId(UUID.randomUUID().toString())
                                     .massId(massInfo.getId())
                                     .duration(3600)
-                                    .time(massHour.getHour())
-                                    .date(massDay.getDate())
+                                    .dateTime(LocalDateTime.of(massDay.getDate(), massHour.getHour()))
                                     .parish(
                                             Parish.builder()
                                                     .id(massInfo.getParish().getParishId())
+                                                    .actual(!massInfo.getParish().isNeedUpdate())
+                                                    .state(parishService.getParish(massInfo.getParish().getParishId())
+                                                            .map(by.imsha.domain.Parish::getState)
+                                                            .map(Enum::name)
+                                                            .orElseThrow())
                                                     .build()
                                     )
                                     .notes(massInfo.getInfo())
@@ -94,6 +109,7 @@ public class MassIndexService {
                                                     .build()
                                     )
                                     .lastModifiedDate(massInfo.getLastModifiedDate())
+                                    .geo(geo)
                                     .build()
                     );
                 }

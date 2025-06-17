@@ -1,14 +1,10 @@
 package by.imsha.meilisearch.model;
 
-import by.imsha.meilisearch.serialization.Seconds2LocalTimeDeserializer;
-import by.imsha.meilisearch.serialization.Timestamp2LocalDateDeserializer;
 import by.imsha.meilisearch.serialization.Timestamp2LocalDateTimeDeserializer;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 /**
  * Представление записи в индексе, при поиске
@@ -19,10 +15,8 @@ public record SearchResultItem(
         String recordId,
         String massId,
         Integer duration,
-        @JsonDeserialize(using = Seconds2LocalTimeDeserializer.class)
-        LocalTime time,
-        @JsonDeserialize(using = Timestamp2LocalDateDeserializer.class)
-        LocalDate date,
+        @JsonDeserialize(using = Timestamp2LocalDateTimeDeserializer.class)
+        LocalDateTime dateTime,
         Parish parish,
         String notes,
         String lang,
