@@ -20,8 +20,8 @@ public interface MassCoordinatesMapper {
     //TODO всюду используется зона +3 (нужно хорошо всё обдумать и отрефакторить)
     ZoneOffset BEL_ZONE_OFFSET = ZoneOffset.ofHours(3);
 
-    default MassCoordinatesResponse map(SearchResult searchResult, List<MassCoordinate> notApprovedParishesMassCoordinates) {
-        List<MassCoordinate> massCoordinates = new ArrayList<>(notApprovedParishesMassCoordinates);
+    default MassCoordinatesResponse map(SearchResult searchResult, List<MassCoordinate> notApprovedAndNotDisabledParishesMassCoordinates) {
+        List<MassCoordinate> massCoordinates = new ArrayList<>(notApprovedAndNotDisabledParishesMassCoordinates);
 
         massCoordinates.addAll(mapSearchResultItems(searchResult.hits()));
 

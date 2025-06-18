@@ -15,8 +15,8 @@ public class MassCoordinatesService {
     private final ParishService parishService;
     private final MassCoordinatesMapper massCoordinatesMapper;
 
-    @Cacheable("notApprovedParishesMassCoordinates")
-    public List<MassCoordinate> getNotApprovedParishesMassCoordinates() {
-        return massCoordinatesMapper.map(parishService.findAllNotApproved());
+    @Cacheable("notApprovedAndNotDisabledParishesMassCoordinates")
+    public List<MassCoordinate> getNotApprovedAndNotDisabledParishesMassCoordinates() {
+        return massCoordinatesMapper.map(parishService.findAllNotApprovedAndNotDisabled());
     }
 }

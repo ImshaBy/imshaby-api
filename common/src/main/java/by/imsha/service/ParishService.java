@@ -126,8 +126,8 @@ public class ParishService {
                 .collect(Collectors.toSet());
     }
 
-    public List<Parish> findAllNotApproved() {
-        return parishRepository.findAllNotApproved();
+    public List<Parish> findAllNotApprovedAndNotDisabled() {
+        return parishRepository.findAllNotApprovedAndNotDisabled();
     }
 
     public Optional<Parish> findParishByKey(final String key) {

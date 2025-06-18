@@ -42,8 +42,8 @@ public interface ParishRepository extends QuerableMongoRepository<Parish, String
     Optional<Parish> findParishByKey(String key);
 
     List<Parish> findByState(Parish.State state);
-    @Query("{ state : { $ne: 'APPROVED' } }")
-    List<Parish> findAllNotApproved();
+    @Query("{ state : { $nin: ['APPROVED', 'DISABLED'] } }")
+    List<Parish> findAllNotApprovedAndNotDisabled();
 
     List<Parish> findByCityIdAndState(String cityId, Parish.State state);
 

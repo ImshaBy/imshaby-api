@@ -1,0 +1,17 @@
+FROM openjdk:21-jdk
+
+WORKDIR /opt/app
+
+COPY ./mass-index-creator/build/libs/mass-index-creator-0.0.1-SNAPSHOT.jar app.jar
+
+COPY ./mass-index-creator/job_script.sh script.sh
+
+RUN groupadd --gid 1000 javauser && useradd --uid 1000 --gid 1000 -m javauser
+
+RUN chmod +x /opt/app/script.sh
+
+RUN chown -R javauser:javauser .
+
+USER javauser
+
+CMD while true; do /opt/app/script.sh; echo sleeping 600; sleep 600; done

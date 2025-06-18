@@ -248,7 +248,7 @@ public class MassController {
                                 .dateTimeFrom(dateTimeFrom)
                                 .dateTimeTo(dateTimeTo)
                                 .build()),
-                        allParishes ? massCoordinatesService.getNotApprovedParishesMassCoordinates() : List.of()
+                        allParishes ? massCoordinatesService.getNotApprovedAndNotDisabledParishesMassCoordinates() : List.of()
                 )
         );
     }
