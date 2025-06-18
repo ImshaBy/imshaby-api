@@ -3,10 +3,10 @@ package by.imsha.service;
 import by.imsha.feign.FusionAuthApiFeignClient;
 import by.imsha.feign.dto.request.UserSearchFilterRequest;
 import by.imsha.feign.dto.response.UserSearchResponse;
+import by.imsha.properties.FusionAuthProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -30,12 +30,8 @@ public class VolunteerService {
     @Autowired
     private VolunteerService self;
 
-    @Value("${fusionAuth.authorization-token}")
-    private String authorization;
-    @Value("${fusionAuth.user-search-pagination}")
-    private Integer pagination;
-    @Value("${fusionAuth.application-id}")
-    private String applicationId;
+    @Autowired
+    private FusionAuthProperties fusionAuthProperties;
 
     public boolean volunteerNeededByParishName(final String parishName, final boolean defaultValue) {
         return self.getVolunteerNeededMap().getOrDefault(parishName, defaultValue);
@@ -50,15 +46,15 @@ public class VolunteerService {
             do {
                 userSearchResponse = fusionAuthApiFeignClient.usersSearch(UserSearchFilterRequest.builder()
                         .search(UserSearchFilterRequest.SearchFilter.builder()
-                                .numberOfResults(pagination)
+                                .numberOfResults(fusionAuthProperties.getUserSearchPagination())
                                 .queryString("*")
                                 .startRow(startRow)
-                                .build()).build(), authorization);
+                                .build()).build(), fusionAuthProperties.getAuthorizationToken());
 
                 userSearchResponse.getUsers().stream()
                         .flatMap(user -> Optional.ofNullable(user)
                                 .filter(u -> u.getRegistrations().stream()
-                                        .filter(registration -> registration.getApplicationId().equals(applicationId))
+                                        .filter(registration -> registration.getApplicationId().equals(fusionAuthProperties.getApplicationId()))
                                         .anyMatch(registration -> registration.getRoles().contains(ROLE_VOLUNTEER)))
                                 .map(UserSearchResponse.User::getData)
                                 .map(UserSearchResponse.ParishData::getParishes).stream())
@@ -69,8 +65,8 @@ public class VolunteerService {
                                 volunteerNeededInParish.put(name, true);
                             }
                         });
-                startRow += pagination;
-            } while (userSearchResponse.getUsers().size() >= pagination);
+                startRow += fusionAuthProperties.getUserSearchPagination();
+            } while (userSearchResponse.getUsers().size() >= fusionAuthProperties.getUserSearchPagination());
         } catch (Exception e) {
             log.error("При получении volunteerNeededMap произошла ошибка: ", e);
             return new VolunteerNotNeededStubMap();

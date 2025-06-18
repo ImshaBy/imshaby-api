@@ -88,6 +88,10 @@ public class Parish {
          * Подтверждена
          */
         APPROVED,
+        /**
+         * Отключена (запрет на отображение)
+         */
+        DISABLED,
     }
 
 }

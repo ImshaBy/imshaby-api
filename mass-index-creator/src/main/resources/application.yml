@@ -1,0 +1,22 @@
+logging:
+  level:
+    org.springframework.data.mongodb.core.MongoTemplate: INFO
+
+app:
+  imsha:
+    zone-id: Europe/Minsk
+
+spring:
+  data:
+    mongodb:
+      uri: "mongodb://localhost:27017/imshaby"
+      auto-index-creation: true
+  jackson:
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: true
+
+meilisearch:
+  writer:
+    host-url: http://localhost:7700
+    api-key: 8Yy6fAZCCIPDiQk4yay7_xrHoxconfRKC5HKhuoij8o
+    index-uid: mass-index

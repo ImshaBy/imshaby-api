@@ -11,12 +11,15 @@ import by.imsha.domain.dto.UpdateMassInfo;
 import by.imsha.domain.dto.mapper.MassInfoMapper;
 import by.imsha.exception.InvalidDateIntervalException;
 import by.imsha.exception.ResourceNotFoundException;
+import by.imsha.mapper.MassCoordinatesMapper;
 import by.imsha.meilisearch.model.SearchResultItem;
+import by.imsha.meilisearch.reader.MassSearchFilter;
 import by.imsha.meilisearch.reader.MeilisearchReader;
-import by.imsha.meilisearch.reader.QueryData;
 import by.imsha.meilisearch.reader.SearchResult;
 import by.imsha.properties.ImshaProperties;
+import by.imsha.rest.dto.MassCoordinatesResponse;
 import by.imsha.service.DefaultCityService;
+import by.imsha.service.MassCoordinatesService;
 import by.imsha.service.MassService;
 import by.imsha.service.ParishService;
 import by.imsha.service.ScheduleFactory;
@@ -41,6 +44,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -60,6 +67,9 @@ import static java.util.Objects.isNull;
 @RequestMapping(value = "/api/mass")
 @Slf4j
 public class MassController {
+
+    //TODO всюду используется зона +3 (нужно хорошо всё обдумать и отрефакторить)
+    private static final ZoneOffset BEL_ZONE_OFFSET = ZoneOffset.ofHours(3);
 
     @Autowired
     private MassService massService;
@@ -85,6 +95,12 @@ public class MassController {
 
     @Autowired
     private MassInfoMapper massInfoMapper;
+
+    @Autowired
+    MassCoordinatesMapper massCoordinatesResponseMapper;
+
+    @Autowired
+    MassCoordinatesService massCoordinatesService;
 
     @PostMapping
     public ResponseEntity<Mass> createMass(@RequestBody final Mass mass) {
@@ -205,6 +221,38 @@ public class MassController {
         );
     }
 
+    @GetMapping("/map")
+    public ResponseEntity<MassCoordinatesResponse> map(@RequestParam(value = "dateTimeFrom")
+                                                       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+                                                       OffsetDateTime dateTimeFrom,
+                                                       @RequestParam(value = "dateTimeTo", required = false)
+                                                       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+                                                       OffsetDateTime dateTimeTo,
+                                                       @RequestParam(value = "allParishes", required = false,
+                                                               defaultValue = "false")
+                                                       boolean allParishes
+    ) {
+
+        if (dateTimeTo == null) {
+            //конец дня в РБ
+            dateTimeTo = OffsetDateTime.of(
+                    dateTimeFrom.withOffsetSameInstant(BEL_ZONE_OFFSET).toLocalDate(),
+                    LocalTime.MAX,
+                    BEL_ZONE_OFFSET
+            );
+        }
+
+        return ResponseEntity.ok().body(
+                massCoordinatesResponseMapper.map(
+                        meilisearchReader.searchNearestMasses(MassSearchFilter.builder()
+                                .dateTimeFrom(dateTimeFrom)
+                                .dateTimeTo(dateTimeTo)
+                                .build()),
+                        allParishes ? massCoordinatesService.getNotApprovedAndNotDisabledParishesMassCoordinates() : List.of()
+                )
+        );
+    }
+
     @GetMapping("/week-indexed")
     public ResponseEntity<MassSchedule> weekMassesFromMeilisearch(@CookieValue(value = "cityId", required = false) String cityId,
                                                                   @DateTimeFormat(pattern = "dd-MM-yyyy")
@@ -220,10 +268,11 @@ public class MassController {
         final LocalDate dateTo = dateFrom.plusDays(6);
         final Boolean rorate = rorateOnly ? true : null;
         final Boolean online = onlineOnly ? true : null;
+        cityId = defaultCityService.getCityIdOrDefault(cityId);
 
-        final SearchResult searchResult = meilisearchReader.search(QueryData.builder()
-                .dateFrom(dateFrom)
-                .dateTo(dateTo)
+        final SearchResult searchResult = meilisearchReader.searchAllMasses(MassSearchFilter.builder()
+                .dateTimeFrom(LocalDateTime.of(dateFrom, LocalTime.MIN).atOffset(BEL_ZONE_OFFSET))
+                .dateTimeTo(LocalDateTime.of(dateTo, LocalTime.MAX).atOffset(BEL_ZONE_OFFSET))
                 .cityId(cityId)
                 .parishId(parishId)
                 .lang(massLang)

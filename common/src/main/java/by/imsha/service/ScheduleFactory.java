@@ -37,7 +37,7 @@ public class ScheduleFactory {
     @Autowired
     private ParishService parishService;
 
-    private MassSchedule build(List<Mass> masses, LocalDate startDate, LocalDate endDate) {
+    public MassSchedule build(List<Mass> masses, LocalDate startDate, LocalDate endDate) {
         MassSchedule schedule =  new MassSchedule(startDate, massInfoMapper);
         for (Mass mass : masses) {
             long singleStartTimestamp = mass.getSingleStartTimestamp();
@@ -93,7 +93,7 @@ public class ScheduleFactory {
         final Map<String, MassParishInfo> parishInfoCache = new HashMap<>();
 
         resultItems.forEach(resultItem -> {
-            final DayOfWeek dayOfWeek = resultItem.date().getDayOfWeek();
+            final DayOfWeek dayOfWeek = resultItem.dateTime().getDayOfWeek();
 
             final MassInfo massInfo = new MassInfo();
             massInfo.setId(resultItem.massId());
@@ -112,7 +112,7 @@ public class ScheduleFactory {
             massInfo.setRorate(resultItem.rorate());
             massInfo.setLastModifiedDate(resultItem.lastModifiedDate());
 
-            massSchedule.populateContainers(massInfo, dayOfWeek, resultItem.time());
+            massSchedule.populateContainers(massInfo, dayOfWeek, resultItem.dateTime().toLocalTime());
         });
 
         return massSchedule;

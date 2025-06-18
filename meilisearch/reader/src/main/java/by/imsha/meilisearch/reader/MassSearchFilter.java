@@ -5,24 +5,30 @@ import lombok.Builder;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
 @Builder
-public record QueryData(
+public record MassSearchFilter(
         String cityId,
         String parishId,
         String lang,
         Boolean online,
         Boolean rorate,
-        LocalDate dateFrom,
-        LocalDate dateTo
+        OffsetDateTime dateTimeFrom,
+        OffsetDateTime dateTimeTo
 ) {
 
     private static final String EQ_FILTER_TEMPLATE = "%s = %s";
     private static final String BETWEEN_FILTER_TEMPLATE = "%s %s TO %s";
     private static final String LE_FILTER_TEMPLATE = "%s <= %s";
     private static final String GE_FILTER_TEMPLATE = "%s >= %s";
+
+    //TODO всюду используется зона +3 (нужно хорошо всё обдумать и отрефакторить)
+    private static final ZoneOffset BEL_ZONE_OFFSET = ZoneOffset.ofHours(3);
 
     public String[][] toFilterArray() {
         final List<String[]> filters = new ArrayList<>();
@@ -42,13 +48,16 @@ public record QueryData(
         if (rorate != null) {
             filters.add(new String[]{EQ_FILTER_TEMPLATE.formatted(SearchRecord.FilterableAttribute.RORATE, rorate)});
         }
-        if (dateFrom != null && dateTo != null) {
-            filters.add(new String[]{BETWEEN_FILTER_TEMPLATE.formatted(SearchRecord.FilterableAttribute.DATE,
-                    dateFrom.toEpochDay(), dateTo.toEpochDay())});
-        } else if (dateFrom != null) {
-            filters.add(new String[]{GE_FILTER_TEMPLATE.formatted(SearchRecord.FilterableAttribute.DATE, dateFrom.toEpochDay())});
-        } else if (dateTo != null) {
-            filters.add(new String[]{LE_FILTER_TEMPLATE.formatted(SearchRecord.FilterableAttribute.DATE, dateTo.toEpochDay())});
+        if (dateTimeFrom != null && dateTimeTo != null) {
+            filters.add(new String[]{BETWEEN_FILTER_TEMPLATE.formatted(SearchRecord.FilterableAttribute.DATE_TIME,
+                    dateTimeFrom.atZoneSameInstant(BEL_ZONE_OFFSET).toEpochSecond(),
+                    dateTimeTo.atZoneSameInstant(BEL_ZONE_OFFSET).toEpochSecond())});
+        } else if (dateTimeFrom != null) {
+            filters.add(new String[]{GE_FILTER_TEMPLATE.formatted(SearchRecord.FilterableAttribute.DATE_TIME,
+                    dateTimeFrom.atZoneSameInstant(BEL_ZONE_OFFSET).toEpochSecond())});
+        } else if (dateTimeTo != null) {
+            filters.add(new String[]{LE_FILTER_TEMPLATE.formatted(SearchRecord.FilterableAttribute.DATE_TIME,
+                    dateTimeTo.atZoneSameInstant(BEL_ZONE_OFFSET).toEpochSecond())});
         }
 
         return filters.isEmpty() ? null : filters.toArray(new String[1][filters.size()]);

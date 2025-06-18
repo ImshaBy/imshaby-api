@@ -1,5 +1,6 @@
 package by.imsha.meilisearch.reader;
 
+import by.imsha.meilisearch.model.SearchRecord;
 import by.imsha.meilisearch.model.SearchResultItem;
 import by.imsha.meilisearch.reader.exception.MeilisearchReaderException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -8,6 +9,7 @@ import com.meilisearch.sdk.Client;
 import com.meilisearch.sdk.Index;
 import com.meilisearch.sdk.SearchRequest;
 import com.meilisearch.sdk.exceptions.MeilisearchException;
+import com.meilisearch.sdk.model.MatchingStrategy;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,13 +36,33 @@ public class DefaultMeilisearchReader implements MeilisearchReader {
     }
 
     @Override
-    public SearchResult search(final QueryData queryData) {
-        final int limit = DEFAULT_LIMIT;
+    public SearchResult searchAllMasses(final MassSearchFilter queryData) {
         final SearchRequest.SearchRequestBuilder searchRequestTemplate = SearchRequest.builder()
                 .filterArray(queryData.toFilterArray())
-                .facets(new String[]{ONLINE, LANG, RORATE})
-                .limit(limit);
+                .facets(new String[]{ONLINE, LANG, RORATE});
 
+        return searchMassesInternal(searchRequestTemplate, DEFAULT_LIMIT);
+    }
+
+    @Override
+    public SearchResult searchNearestMasses(MassSearchFilter queryData) {
+        final SearchRequest.SearchRequestBuilder searchRequestTemplate = SearchRequest.builder()
+                .filterArray(queryData.toFilterArray())
+                .attributesToRetrieve(new String[]{
+                        SearchRecord.RecordAttribute.PARISH,
+                        SearchRecord.RecordAttribute.DATE_TIME,
+                        SearchRecord.RecordAttribute.GEO
+                })
+                .sort(new String[]{
+                        SearchRecord.SortableAttribute.DATE_TIME_ASC
+                })
+                .distinct(SearchRecord.RecordAttribute.PARISH_ID);
+
+        return searchMassesInternal(searchRequestTemplate, DEFAULT_LIMIT);
+    }
+
+    private SearchResult searchMassesInternal(SearchRequest.SearchRequestBuilder searchRequestTemplate, int limit) {
+        searchRequestTemplate.limit(limit);
         //загружаем все страницы
         searchRequestTemplate.offset(0);
         final SearchResultWrapper resultWrapper = search(searchRequestTemplate.build());
