@@ -1,4 +1,4 @@
-name: Release QA
+name: Release 'imshaby-api:server' QA
 
 on:
   workflow_dispatch:

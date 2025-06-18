@@ -1,4 +1,4 @@
-name: Release Index Creator QA
+name: Release 'imshaby-api:mass-index-creator' QA
 
 on:
   workflow_dispatch:
