@@ -53,18 +53,18 @@ jobs:
           docker build -f ./mass-index-creator/Dockerfile-job -t cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG .
           docker push cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG
 
-# TODO Никите поправить
-#  deploy_qa:
-#    runs-on: ubuntu-latest
-#    needs: [create_tag, build]
-#    steps:
-#      - name: start remote ansible file
-#        uses: appleboy/ssh-action@v1.0.3
-#        with:
-#          host: ${{vars.QA_SSH_HOST}}
-#          username: ${{vars.QA_SSH_USER}}
-#          password: ${{secrets.QA_SSH_PASSWORD}}
-#          key: ${{secrets.QA_SSH_KEY}}
-#          script: |
-#            cd /root/imshaby-deploy
-#            ansible-playbook ./staging.yaml --extra-vars "service_name=backend docker_image=cr.yandex/crp8o64j2cl644b4pjki/imshaby-api-qa:${{ needs.create_tag.outputs.tag }} spring_profile=${{ vars.QA_SPRING_PROFILE}}"
+  deploy_qa:
+    runs-on: ubuntu-latest
+    needs: [create_tag, build]
+    steps:
+      - name: start remote ansible file
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{vars.QA_SSH_HOST}}
+          username: ${{vars.QA_SSH_USER}}
+          password: ${{secrets.QA_SSH_PASSWORD}}
+          key: ${{secrets.QA_SSH_KEY}}
+          script: |
+            cd /root/imshaby-deploy
+            ansible-playbook ./staging.yaml --extra-vars "service_name=meilisearch_index docker_image=cr.yandex/crp8o64j2cl644b4pjki/imshaby-mass-index-creator-qa:${{ needs.create_tag.outputs.tag }}"
+        
