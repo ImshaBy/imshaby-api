@@ -24,14 +24,9 @@ public class LocalizedUtils {
     }
 
     public static String getLocalizedMassNotes(final Mass mass, final String locale) {
-        LocalizedMass localizedMass = mass.getLocalizedInfo().get(locale);
-        String calculatedNotes = null;
-        if (localizedMass != null) {
-            calculatedNotes = localizedMass.getNotes();
-        } else if (Constants.DEFAULT_LANG.equalsIgnoreCase(locale)) {
-            calculatedNotes = mass.getNotes();
-        }
-        return calculatedNotes;
+        return Optional.ofNullable(mass.getLocalizedInfo().get(locale))
+                .map(LocalizedMass::getNotes)
+                .orElseGet(mass::getNotes);
     }
 
     public static String getLocalizedParishName(final Parish parish, final String locale) {

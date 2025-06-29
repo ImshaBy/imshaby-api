@@ -1,9 +1,11 @@
 package by.imsha.service;
 
 import by.imsha.domain.Mass;
+import by.imsha.domain.dto.CityName;
 import by.imsha.domain.dto.MassInfo;
 import by.imsha.domain.dto.MassParishInfo;
 import by.imsha.domain.dto.MassSchedule;
+import by.imsha.domain.dto.mapper.CityNameMapper;
 import by.imsha.domain.dto.mapper.MassInfoMapper;
 import by.imsha.domain.dto.mapper.MassParishInfoMapper;
 import by.imsha.meilisearch.model.SearchResultItem;
@@ -36,6 +38,10 @@ public class ScheduleFactory {
     private MassInfoMapper massInfoMapper;
     @Autowired
     private ParishService parishService;
+    @Autowired
+    CityNameMapper cityNameMapper;
+    @Autowired
+    CityService cityService;
 
     public MassSchedule build(List<Mass> masses, LocalDate startDate, LocalDate endDate) {
         MassSchedule schedule =  new MassSchedule(startDate, massInfoMapper);
@@ -91,6 +97,7 @@ public class ScheduleFactory {
         final MassSchedule massSchedule = new MassSchedule(dateFrom, massInfoMapper, true);
 
         final Map<String, MassParishInfo> parishInfoCache = new HashMap<>();
+        final Map<String, CityName> cityNameCache = new HashMap<>();
 
         resultItems.forEach(resultItem -> {
             final DayOfWeek dayOfWeek = resultItem.dateTime().getDayOfWeek();
@@ -98,6 +105,14 @@ public class ScheduleFactory {
             final MassInfo massInfo = new MassInfo();
             massInfo.setId(resultItem.massId());
             massInfo.setLangCode(resultItem.lang());
+            massInfo.setCity(
+                    cityNameCache.computeIfAbsent(
+                            resultItem.city().id(),
+                            cityId -> cityService.retrieveCity(cityId)
+                                    .map(cityNameMapper::mapToCityName)
+                                    .orElse(null)
+                    )
+            );
             massInfo.setParish(
                     parishInfoCache.computeIfAbsent(
                             resultItem.parish().id(),

@@ -17,6 +17,7 @@ public class MassInfo implements Serializable{
     private String id;
     private String langCode;
     private MassParishInfo parish;
+    private CityName city;
     private Integer duration;
     private String info;
     private int[] days;
