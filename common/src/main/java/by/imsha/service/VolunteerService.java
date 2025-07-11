@@ -71,6 +71,17 @@ public class VolunteerService {
             log.error("При получении volunteerNeededMap произошла ошибка: ", e);
             return new VolunteerNotNeededStubMap();
         }
+
+        try {
+            log.info("При получении volunteerNeededMap были найдены {} парафии из них {} не нуждаются в волонтерах",
+                    volunteerNeededInParish.size(),
+                    volunteerNeededInParish.entrySet().stream()
+                            .filter(Map.Entry::getValue)
+                            .count());
+        } catch (Exception e) {
+            log.error("При составлении лога volunteerNeededMap произошла ошибка: ", e);
+        }
+
         return volunteerNeededInParish;
     }
 
