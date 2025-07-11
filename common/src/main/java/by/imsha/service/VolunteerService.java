@@ -81,7 +81,7 @@ public class VolunteerService {
         }
 
         try {
-            log.info("При получении volunteerNeededMap были найдены {} парафии из них {} не нуждаются в волонтерах",
+            log.info("При получении volunteerNeededMap были найдены {} парафии из них {} нуждаются в волонтерах",
                     volunteerNeededInParish.size(),
                     volunteerNeededInParish.entrySet().stream()
                             .filter(Map.Entry::getValue)
