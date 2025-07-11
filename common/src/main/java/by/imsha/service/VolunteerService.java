@@ -4,7 +4,6 @@ import by.imsha.feign.FusionAuthApiFeignClient;
 import by.imsha.feign.dto.request.UserSearchFilterRequest;
 import by.imsha.feign.dto.response.UserSearchResponse;
 import by.imsha.properties.FusionAuthProperties;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,7 +85,6 @@ public class VolunteerService {
                     volunteerNeededInParish.entrySet().stream()
                             .filter(Map.Entry::getValue)
                             .count());
-            log.info("Пользователи: {}", new ObjectMapper().writeValueAsString(users));
         } catch (Exception e) {
             log.error("При составлении лога volunteerNeededMap произошла ошибка: ", e);
         }
