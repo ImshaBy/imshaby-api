@@ -4,6 +4,7 @@ import by.imsha.feign.FusionAuthApiFeignClient;
 import by.imsha.feign.dto.request.UserSearchFilterRequest;
 import by.imsha.feign.dto.response.UserSearchResponse;
 import by.imsha.properties.FusionAuthProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -40,6 +43,9 @@ public class VolunteerService {
     @Cacheable(cacheNames = "volunteerNeededMap", sync = true)
     public Map<String, Boolean> getVolunteerNeededMap() {
         Map<String, Boolean> volunteerNeededInParish = new HashMap<>();
+
+        List<UserSearchResponse.User> users = new LinkedList<>();
+
         UserSearchResponse userSearchResponse;
         int startRow = 0;
         try {
@@ -50,6 +56,8 @@ public class VolunteerService {
                                 .queryString("*")
                                 .startRow(startRow)
                                 .build()).build(), fusionAuthProperties.getAuthorizationToken());
+
+                users.addAll(userSearchResponse.getUsers());
 
                 userSearchResponse.getUsers().stream()
                         .flatMap(user -> Optional.ofNullable(user)
@@ -78,6 +86,7 @@ public class VolunteerService {
                     volunteerNeededInParish.entrySet().stream()
                             .filter(Map.Entry::getValue)
                             .count());
+            log.info("Пользователи: {}", new ObjectMapper().writeValueAsString(users));
         } catch (Exception e) {
             log.error("При составлении лога volunteerNeededMap произошла ошибка: ", e);
         }
