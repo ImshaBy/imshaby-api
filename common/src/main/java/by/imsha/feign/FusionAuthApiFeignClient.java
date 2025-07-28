@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 /**
  * API для feign-клиента FusionAuth
  */
-@FeignClient(name = "fusionAuthApiFeignClient", url ="${fusionAuth.host-url:http://rewrite-me}")
+@FeignClient(name = "fusionAuthApiFeignClient", url ="${fusionAuth.host-url:${FUSION_AUTH_HOST_URL:http://rewrite-me}}")
 public interface FusionAuthApiFeignClient {
 
     @PostMapping("/api/user/search")
