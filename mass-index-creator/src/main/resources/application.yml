@@ -20,3 +20,9 @@ meilisearch:
     host-url: http://localhost:7700
     api-key: 8Yy6fAZCCIPDiQk4yay7_xrHoxconfRKC5HKhuoij8o
     index-uid: mass-index
+
+fusionAuth:
+  host-url: https://identity.imsha.by
+  authorization-token: LVkhGbFBTQuvnZgm3OCgS3uAGHJ55QZBxh43GN94RZ6aLDW2pZL2bUo8
+  user-search-pagination: 10
+  application-id: 1f99412a-b65b-4acf-87f7-1dc21d93b127
