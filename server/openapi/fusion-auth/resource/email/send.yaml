@@ -1,0 +1,76 @@
+openapi: "3.0.3"
+info:
+  title: Модели запросов и ответов для эндпоинта /api/email/send
+  version: "1"
+paths:
+  /api/email/send/{templateId}:
+    post:
+      tags:
+        - FusionAuthApi
+      operationId: sendEmail
+      summary: Отправка письма
+      parameters:
+        - $ref: '#/components/parameters/templateId'
+      requestBody:
+        $ref: '#/components/requestBodies/Send email request'
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    Send confirmation code:
+      type: object
+      description: Данные для шаблона письма при отправке кода подтверждения
+      required:
+        - type
+        - confirmationCode
+      properties:
+        type:
+          description: Идентификатор типа данных для шаблона
+          type: string
+          default: 'Send confirmation code'
+        confirmationCode:
+          description: Код подтверждения
+          type: string
+          default: '1234'
+
+  requestBodies:
+    Send email request:
+      description: Отправить письмо по шаблону
+      required: true
+      content:
+        application/json:
+          schema:
+            required:
+              - requestData
+              - toAddresses
+            properties:
+              requestData:
+                description: Данные для подстановки в шаблон
+                oneOf:
+                  - $ref: '#/components/schemas/Send confirmation code'
+                discriminator:
+                  propertyName: type
+              toAddresses:
+                description: Адреса, на которые необходимо отправить письмо
+                type: array
+                minItems: 1
+                items:
+                  title: Address
+                  required:
+                    - address
+                  properties:
+                    address:
+                      description: email для отправки письма
+                      type: string
+                      example: "example@mail.com"
+  parameters:
+    templateId:
+      in: path
+      name: templateId
+      required: true
+      schema:
+        type: string
+        description: Идентификатор шаблона письма
+        example: "1ab56274-46f5-4023-b585-e5334585f820"

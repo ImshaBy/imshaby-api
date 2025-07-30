@@ -1,0 +1,16 @@
+openapi: "3.0.3"
+info:
+  title: FusionAuth API
+  version: "1"
+externalDocs:
+  description: Оригинальная документация
+  url: https://fusionauth.io/docs/apis/
+servers:
+  - url: http://localhost:9091/
+  - url: https://identity.imsha.by/
+tags:
+  - name: FusionAuthApi
+    description: FusionAuth сервер
+paths:
+  /api/email/send/{templateId}:
+    $ref: 'resource/email/send.yaml#/paths/~1api~1email~1send~1{templateId}'

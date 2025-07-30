@@ -77,3 +77,6 @@ fusionAuth:
   authorization-token: LVkhGbFBTQuvnZgm3OCgS3uAGHJ55QZBxh43GN94RZ6aLDW2pZL2bUo8
   user-search-pagination: 10
   application-id: 1f99412a-b65b-4acf-87f7-1dc21d93b127
+
+fusionAuthApi:
+  url: https://identity.imsha.by
