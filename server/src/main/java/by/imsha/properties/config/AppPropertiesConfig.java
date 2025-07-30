@@ -1,5 +1,6 @@
 package by.imsha.properties.config;
 
+import by.imsha.properties.AuthProperties;
 import by.imsha.properties.ImshaProperties;
 import by.imsha.properties.PasswordlessApiProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -25,5 +26,11 @@ public class AppPropertiesConfig {
     @ConfigurationProperties("app.imsha")
     public ImshaProperties imshaProperties() {
         return new ImshaProperties();
+    }
+
+    @Bean
+    @ConfigurationProperties(AuthProperties.PREFIX)
+    public AuthProperties authProperties() {
+        return new AuthProperties();
     }
 }

@@ -61,6 +61,10 @@ app:
         start: ${PASSWORDLESS_URI_START:https://localhost:9091/api/passwordless/start}
         send: ${PASSWORDLESS_URI_SEND:https://localhost:9091/api/passwordless/send}
         login: ${PASSWORDLESS_URI_LOGIN:https://localhost:9091/api/passwordless/login}
+  auth:
+    confirmation-code-email-template-id: 1ab56274-46f5-4023-b585-e5334585f820
+    uri:
+      send-email: https://identity.imsha.by/api/email/send
 
 meilisearch:
   reader:
