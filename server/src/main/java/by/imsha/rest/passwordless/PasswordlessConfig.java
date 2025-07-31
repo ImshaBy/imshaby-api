@@ -4,35 +4,19 @@ import by.imsha.properties.PasswordlessApiProperties;
 import by.imsha.rest.passwordless.send.CodeSender;
 import by.imsha.rest.passwordless.send.ConsoleCodeSender;
 import by.imsha.rest.passwordless.send.EmailCodeSender;
-import org.springframework.beans.factory.annotation.Qualifier;
+import by.imsha.server.api_specification.fusionauth.public_client.api.FusionauthPublicApiClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.bind.BindResult;
 import org.springframework.boot.context.properties.bind.Binder;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
-import org.springframework.http.HttpHeaders;
-import org.springframework.web.client.RestTemplate;
 
 @Configuration
 public class PasswordlessConfig {
-
-    @Bean
-    RestTemplate passwordlessSecureRestTemplate(RestTemplateBuilder restTemplateBuilder,
-                                                PasswordlessApiProperties passwordlessApiProperties) {
-        return restTemplateBuilder
-                .defaultHeader(HttpHeaders.AUTHORIZATION, passwordlessApiProperties.getApiKey())
-                .build();
-    }
-
-    @Bean
-    RestTemplate passwordlessPublicRestTemplate(RestTemplateBuilder restTemplateBuilder) {
-        return restTemplateBuilder.build();
-    }
 
     @Bean
     @Conditional(ConsoleSenderCondition.class)
@@ -42,9 +26,8 @@ public class PasswordlessConfig {
 
     @Bean
     @ConditionalOnMissingBean
-    public CodeSender codeSender(PasswordlessApiProperties passwordlessApiProperties,
-                                 @Qualifier("passwordlessPublicRestTemplate") RestTemplate restTemplate) {
-        return new EmailCodeSender(passwordlessApiProperties, restTemplate);
+    public CodeSender codeSender(FusionauthPublicApiClient fusionauthPublicApiClient) {
+        return new EmailCodeSender(fusionauthPublicApiClient);
     }
 
     /**

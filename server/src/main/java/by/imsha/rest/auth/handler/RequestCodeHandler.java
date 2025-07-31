@@ -2,6 +2,10 @@ package by.imsha.rest.auth.handler;
 
 import by.imsha.properties.AuthProperties;
 import by.imsha.rest.auth.exception.AuthException;
+import by.imsha.server.api_specification.fusionauth.secured_client.api.FusionauthApiClient;
+import by.imsha.server.api_specification.fusionauth.secured_client.model.Address;
+import by.imsha.server.api_specification.fusionauth.secured_client.model.SendConfirmationCode;
+import by.imsha.server.api_specification.fusionauth.secured_client.model.SendEmailRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -11,7 +15,6 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 
@@ -21,7 +24,7 @@ import java.util.List;
 @Slf4j
 public class RequestCodeHandler {
 
-    private final RestTemplate passwordlessSecureRestTemplate;
+    private final FusionauthApiClient fusionauthApiClient;
     private final AuthProperties authProperties;
     private final ConfirmationCodeGenerator confirmationCodeGenerator;
 
@@ -29,26 +32,21 @@ public class RequestCodeHandler {
                        Input input) {
 
         try {
-            String response = passwordlessSecureRestTemplate.postForObject(
-                    authProperties.getUri().getSendEmail() + "/" + authProperties.getConfirmationCodeEmailTemplateId(),
-                    RequestBody.builder()
-                            .requestData(
-                                    RequestBody.RequestData.builder()
-                                            .confirmationCode(confirmationCodeGenerator.generateCode(input.getEmail()))
-                                            .build()
-                            )
+            Void body = fusionauthApiClient.sendEmail(
+                    authProperties.getConfirmationCodeEmailTemplateId(),
+                    SendEmailRequest.builder()
+                            .requestData(SendConfirmationCode.builder()
+                                    .confirmationCode(confirmationCodeGenerator.generateCode(input.getEmail()))
+                                    .build())
                             .toAddresses(
-                                    List.of(
-                                            RequestBody.AddressContainer.builder()
-                                                    .address(input.getEmail())
-                                                    .build()
-                                    )
+                                    List.of(Address.builder()
+                                            .address(input.getEmail())
+                                            .build())
                             )
-                            .build(),
-                    String.class
-            );
-
-            log.info("Результат отправки кода подтверждения на email: {}", response);
+                            .build()
+            ).getBody();
+            //TODO описать поля ответа и залогировать ответ
+            log.info("Результат отправки кода подтверждения на email: {}", body);
         } catch (Exception exception) {
             throw new AuthException("Ошибка отправки кода подтверждения на email", exception);
         }
@@ -63,40 +61,5 @@ public class RequestCodeHandler {
          */
         @NotBlank(message = "Адрес электронной почты пользователя")
         String email;
-    }
-
-    @Builder
-    @Value
-    private static class RequestBody {
-
-        /**
-         * Данные для подстановки в шаблон
-         */
-        RequestData requestData;
-
-        /**
-         * Адреса, на которые необходимо отправить письмо
-         */
-        List<AddressContainer> toAddresses;
-
-        @Builder
-        @Value
-        public static class RequestData {
-
-            /**
-             * Код подтверждения
-             */
-            String confirmationCode;
-        }
-
-        @Builder
-        @Value
-        public static class AddressContainer {
-
-            /**
-             * email адрес
-             */
-            String address;
-        }
     }
 }

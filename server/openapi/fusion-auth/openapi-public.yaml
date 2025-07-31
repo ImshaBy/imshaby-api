@@ -1,6 +1,6 @@
 openapi: "3.0.3"
 info:
-  title: FusionAuth API
+  title: FusionAuth API (public)
   version: "1"
 externalDocs:
   description: Оригинальная документация
@@ -12,5 +12,7 @@ tags:
   - name: FusionAuthApi
     description: FusionAuth сервер
 paths:
-  /api/email/send/{templateId}:
-    $ref: 'resource/email/send.yaml#/paths/~1api~1email~1send~1{templateId}'
+  /api/passwordless/send:
+    $ref: 'resource/passwordless/send.yaml#/paths/~1api~1passwordless~1send'
+  /api/passwordless/login:
+    $ref: 'resource/passwordless/login.yaml#/paths/~1api~1passwordless~1login'

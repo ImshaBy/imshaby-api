@@ -71,18 +71,45 @@ dependencies {
 
 sourceSets.main.java.srcDirs += "$buildDir/openapi/generated"
 
-tasks.register('generate FusionAuth API Feign client', GenerateTask) {
+tasks.register('generate FusionAuth Secured API Feign client', GenerateTask) {
     generatorName.set("spring")
-    inputSpec.set("$projectDir/openapi/fusion-auth/openapi.yaml")
+    inputSpec.set("$projectDir/openapi/fusion-auth/openapi-secured.yaml")
     outputDir.set("$buildDir/openapi/generated")
     ignoreFileOverride.set("$projectDir/.openapi-generator-ignore")
     configOptions.set([
             library                             : "spring-cloud",
-            invokerPackage                      : "by.imsha.server.api_specification.fusionauth.client",
-            apiPackage                          : "by.imsha.server.api_specification.fusionauth.client.api",
-            modelPackage                        : "by.imsha.server.api_specification.fusionauth.client.model",
-            configPackage                       : "by.imsha.server.api_specification.fusionauth.client.configuration",
-            basePackage                         : "by.imsha.server.api_specification.fusionauth.client",
+            invokerPackage                      : "by.imsha.server.api_specification.fusionauth.secured_client",
+            apiPackage                          : "by.imsha.server.api_specification.fusionauth.secured_client.api",
+            modelPackage                        : "by.imsha.server.api_specification.fusionauth.secured_client.model",
+            configPackage                       : "by.imsha.server.api_specification.fusionauth.secured_client.configuration",
+            basePackage                         : "by.imsha.server.api_specification.fusionauth.secured_client",
+            useOptional                         : "true",
+            openApiNullable                     : "false",
+            interfaceOnly                       : "false",
+            sourceFolder                        : "",
+            testOutput                          : "$rootDir/src/test/java",
+            generateApiTests                    : "true",
+            generateModelTests                  : "true",
+            generateBuilders                    : "true",
+            generatedConstructorWithRequiredArgs: "true",
+            generateConstructorWithAllArgs      : "true",
+            useTags                             : "true",
+            useSpringBoot3                      : "true",
+    ])
+}
+
+tasks.register('generate FusionAuth Public API Feign client', GenerateTask) {
+    generatorName.set("spring")
+    inputSpec.set("$projectDir/openapi/fusion-auth/openapi-public.yaml")
+    outputDir.set("$buildDir/openapi/generated")
+    ignoreFileOverride.set("$projectDir/.openapi-generator-ignore")
+    configOptions.set([
+            library                             : "spring-cloud",
+            invokerPackage                      : "by.imsha.server.api_specification.fusionauth.public_client",
+            apiPackage                          : "by.imsha.server.api_specification.fusionauth.public_client.api",
+            modelPackage                        : "by.imsha.server.api_specification.fusionauth.public_client.model",
+            configPackage                       : "by.imsha.server.api_specification.fusionauth.public_client.configuration",
+            basePackage                         : "by.imsha.server.api_specification.fusionauth.public_client",
             useOptional                         : "true",
             openApiNullable                     : "false",
             interfaceOnly                       : "false",

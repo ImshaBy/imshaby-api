@@ -5,8 +5,10 @@ info:
 paths:
   /api/email/send/{templateId}:
     post:
+      security:
+        - apiKey: []
       tags:
-        - FusionAuthApi
+        - fusionauth
       operationId: sendEmail
       summary: Отправка письма
       parameters:
@@ -33,7 +35,7 @@ components:
         confirmationCode:
           description: Код подтверждения
           type: string
-          default: '1234'
+          example: '1234'
 
   requestBodies:
     Send email request:
