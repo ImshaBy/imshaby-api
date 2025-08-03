@@ -1,8 +1,8 @@
 package by.imsha.rest.passwordless.send;
 
-import by.imsha.rest.passwordless.exception.PasswordlessApiException;
 import api_specification.by.imsha.server.fusionauth.public_client.api.FusionauthPublicApiClient;
-import api_specification.by.imsha.server.fusionauth.public_client.model.SendCodeByEmailRequest;
+import by.imsha.rest.passwordless.exception.PasswordlessApiException;
+import by.imsha.rest.passwordless.mapper.FusionauthMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
@@ -13,6 +13,7 @@ import org.springframework.validation.annotation.Validated;
 public class EmailCodeSender implements CodeSender {
 
     private final FusionauthPublicApiClient fusionauthPublicApiClient;
+    private final FusionauthMapper fusionauthMapper;
 
     /**
      * Отправить код пользователю
@@ -25,9 +26,7 @@ public class EmailCodeSender implements CodeSender {
             log.info("[VERBOSE] Send to: '{}', code: '{}'", userIdentifier, code);
 
             fusionauthPublicApiClient.sendCodeByEmail(
-                    SendCodeByEmailRequest.builder()
-                            .code(code)
-                            .build()
+                    fusionauthMapper.map(code)
             );
         } catch (PasswordlessApiException passwordlessApiException) {
             throw passwordlessApiException;

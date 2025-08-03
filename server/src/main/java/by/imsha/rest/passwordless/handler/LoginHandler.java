@@ -3,6 +3,7 @@ package by.imsha.rest.passwordless.handler;
 import by.imsha.rest.passwordless.exception.PasswordlessApiException;
 import api_specification.by.imsha.server.fusionauth.public_client.api.FusionauthPublicApiClient;
 import api_specification.by.imsha.server.fusionauth.public_client.model.SendCodeByEmailRequest;
+import by.imsha.rest.passwordless.mapper.FusionauthMapper;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -23,6 +24,7 @@ import org.springframework.validation.annotation.Validated;
 public class LoginHandler {
 
     private final FusionauthPublicApiClient fusionauthPublicApiClient;
+    private final FusionauthMapper fusionauthMapper;
 
     public String handle(@Valid @NotNull(message = "Входные параметры обязательны для заполнения")
                          Input input) {
@@ -30,9 +32,7 @@ public class LoginHandler {
             log.info("[VERBOSE] Received code: '{}'", input.getCode());
 
             return fusionauthPublicApiClient.authByCode(
-                            SendCodeByEmailRequest.builder()
-                                    .code(input.getCode())
-                                    .build()
+                            fusionauthMapper.map(input)
                     ).getBody()
                     .getToken();
         } catch (Exception exception) {

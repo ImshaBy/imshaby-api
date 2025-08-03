@@ -97,7 +97,7 @@ public class LocalComposeEnvironmentConfiguration {
     @Bean
     @Primary
     LoginHandler localLoginHandler(Supplier<List<UserStub>> userStubsLoader) {
-        return new LoginHandler(null) {
+        return new LoginHandler(null, null) {
             @Override
             public String handle(Input input) {
                 final String code = input.getCode();

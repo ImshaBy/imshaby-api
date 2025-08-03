@@ -1,6 +1,7 @@
 package by.imsha.rest.passwordless;
 
 import by.imsha.properties.PasswordlessApiProperties;
+import by.imsha.rest.passwordless.mapper.FusionauthMapper;
 import by.imsha.rest.passwordless.send.CodeSender;
 import by.imsha.rest.passwordless.send.ConsoleCodeSender;
 import by.imsha.rest.passwordless.send.EmailCodeSender;
@@ -26,8 +27,9 @@ public class PasswordlessConfig {
 
     @Bean
     @ConditionalOnMissingBean
-    public CodeSender codeSender(FusionauthPublicApiClient fusionauthPublicApiClient) {
-        return new EmailCodeSender(fusionauthPublicApiClient);
+    public CodeSender codeSender(FusionauthPublicApiClient fusionauthPublicApiClient,
+                                 FusionauthMapper fusionauthMapper) {
+        return new EmailCodeSender(fusionauthPublicApiClient, fusionauthMapper);
     }
 
     /**

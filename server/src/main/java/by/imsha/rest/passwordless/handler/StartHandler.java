@@ -1,6 +1,7 @@
 package by.imsha.rest.passwordless.handler;
 
 import by.imsha.rest.passwordless.exception.PasswordlessApiException;
+import by.imsha.rest.passwordless.mapper.FusionauthMapper;
 import by.imsha.rest.passwordless.send.CodeSender;
 import api_specification.by.imsha.server.fusionauth.secured_client.api.FusionauthApiClient;
 import api_specification.by.imsha.server.fusionauth.secured_client.model.StartPasswordlessLoginRequest;
@@ -23,6 +24,7 @@ public class StartHandler {
 
     private final FusionauthApiClient fusionauthApiClient;
     private final CodeSender defaultCodeSender;
+    private final FusionauthMapper fusionauthMapper;
 
     public void handle(@Valid @NotNull(message = "Входные параметры обязательны для заполнения") final Input input) {
         handle(input, defaultCodeSender);
@@ -34,10 +36,7 @@ public class StartHandler {
 
         try {
             StartPasswordlessLoginResponse response = fusionauthApiClient.startPasswordlessLogin(
-                    StartPasswordlessLoginRequest.builder()
-                            .applicationId(input.getApplicationId())
-                            .loginId(input.getLoginId())
-                            .build()
+                    fusionauthMapper.map(input)
             ).getBody();
 
             codeSender.send(input.getLoginId(), response.getCode());
