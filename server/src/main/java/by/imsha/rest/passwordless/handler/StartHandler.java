@@ -2,9 +2,9 @@ package by.imsha.rest.passwordless.handler;
 
 import by.imsha.rest.passwordless.exception.PasswordlessApiException;
 import by.imsha.rest.passwordless.send.CodeSender;
-import by.imsha.server.api_specification.fusionauth.secured_client.api.FusionauthApiClient;
-import by.imsha.server.api_specification.fusionauth.secured_client.model.StartPasswordlessLoginRequest;
-import by.imsha.server.api_specification.fusionauth.secured_client.model.StartPasswordlessLoginResponse;
+import api_specification.by.imsha.server.fusionauth.secured_client.api.FusionauthApiClient;
+import api_specification.by.imsha.server.fusionauth.secured_client.model.StartPasswordlessLoginRequest;
+import api_specification.by.imsha.server.fusionauth.secured_client.model.StartPasswordlessLoginResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

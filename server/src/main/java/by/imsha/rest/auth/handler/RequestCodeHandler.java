@@ -2,10 +2,10 @@ package by.imsha.rest.auth.handler;
 
 import by.imsha.properties.AuthProperties;
 import by.imsha.rest.auth.exception.AuthException;
-import by.imsha.server.api_specification.fusionauth.secured_client.api.FusionauthApiClient;
-import by.imsha.server.api_specification.fusionauth.secured_client.model.Address;
-import by.imsha.server.api_specification.fusionauth.secured_client.model.SendConfirmationCode;
-import by.imsha.server.api_specification.fusionauth.secured_client.model.SendEmailRequest;
+import api_specification.by.imsha.server.fusionauth.secured_client.api.FusionauthApiClient;
+import api_specification.by.imsha.server.fusionauth.secured_client.model.Address;
+import api_specification.by.imsha.server.fusionauth.secured_client.model.SendConfirmationCode;
+import api_specification.by.imsha.server.fusionauth.secured_client.model.SendEmailRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

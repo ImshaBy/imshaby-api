@@ -4,7 +4,7 @@ import by.imsha.properties.PasswordlessApiProperties;
 import by.imsha.rest.passwordless.send.CodeSender;
 import by.imsha.rest.passwordless.send.ConsoleCodeSender;
 import by.imsha.rest.passwordless.send.EmailCodeSender;
-import by.imsha.server.api_specification.fusionauth.public_client.api.FusionauthPublicApiClient;
+import api_specification.by.imsha.server.fusionauth.public_client.api.FusionauthPublicApiClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.bind.BindResult;
 import org.springframework.boot.context.properties.bind.Binder;

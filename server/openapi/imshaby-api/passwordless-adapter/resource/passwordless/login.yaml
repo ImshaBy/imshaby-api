@@ -6,22 +6,22 @@ paths:
   /api/passwordless/login:
     post:
       tags:
-        - "fusionauth public"
-      operationId: authByCode
-      summary: Аутентификация по коду (обмен кода на токен)
+        - PasswordlessAdapter
+      operationId: finishPasswordlessLogin
+      summary: Завершить процесс беспарольного входа
       requestBody:
-        $ref: '#/components/requestBodies/Auth by code request'
+        $ref: '#/components/requestBodies/Finish passwordless login request'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Auth by code response'
+                $ref: '#/components/schemas/Finish passwordless login response'
 
 components:
   schemas:
-    Auth by code response:
+    Finish passwordless login response:
       type: object
       required:
         - token
@@ -32,9 +32,8 @@ components:
           example: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzaXRlIjoiaW1zaGEuYnkifQ.HtVmRcsfYvY4u10zHVH8raeA__C7A8pIdls6mhfUk2c'
 
   requestBodies:
-    Auth by code request:
-      title: AuthByCodeRequest
-      description: Данные для аутентификации по коду (обмен кода на токен)
+    Finish passwordless login request:
+      description: Данные завершения беспарольного входа
       required: true
       content:
         application/json:

@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @SpringBootApplication
-@EnableFeignClients(basePackages = {"by.imsha.server.api_specification", "by.imsha"})
+@EnableFeignClients(basePackages = {"api_specification.by.imsha.server", "by.imsha"})
 public class Application {
 
     public static void main(String[] args) {

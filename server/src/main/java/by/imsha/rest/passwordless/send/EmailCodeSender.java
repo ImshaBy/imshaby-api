@@ -1,8 +1,8 @@
 package by.imsha.rest.passwordless.send;
 
 import by.imsha.rest.passwordless.exception.PasswordlessApiException;
-import by.imsha.server.api_specification.fusionauth.public_client.api.FusionauthPublicApiClient;
-import by.imsha.server.api_specification.fusionauth.public_client.model.SendCodeByEmailRequest;
+import api_specification.by.imsha.server.fusionauth.public_client.api.FusionauthPublicApiClient;
+import api_specification.by.imsha.server.fusionauth.public_client.model.SendCodeByEmailRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;

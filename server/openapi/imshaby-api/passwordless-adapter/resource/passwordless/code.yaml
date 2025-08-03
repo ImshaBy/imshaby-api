@@ -1,0 +1,47 @@
+openapi: "3.0.3"
+info:
+  title: Модели запросов и ответов для эндпоинта /api/passwordless/code
+  version: "1"
+paths:
+  /api/passwordless/code:
+    post:
+      tags:
+        - PasswordlessAdapter
+      operationId: generatePasswordlessLoginCode
+      summary: Сгенерировать и получить код для беспарольного входа
+      requestBody:
+        $ref: '#/components/requestBodies/Generate passwordless login code request'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generate passwordless login code response'
+
+components:
+  schemas:
+    Generate passwordless login code response:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          description: Уникальный код, необходимый для завершения входа в систему
+          type: string
+          example: 'L6G4LRiXdxwtVTX27dM4iVbHfbA9Br8GYwZ7QqclQHA'
+
+  requestBodies:
+    Generate passwordless login code request:
+      description: Данные генерации и получения кода для беспарольного входа
+      required: true
+      content:
+        application/json:
+          schema:
+            required:
+              - email
+            properties:
+              email:
+                description: email пользователя
+                type: string
+                example: 'example@mail.com'
