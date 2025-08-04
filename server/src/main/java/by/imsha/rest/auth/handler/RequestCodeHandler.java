@@ -1,11 +1,10 @@
 package by.imsha.rest.auth.handler;
 
+import api_specification.by.imsha.server.fusionauth.secured_client.api.FusionauthApiClient;
+import api_specification.by.imsha.server.fusionauth.secured_client.model.SendEmailResponse;
 import by.imsha.properties.AuthProperties;
 import by.imsha.rest.auth.exception.AuthException;
-import api_specification.by.imsha.server.fusionauth.secured_client.api.FusionauthApiClient;
-import api_specification.by.imsha.server.fusionauth.secured_client.model.Address;
-import api_specification.by.imsha.server.fusionauth.secured_client.model.SendConfirmationCode;
-import api_specification.by.imsha.server.fusionauth.secured_client.model.SendEmailRequest;
+import by.imsha.rest.auth.mapper.FusionauthMapper;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -16,8 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
-import java.util.List;
-
 @Component
 @RequiredArgsConstructor
 @Validated
@@ -27,26 +24,20 @@ public class RequestCodeHandler {
     private final FusionauthApiClient fusionauthApiClient;
     private final AuthProperties authProperties;
     private final ConfirmationCodeGenerator confirmationCodeGenerator;
+    private final FusionauthMapper fusionauthMapper;
 
     public void handle(@Valid @NotNull(message = "Входные параметры обязательны для заполнения")
                        Input input) {
 
         try {
-            Void body = fusionauthApiClient.sendEmail(
+            String confirmationCode = confirmationCodeGenerator.generate(input.getEmail());
+
+            SendEmailResponse response = fusionauthApiClient.sendEmail(
                     authProperties.getConfirmationCodeEmailTemplateId(),
-                    SendEmailRequest.builder()
-                            .requestData(SendConfirmationCode.builder()
-                                    .confirmationCode(confirmationCodeGenerator.generateCode(input.getEmail()))
-                                    .build())
-                            .toAddresses(
-                                    List.of(Address.builder()
-                                            .address(input.getEmail())
-                                            .build())
-                            )
-                            .build()
+                    fusionauthMapper.map(confirmationCode, input)
             ).getBody();
-            //TODO описать поля ответа и залогировать ответ
-            log.info("Результат отправки кода подтверждения на email: {}", body);
+
+            log.info("Результат отправки кода подтверждения на email: {}", response);
         } catch (Exception exception) {
             throw new AuthException("Ошибка отправки кода подтверждения на email", exception);
         }

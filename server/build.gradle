@@ -152,6 +152,33 @@ tasks.register('generate passwordless api adapter server', GenerateTask) {
     ])
 }
 
+tasks.register('generate auth server', GenerateTask) {
+    generatorName.set("spring")
+    inputSpec.set("$projectDir/openapi/imshaby-api/auth/openapi.yaml")
+    outputDir.set("$buildDir/openapi/generated")
+    ignoreFileOverride.set("$projectDir/.openapi-generator-ignore")
+    configOptions.set([
+            library                             : "spring-boot",
+            invokerPackage                      : "api_specification.by.imsha.server.auth.server",
+            apiPackage                          : "api_specification.by.imsha.server.auth.server.api",
+            modelPackage                        : "api_specification.by.imsha.server.auth.server.model",
+            configPackage                       : "api_specification.by.imsha.server.auth.server.configuration",
+            basePackage                         : "api_specification.by.imsha.server.auth.server",
+            useOptional                         : "true",
+            openApiNullable                     : "false",
+            interfaceOnly                       : "false",
+            sourceFolder                        : "",
+            testOutput                          : "$rootDir/src/test/java",
+            generateApiTests                    : "true",
+            generateModelTests                  : "true",
+            generateBuilders                    : "true",
+            generatedConstructorWithRequiredArgs: "true",
+            generateConstructorWithAllArgs      : "true",
+            useTags                             : "true",
+            useSpringBoot3                      : "true",
+    ])
+}
+
 tasks.withType(GenerateTask).each { task ->
     configure(task) {
         if (task.name != "openApiGenerate") {

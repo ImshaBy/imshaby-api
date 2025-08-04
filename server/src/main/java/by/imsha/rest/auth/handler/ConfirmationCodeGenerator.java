@@ -17,7 +17,7 @@ public class ConfirmationCodeGenerator {
      * @return сгенерированный код (каждый вызов метода порождает новый код)
      */
     @CachePut(cacheNames = "confirmationCodeCache")
-    public String generateCode(String key) {
+    public synchronized String generate(String key) {
         return RandomStringUtils.randomNumeric(4);
     }
 

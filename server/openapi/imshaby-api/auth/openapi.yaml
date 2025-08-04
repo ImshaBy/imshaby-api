@@ -1,0 +1,15 @@
+openapi: "3.0.3"
+info:
+  title: passwordless api adapter
+  version: "1"
+servers:
+  - url: http://localhost:9091/
+  - url: https://api.imsha.by/
+tags:
+  - name: Auth
+    description: API для аутентификации
+paths:
+  /api/auth/request-code:
+    $ref: 'resource/auth/request-code.yaml#/paths/~1api~1auth~1request-code'
+  /api/auth/verify-code:
+    $ref: 'resource/auth/verify-code.yaml#/paths/~1api~1auth~1verify-code'

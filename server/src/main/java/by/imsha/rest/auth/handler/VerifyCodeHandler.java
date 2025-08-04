@@ -49,12 +49,13 @@ public class VerifyCodeHandler {
         /**
          * email пользователя
          */
-        @NotBlank(message = "Адрес электронной почты пользователя")
+        @NotBlank(message = "Адрес электронной почты пользователя должен быть заполнен")
         String email;
 
         /**
          * Код подтверждения
          */
+        @NotBlank(message = "Код подтверждения должен быть заполнен")
         String confirmationCode;
     }
 }

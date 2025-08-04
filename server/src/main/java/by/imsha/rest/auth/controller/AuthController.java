@@ -1,55 +1,55 @@
 package by.imsha.rest.auth.controller;
 
-import by.imsha.rest.auth.controller.request.SendConfirmationCodeRequest;
-import by.imsha.rest.auth.controller.request.VerifyConfirmationCodeRequest;
-import by.imsha.rest.auth.controller.response.VerifyConfirmationCodeResponse;
+import api_specification.by.imsha.server.auth.server.api.AuthApiController;
+import api_specification.by.imsha.server.auth.server.model.CodeVerificationResponse;
+import api_specification.by.imsha.server.auth.server.model.SendVerificationCodeToEmailRequest;
+import api_specification.by.imsha.server.auth.server.model.VerifyCodeRequest;
 import by.imsha.rest.auth.handler.RequestCodeHandler;
 import by.imsha.rest.auth.handler.VerifyCodeHandler;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import by.imsha.rest.auth.mapper.AuthApiMapper;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.context.request.NativeWebRequest;
 
 /**
  * Контроллер для процесса аутентификации
  */
-@RestController
-@RequestMapping("/api/auth")
-@RequiredArgsConstructor
-@Slf4j
-public class AuthController {
+@Controller
+public class AuthController extends AuthApiController {
 
     private final RequestCodeHandler requestCodeHandler;
     private final VerifyCodeHandler verifyCodeHandler;
+    private final AuthApiMapper authApiMapper;
 
-    @Secured("ROLE_INTERNAL")
-    @PostMapping("/request-code")
-    public void requestCode(@RequestBody @Valid SendConfirmationCodeRequest request) {
-
-        requestCodeHandler.handle(
-                RequestCodeHandler.Input.builder()
-                        .email(request.getEmail())
-                        .build()
-        );
+    public AuthController(NativeWebRequest request, RequestCodeHandler requestCodeHandler, VerifyCodeHandler verifyCodeHandler, AuthApiMapper authApiMapper) {
+        super(request);
+        this.requestCodeHandler = requestCodeHandler;
+        this.verifyCodeHandler = verifyCodeHandler;
+        this.authApiMapper = authApiMapper;
     }
 
     @Secured("ROLE_INTERNAL")
-    @PostMapping("/verify-code")
-    public VerifyConfirmationCodeResponse verifyCode(@RequestBody @Valid VerifyConfirmationCodeRequest request) {
+    @Override
+    public ResponseEntity<Void> sendVerificationCodeToEmail(SendVerificationCodeToEmailRequest sendVerificationCodeToEmailRequest) {
 
-        boolean valid = verifyCodeHandler.handle(
-                VerifyCodeHandler.Input.builder()
-                        .email(request.getEmail())
-                        .confirmationCode(request.getConfirmationCode())
-                        .build()
+        requestCodeHandler.handle(
+                authApiMapper.map(sendVerificationCodeToEmailRequest)
         );
 
-        return VerifyConfirmationCodeResponse.builder()
-                .valid(valid)
-                .build();
+        return ResponseEntity.ok(null);
+    }
+
+    @Secured("ROLE_INTERNAL")
+    @Override
+    public ResponseEntity<CodeVerificationResponse> verifyCode(VerifyCodeRequest verifyCodeRequest) {
+
+        boolean valid = verifyCodeHandler.handle(
+                authApiMapper.map(verifyCodeRequest)
+        );
+
+        return ResponseEntity.ok(
+                authApiMapper.mapToVerificationResponse(valid)
+        );
     }
 }

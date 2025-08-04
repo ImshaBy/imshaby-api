@@ -6,8 +6,9 @@ import by.imsha.rest.passwordless.handler.LoginHandler;
 import by.imsha.rest.passwordless.handler.StartHandler;
 import org.mapstruct.Mapper;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", implementationName = "FusionauthMapper_passwordless")
 public interface FusionauthMapper {
+
     SendCodeByEmailRequest map(LoginHandler.Input input);
 
     StartPasswordlessLoginRequest map(StartHandler.Input input);

@@ -6,7 +6,7 @@ paths:
   /api/email/send/{templateId}:
     post:
       security:
-        - apiKey: []
+        - apiKey: [ ]
       tags:
         - fusionauth
       operationId: sendEmail
@@ -18,9 +18,36 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Send email response'
 
 components:
   schemas:
+    Send email response:
+      type: object
+      properties:
+        anonymousResults:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Send result'
+        results:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Send result'
+    Send result:
+      type: object
+      properties:
+        parseErrors:
+          type: object
+          additionalProperties:
+            type: string
+        renderErrors:
+          type: object
+          additionalProperties:
+            type: string
+
     Send confirmation code:
       type: object
       description: Данные для шаблона письма при отправке кода подтверждения

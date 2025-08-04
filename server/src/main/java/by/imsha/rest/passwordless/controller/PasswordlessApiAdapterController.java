@@ -1,4 +1,4 @@
-package by.imsha.rest.passwordless.adapter;
+package by.imsha.rest.passwordless.controller;
 
 import by.imsha.rest.passwordless.handler.LoginHandler;
 import by.imsha.rest.passwordless.handler.StartHandler;
