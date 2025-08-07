@@ -1,6 +1,6 @@
 openapi: "3.0.3"
 info:
-  title: FusionAuth API (Secured with API-token)
+  title: FusionAuth
   version: "1"
 externalDocs:
   description: Оригинальная документация

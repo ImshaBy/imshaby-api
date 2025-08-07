@@ -1,19 +1,25 @@
 imshaby-api:
   base-path: /
 
-local:
-  user:
-    stub:
-      folder: ${projectBuildDir} # заменяется градлом
-
 app:
   imsha:
     api-keys: TEST_API_KEY
     internal-api-keys: TEST_INTERNAL_API_KEY
     parish-week-api-keys: "123:123"
+  oauth2:
+    passwordless:
+      application-id: test-application-id
 
 fusionAuth:
-  host-url: https://identity.imsha.by
-  authorization-token: LVkhGbFBTQuvnZgm3OCgS3uAGHJ55QZBxh43GN94RZ6aLDW2pZL2bUo8
+  host-url: https://remove-me
+  authorization-token: remove-me
   user-search-pagination: 3
   application-id: 1f99412a-b65b-4acf-87f7-1dc21d93b127
+
+fusionauth:
+  url: ${wiremock.baseUrl}/fusion-auth
+  security:
+    apiKey:
+      key: authorization-key-mock
+fusionauthPublic:
+  url: ${fusionauth.url}

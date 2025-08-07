@@ -3,6 +3,9 @@ package by.imsha.server.bdd.glue;
 import by.imsha.Application;
 import by.imsha.server.ImshabyApiEndpoint;
 import by.imsha.server.properties.ImshabyApiTestProperties;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import io.cucumber.java.ParameterType;
 import io.cucumber.spring.CucumberContextConfiguration;
 import io.restassured.RestAssured;
@@ -30,11 +33,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @see io.cucumber.spring.ScenarioScope
  */
 @CucumberContextConfiguration
-@ActiveProfiles({"local", "test"})
+@ActiveProfiles({"test"})
 @SpringBootTest(classes = Application.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class SpringGlue {
 
     public static final int MONGO_PORT;
+
+    public static final WireMockServer wireMockServer;
 
     static {
 
@@ -59,11 +64,19 @@ public class SpringGlue {
 //                .waitingFor(Wait.forHttp("/api/cities")
 //                        .forStatusCode(401));
 //        imshabyApi.start();
+
+        wireMockServer = new WireMockServer(
+                WireMockConfiguration.options()
+                        .dynamicPort()
+        );
+        wireMockServer.start();
+        WireMock.configureFor(new WireMock(wireMockServer));
     }
 
     @DynamicPropertySource
     static void registerImshabyApiPort(DynamicPropertyRegistry registry) {
         registry.add("spring.data.mongodb.uri", () -> "mongodb://localhost:" + MONGO_PORT + "/imshaby");
+        registry.add("wiremock.baseUrl", wireMockServer::baseUrl);
     }
 
     @LocalServerPort

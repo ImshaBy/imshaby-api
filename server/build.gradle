@@ -4,7 +4,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot'
     id 'io.spring.dependency-management'
-    id 'org.openapi.generator' version '7.12.0'
+    id 'org.openapi.generator' version '7.14.0'
 }
 
 group = 'by.imsha'
@@ -62,6 +62,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter'
     testImplementation 'org.springframework.boot:spring-boot-starter-json'
     testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation "org.wiremock:wiremock-standalone:${wiremockVersion}"
 
     testImplementation 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
@@ -95,6 +96,7 @@ tasks.register('generate FusionAuth Secured API Feign client', GenerateTask) {
             generateConstructorWithAllArgs      : "true",
             useTags                             : "true",
             useSpringBoot3                      : "true",
+            useFeignClientContextId             : "false"
     ])
 }
 
@@ -122,6 +124,8 @@ tasks.register('generate FusionAuth Public API Feign client', GenerateTask) {
             generateConstructorWithAllArgs      : "true",
             useTags                             : "true",
             useSpringBoot3                      : "true",
+            useFeignClientContextId             : "false"
+
     ])
 }
 
@@ -193,11 +197,6 @@ tasks.register('generate all') {
 }
 
 compileJava.dependsOn 'generate all'
-
-processTestResources {
-    // для профиля local необходима директория (заменяем projectBuildDir на путь к директории)
-    expand(["projectBuildDir": layout.buildDirectory.getAsFile().get().getAbsolutePath()])
-}
 
 test {
     useJUnitPlatform()

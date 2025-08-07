@@ -1,5 +1,6 @@
 package by.imsha.server.bdd.glue;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
 import io.cucumber.java.Before;
 import io.cucumber.java.Scenario;
 import org.apache.commons.lang3.StringUtils;
@@ -19,6 +20,8 @@ public class Hooks {
 
     @Before
     public void setUp(Scenario scenario) {
+        WireMock.reset();
+
         if (!CURRENT_URI.equals(scenario.getUri().toString())) {
             CURRENT_URI = scenario.getUri().toString();
             MongoDBHelper mongoDBHelper = new MongoDBHelper();
@@ -26,11 +29,11 @@ public class Hooks {
             mongoDBHelper.close();
 
             internalRestTemplate.exchange(
-                            RequestEntity.post(
-                                    "http://localhost:" + serverPort + "/api/cache/clear"
-                                    ).build(),
-                            Void.class
-                    );
+                    RequestEntity.post(
+                            "http://localhost:" + serverPort + "/api/cache/clear"
+                    ).build(),
+                    Void.class
+            );
         }
     }
 }
