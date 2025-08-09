@@ -16,6 +16,8 @@ paths:
     $ref: 'resource/email/send.yaml#/paths/~1api~1email~1send~1{templateId}'
   /api/passwordless/start:
     $ref: 'resource/passwordless/start.yaml#/paths/~1api~1passwordless~1start'
+  /api/user/search:
+    $ref: 'resource/user/search.yaml#/paths/~1api~1user~1search'
 
 components:
   securitySchemes:

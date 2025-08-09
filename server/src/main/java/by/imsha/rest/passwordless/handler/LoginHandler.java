@@ -1,8 +1,8 @@
 package by.imsha.rest.passwordless.handler;
 
 import by.imsha.rest.passwordless.exception.PasswordlessApiException;
-import api_specification.by.imsha.server.fusionauth.public_client.api.FusionauthPublicApiClient;
-import api_specification.by.imsha.server.fusionauth.public_client.model.SendCodeByEmailRequest;
+import api_specification.by.imsha.common.fusionauth.public_client.api.FusionauthPublicApiClient;
+import api_specification.by.imsha.common.fusionauth.public_client.model.SendCodeByEmailRequest;
 import by.imsha.rest.passwordless.mapper.FusionauthMapper;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;

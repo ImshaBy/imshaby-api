@@ -1,8 +1,8 @@
 package by.imsha.rest.auth.handler;
 
-import api_specification.by.imsha.server.fusionauth.secured_client.api.FusionauthApiClient;
-import api_specification.by.imsha.server.fusionauth.secured_client.model.SendEmailResponse;
-import by.imsha.properties.AuthProperties;
+import api_specification.by.imsha.common.fusionauth.secured_client.api.FusionauthApiClient;
+import api_specification.by.imsha.common.fusionauth.secured_client.model.SendEmailResponse;
+import by.imsha.properties.FusionauthProperties;
 import by.imsha.rest.auth.exception.AuthException;
 import by.imsha.rest.auth.mapper.FusionauthMapper;
 import jakarta.validation.Valid;
@@ -22,7 +22,7 @@ import org.springframework.validation.annotation.Validated;
 public class RequestCodeHandler {
 
     private final FusionauthApiClient fusionauthApiClient;
-    private final AuthProperties authProperties;
+    private final FusionauthProperties fusionauthProperties;
     private final ConfirmationCodeGenerator confirmationCodeGenerator;
     private final FusionauthMapper fusionauthMapper;
 
@@ -33,7 +33,7 @@ public class RequestCodeHandler {
             String confirmationCode = confirmationCodeGenerator.generate(input.getEmail());
 
             SendEmailResponse response = fusionauthApiClient.sendEmail(
-                    authProperties.getConfirmationCodeEmailTemplateId(),
+                    fusionauthProperties.getConfirmationCodeEmailTemplateId(),
                     fusionauthMapper.map(confirmationCode, input)
             ).getBody();
 

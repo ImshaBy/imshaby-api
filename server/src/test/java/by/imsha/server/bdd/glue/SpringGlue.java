@@ -15,6 +15,7 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -95,6 +96,9 @@ public class SpringGlue {
 
     @Autowired
     private ImshabyApiTestProperties properties;
+
+    @Autowired
+    private ApplicationContext applicationContext;
 
     /**
      * Настройка статики RestAssured

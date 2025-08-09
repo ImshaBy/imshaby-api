@@ -1,8 +1,8 @@
 package by.imsha.rest.auth.mapper;
 
-import api_specification.by.imsha.server.fusionauth.secured_client.model.Address;
-import api_specification.by.imsha.server.fusionauth.secured_client.model.SendConfirmationCode;
-import api_specification.by.imsha.server.fusionauth.secured_client.model.SendEmailRequest;
+import api_specification.by.imsha.common.fusionauth.secured_client.model.Address;
+import api_specification.by.imsha.common.fusionauth.secured_client.model.SendConfirmationCode;
+import api_specification.by.imsha.common.fusionauth.secured_client.model.SendEmailRequest;
 import by.imsha.rest.auth.handler.RequestCodeHandler;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

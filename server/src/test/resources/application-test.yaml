@@ -6,20 +6,12 @@ app:
     api-keys: TEST_API_KEY
     internal-api-keys: TEST_INTERNAL_API_KEY
     parish-week-api-keys: "123:123"
-  oauth2:
-    passwordless:
-      application-id: test-application-id
-
-fusionAuth:
-  host-url: https://remove-me
-  authorization-token: remove-me
-  user-search-pagination: 3
-  application-id: 1f99412a-b65b-4acf-87f7-1dc21d93b127
 
 fusionauth:
+  application-id: test-application-id
   url: ${wiremock.baseUrl}/fusion-auth
   security:
     apiKey:
       key: authorization-key-mock
-fusionauthPublic:
-  url: ${fusionauth.url}
+  confirmation-code-email-template-id: confirmation-code-email-template-id-mock
+  user-search-pagination: 3

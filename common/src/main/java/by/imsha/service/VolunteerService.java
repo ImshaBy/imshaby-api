@@ -1,9 +1,12 @@
 package by.imsha.service;
 
-import by.imsha.feign.FusionAuthApiFeignClient;
-import by.imsha.feign.dto.request.UserSearchFilterRequest;
-import by.imsha.feign.dto.response.UserSearchResponse;
-import by.imsha.properties.FusionAuthProperties;
+import api_specification.by.imsha.common.fusionauth.secured_client.api.FusionauthApiClient;
+import api_specification.by.imsha.common.fusionauth.secured_client.model.SearchUsersRequest;
+import api_specification.by.imsha.common.fusionauth.secured_client.model.SearchUsersRequestSearch;
+import api_specification.by.imsha.common.fusionauth.secured_client.model.UsersSearchResponse;
+import api_specification.by.imsha.common.fusionauth.secured_client.model.UsersSearchResponseUsersInner;
+import api_specification.by.imsha.common.fusionauth.secured_client.model.UsersSearchResponseUsersInnerData;
+import by.imsha.properties.FusionauthProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,14 +29,14 @@ public class VolunteerService {
 
     private static final String ROLE_VOLUNTEER = "Volunteer";
 
-    private final FusionAuthApiFeignClient fusionAuthApiFeignClient;
+    private final FusionauthApiClient fusionauthApiClient;
 
     @Lazy
     @Autowired
     private VolunteerService self;
 
     @Autowired
-    private FusionAuthProperties fusionAuthProperties;
+    private FusionauthProperties fusionAuthProperties;
 
     public boolean volunteerNeededByParishName(final String parishName, final boolean defaultValue) {
         return self.getVolunteerNeededMap().getOrDefault(parishName, defaultValue);
@@ -43,28 +46,29 @@ public class VolunteerService {
     public Map<String, Boolean> getVolunteerNeededMap() {
         Map<String, Boolean> volunteerNeededInParish = new HashMap<>();
 
-        List<UserSearchResponse.User> users = new LinkedList<>();
+        List<UsersSearchResponseUsersInner> users = new LinkedList<>();
 
-        UserSearchResponse userSearchResponse;
+        UsersSearchResponse usersSearchResponse;
         int startRow = 0;
         try {
             do {
-                userSearchResponse = fusionAuthApiFeignClient.usersSearch(UserSearchFilterRequest.builder()
-                        .search(UserSearchFilterRequest.SearchFilter.builder()
-                                .numberOfResults(fusionAuthProperties.getUserSearchPagination())
-                                .queryString("*")
-                                .startRow(startRow)
-                                .build()).build(), fusionAuthProperties.getAuthorizationToken());
+                usersSearchResponse = fusionauthApiClient.searchUsers(SearchUsersRequest.builder()
+                                .search(SearchUsersRequestSearch.builder()
+                                        .numberOfResults(fusionAuthProperties.getUserSearchPagination())
+                                        .queryString("*")
+                                        .startRow(startRow)
+                                        .build()).build())
+                        .getBody();
 
-                users.addAll(userSearchResponse.getUsers());
+                users.addAll(usersSearchResponse.getUsers());
 
-                userSearchResponse.getUsers().stream()
+                usersSearchResponse.getUsers().stream()
                         .flatMap(user -> Optional.ofNullable(user)
                                 .filter(u -> u.getRegistrations().stream()
                                         .filter(registration -> registration.getApplicationId().equals(fusionAuthProperties.getApplicationId()))
                                         .anyMatch(registration -> registration.getRoles().contains(ROLE_VOLUNTEER)))
-                                .map(UserSearchResponse.User::getData)
-                                .map(UserSearchResponse.ParishData::getParishes).stream())
+                                .map(UsersSearchResponseUsersInner::getData)
+                                .map(UsersSearchResponseUsersInnerData::getParishes).stream())
                         .flatMap(map -> map.values().stream())
                         .forEach(name -> {
                             Boolean volunteerNeeded = volunteerNeededInParish.computeIfPresent(name, (k, v) -> false);
@@ -73,7 +77,7 @@ public class VolunteerService {
                             }
                         });
                 startRow += fusionAuthProperties.getUserSearchPagination();
-            } while (userSearchResponse.getUsers().size() >= fusionAuthProperties.getUserSearchPagination());
+            } while (usersSearchResponse.getUsers().size() >= fusionAuthProperties.getUserSearchPagination());
         } catch (Exception e) {
             log.error("При получении volunteerNeededMap произошла ошибка: ", e);
             return new VolunteerNotNeededStubMap();

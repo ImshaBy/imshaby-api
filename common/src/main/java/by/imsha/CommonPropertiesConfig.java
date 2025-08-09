@@ -1,7 +1,7 @@
 package by.imsha;
 
 import by.imsha.properties.CommonProperties;
-import by.imsha.properties.FusionAuthProperties;
+import by.imsha.properties.FusionauthProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -18,16 +18,16 @@ public class CommonPropertiesConfig {
     }
 
     @Bean
-    @ConfigurationProperties("fusion-auth")
-    @ConditionalOnProperty(name = "fusion-auth.authorization-token")
-    public FusionAuthProperties fusionAuthProperties() {
-        return new FusionAuthProperties();
+    @ConfigurationProperties("fusionauth")
+    @ConditionalOnProperty(name = "fusionauth.url")
+    public FusionauthProperties fusionAuthProperties() {
+        return new FusionauthProperties();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public FusionAuthProperties fusionAuthPropertiesStub() {
+    public FusionauthProperties fusionAuthPropertiesStub() {
         //FIXME для того, чтобы не пришлось конфигурировать fusionAuth там, где он не нужен
-        return new FusionAuthProperties();
+        return new FusionauthProperties();
     }
 }

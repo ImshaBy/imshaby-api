@@ -5,7 +5,7 @@ import api_specification.by.imsha.server.passwordless.adapter.server.model.Finis
 import api_specification.by.imsha.server.passwordless.adapter.server.model.GeneratePasswordlessLoginCodeRequest;
 import api_specification.by.imsha.server.passwordless.adapter.server.model.GeneratePasswordlessLoginCodeResponse;
 import api_specification.by.imsha.server.passwordless.adapter.server.model.StartPasswordlessLoginRequest;
-import by.imsha.properties.PasswordlessApiProperties;
+import by.imsha.properties.FusionauthProperties;
 import by.imsha.rest.passwordless.handler.LoginHandler;
 import by.imsha.rest.passwordless.handler.StartHandler;
 import org.mapstruct.Mapper;
@@ -16,7 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public abstract class PasswordlessAdapterMapper {
 
     @Autowired
-    protected PasswordlessApiProperties passwordlessApiProperties;
+    protected FusionauthProperties passwordlessApiProperties;
 
     @Mapping(source = "email", target = "loginId")
     @Mapping(target = "applicationId", expression = "java( passwordlessApiProperties.getApplicationId() )")

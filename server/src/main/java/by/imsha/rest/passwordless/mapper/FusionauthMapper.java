@@ -1,7 +1,7 @@
 package by.imsha.rest.passwordless.mapper;
 
-import api_specification.by.imsha.server.fusionauth.public_client.model.SendCodeByEmailRequest;
-import api_specification.by.imsha.server.fusionauth.secured_client.model.StartPasswordlessLoginRequest;
+import api_specification.by.imsha.common.fusionauth.public_client.model.SendCodeByEmailRequest;
+import api_specification.by.imsha.common.fusionauth.secured_client.model.StartPasswordlessLoginRequest;
 import by.imsha.rest.passwordless.handler.LoginHandler;
 import by.imsha.rest.passwordless.handler.StartHandler;
 import org.mapstruct.Mapper;
