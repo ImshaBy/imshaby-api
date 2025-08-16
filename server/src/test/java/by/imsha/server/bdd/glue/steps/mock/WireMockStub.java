@@ -81,6 +81,45 @@ public enum WireMockStub {
                         .withRequestBody(new EqualToJsonPattern(requestBody, true, false))
                         .willReturn(WireMock.jsonResponse(responseBody, 200));
             }),
+    FUSIONAUTH_SEND_EMAIL("Отправка письма с кодом подтверждения на email в FusionAuth",
+            dataTable -> {
+
+                Map<String, String> properties = dataTable.asMap();
+
+                String templateId = properties.get("идентификатор шаблона письма");
+                String email = properties.get("email");
+                String fusionAuthApiKey = properties.get("api-key");
+
+                String requestBody = """
+                        {
+                            "requestData": {
+                                "type": "Send confirmation code",
+                                "confirmationCode": "${json-unit.regex}\\\\d{4}"
+                            },
+                            "toAddresses": [
+                                {
+                                    "address": "%s"
+                                }
+                            ]
+                        }
+                        """.formatted(email);
+                String responseBody = """
+                        {
+                            "anonymousResults": {
+                                "%s": {
+                                    "parseErrors": {},
+                                    "renderErrors": {}
+                                }
+                            },
+                            "results": {}
+                        }
+                        """.formatted(email);
+
+                return WireMock.post(WireMock.urlEqualTo("/fusion-auth/api/email/send/" + templateId))
+                        .withHeader("Authorization", new EqualToPattern(fusionAuthApiKey))
+                        .withRequestBody(new EqualToJsonPattern(requestBody, true, false))
+                        .willReturn(WireMock.jsonResponse(responseBody, 200));
+            }),
     ;
 
     private final String name;

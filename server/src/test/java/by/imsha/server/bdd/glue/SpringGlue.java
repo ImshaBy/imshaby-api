@@ -68,6 +68,8 @@ public class SpringGlue {
 
         wireMockServer = new WireMockServer(
                 WireMockConfiguration.options()
+                        .globalTemplating(true)
+                        .templatingEnabled(true)
                         .dynamicPort()
         );
         wireMockServer.start();

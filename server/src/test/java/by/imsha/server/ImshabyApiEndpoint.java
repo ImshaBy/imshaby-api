@@ -3,6 +3,8 @@ package by.imsha.server;
 import by.imsha.server.mapping.request.dto.CreateCityDtoMapping;
 import by.imsha.server.mapping.request.dto.UpdateCityDtoMapping;
 import by.imsha.server.mapping.request.dto.UpdateCityLocalizationDtoMapping;
+import by.imsha.server.mapping.request.dto.auth.GenerateAndGetConfirmationCodeRequestDtoMapping;
+import by.imsha.server.mapping.request.dto.auth.VerifyConfirmationCodeRequestDtoMapping;
 import by.imsha.server.mapping.request.dto.mass.MassDtoMapping;
 import by.imsha.server.mapping.request.dto.mass.RefreshMassDtoMapping;
 import by.imsha.server.mapping.request.dto.parish.CreateParishDtoMapping;
@@ -14,6 +16,7 @@ import by.imsha.server.mapping.request.dto.passwordless.GenerateAndGetAuthentica
 import by.imsha.server.mapping.request.dto.passwordless.GenerateAndSendAuthenticationCodeRequestDtoMapping;
 import by.imsha.server.mapping.request.dto.webhook.CreateWebHookDtoMapping;
 import by.imsha.server.mapping.response.dto.CreateCityResponseDtoMapping;
+import by.imsha.server.mapping.response.dto.auth.VerifyConfirmationCodeResponseDtoMapping;
 import by.imsha.server.mapping.response.dto.mass.ConfirmRelevanceMassResponseDtoMapping;
 import by.imsha.server.mapping.response.dto.mass.DeleteMassByTimeIntervalResponseDtoMapping;
 import by.imsha.server.mapping.response.dto.mass.DeleteMassResponseDtoMapping;
@@ -124,6 +127,10 @@ public enum ImshabyApiEndpoint {
             Method.POST, new GenerateAndSendAuthenticationCodeRequestDtoMapping(), new FieldNameGetter.Default()),
     EXCHANGE_PASSWORDLESS_CODE_FOR_TOKEN("Завершение процесса беспарольного входа", "/api/passwordless/login",
             Method.POST, new ExchangeAuthenticationCodeForTokenRequestDtoMapping(), new ExchangeAuthenticationCodeForTokenResponseDtoMapping()),
+    GENERATE_AND_SEND_CONFIRMATION_CODE("Генерации и получения кода верификации по email", "/api/auth/request-code",
+            Method.POST, new GenerateAndGetConfirmationCodeRequestDtoMapping(), new FieldNameGetter.Default()),
+    VERIFY_CONFIRMATION_CODE("Верификация кода подтверждения", "/api/auth/verify-code",
+            Method.POST, new VerifyConfirmationCodeRequestDtoMapping(), new VerifyConfirmationCodeResponseDtoMapping()),
     ;
 
     private static final Map<String, ImshabyApiEndpoint> cyrillicCodeEndpointMap;
