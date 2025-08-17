@@ -8,7 +8,7 @@ paths:
       tags:
         - Auth
       operationId: verifyCode
-      summary: Запрос генерации и получения кода верификации
+      summary: Запрос на проверку кода подтверждения
       requestBody:
         $ref: '#/components/requestBodies/Code verification request'
       responses:
@@ -33,7 +33,7 @@ components:
 
   requestBodies:
     Code verification request:
-      description: Данные для верификации кода подтверждения
+      description: Данные для проверку кода подтверждения
       required: true
       content:
         application/json:

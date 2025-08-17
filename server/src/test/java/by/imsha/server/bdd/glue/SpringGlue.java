@@ -49,22 +49,6 @@ public class SpringGlue {
                 .withExposedPorts(27017);
         mongoContainer.start();
         MONGO_PORT = mongoContainer.getMappedPort(27017);
-//        GenericContainer imshabyApi = new GenericContainer("imshaby-api:tests")
-//                .withExtraHost("host.docker.internal", "host-gateway")
-//                .withAccessToHost(true)
-//                .withEnv("SPRING_DATA_MONGODB_URI", "mongodb://host.docker.internal:" + MONGO_PORT + "/imshaby")
-//                .withEnv("SPRING_PROFILES_ACTIVE", "local")
-////                .withEnv("LOCAL_USER_STUB_FOLDER", "/usr/local")
-//                .withEnv("LOCAL_USER_STUB_FOLDER", "/opt/app")//TODO для новой версии
-//                .withEnv("API_KEYS", "TEST_API_KEY")
-//                .withEnv("INTERNAL_API_KEYS", "TEST_INTERNAL_API_KEY")
-//                .withEnv("PARISH_WEEK_API_KEYS", "123:123")
-//                .withEnv("LOGGING_LEVEL_ORG_SPRINGFRAMEWORK", "DEBUG")
-//                .withEnv("LOGGING_LEVEL_ROOT", "DEBUG")
-//                .withExposedPorts(8080)
-//                .waitingFor(Wait.forHttp("/api/cities")
-//                        .forStatusCode(401));
-//        imshabyApi.start();
 
         wireMockServer = new WireMockServer(
                 WireMockConfiguration.options()
@@ -98,9 +82,6 @@ public class SpringGlue {
 
     @Autowired
     private ImshabyApiTestProperties properties;
-
-    @Autowired
-    private ApplicationContext applicationContext;
 
     /**
      * Настройка статики RestAssured
