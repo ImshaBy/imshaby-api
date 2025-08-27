@@ -52,15 +52,6 @@ app:
       - "*"
     allowed-headers:
       - "*"
-  oauth2:
-    passwordless:
-      log-code: ${PASSWORDLESS_LOG_CODE:false}
-      application-id: ${PASSWORDLESS_APPLICATION_ID:adf0a804-0f48-43d9-a43c-566d377d8fcb}
-      api-key: ${PASSWORDLESS_API_KEY}
-      uri:
-        start: ${PASSWORDLESS_URI_START:https://localhost:9091/api/passwordless/start}
-        send: ${PASSWORDLESS_URI_SEND:https://localhost:9091/api/passwordless/send}
-        login: ${PASSWORDLESS_URI_LOGIN:https://localhost:9091/api/passwordless/login}
 
 meilisearch:
   reader:
@@ -68,8 +59,14 @@ meilisearch:
     api-key: 8Yy6fAZCCIPDiQk4yay7_xrHoxconfRKC5HKhuoij8o
     index-uid: mass-index
 
-fusionAuth:
-  host-url: https://identity.imsha.by
-  authorization-token: LVkhGbFBTQuvnZgm3OCgS3uAGHJ55QZBxh43GN94RZ6aLDW2pZL2bUo8
+fusionauth:
+  application-id: adf0a804-0f48-43d9-a43c-566d377d8fcb
+  url: https://identity.imsha.by
+  security:
+    apiKey:
+      key: LVkhGbFBTQuvnZgm3OCgS3uAGHJ55QZBxh43GN94RZ6aLDW2pZL2bUo8
+  confirmation-code-email-template-id: 1ab56274-46f5-4023-b585-e5334585f820
   user-search-pagination: 10
-  application-id: 1f99412a-b65b-4acf-87f7-1dc21d93b127
+
+fusionauthPublic:
+  url: ${fusionauth.url}

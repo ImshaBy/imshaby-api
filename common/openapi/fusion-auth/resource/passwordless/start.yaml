@@ -1,0 +1,54 @@
+openapi: "3.0.3"
+info:
+  title: Модели запросов и ответов для эндпоинта /api/passwordless/start
+  version: "1"
+paths:
+  /api/passwordless/start:
+    post:
+      security:
+        - apiKey: [ ]
+      tags:
+        - "fusionauth"
+      operationId: startPasswordlessLogin
+      summary: Начать процесс беспарольного входа
+      requestBody:
+        $ref: '#/components/requestBodies/Start passwordless login request'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Start passwordless login response'
+
+components:
+  schemas:
+    Start passwordless login response:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          description: Уникальный код, необходимый для завершения входа в систему
+          type: string
+          example: 'L6G4LRiXdxwtVTX27dM4iVbHfbA9Br8GYwZ7QqclQHA'
+
+  requestBodies:
+    Start passwordless login request:
+      description: Данные для начала процесса беспарольного входа
+      required: true
+      content:
+        application/json:
+          schema:
+            required:
+              - applicationId
+              - loginId
+            properties:
+              applicationId:
+                description: Идентификатор приложения в которое выполняется вход
+                type: string
+                example: '10000000-0000-0002-0000-000000000001'
+              loginId:
+                description: Идентификатор пользователя. email или username
+                type: string
+                example: 'example@mail.com'

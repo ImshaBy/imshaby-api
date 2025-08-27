@@ -1,0 +1,33 @@
+openapi: "3.0.3"
+info:
+  title: Модели запросов и ответов для эндпоинта /api/passwordless/send
+  version: "1"
+paths:
+  /api/passwordless/send:
+    post:
+      tags:
+        - "fusionauth public"
+      operationId: sendCodeByEmail
+      summary: Отправить код на почту
+      requestBody:
+        $ref: '#/components/requestBodies/Send code by email request'
+      responses:
+        '200':
+          description: OK
+
+components:
+  requestBodies:
+    Send code by email request:
+      title: SendCodeByEmailRequest
+      description: Данные для отправки кода на почту
+      required: true
+      content:
+        application/json:
+          schema:
+            required:
+              - code
+            properties:
+              code:
+                description: Уникальный код, необходимый для завершения входа в систему
+                type: string
+                example: 'L6G4LRiXdxwtVTX27dM4iVbHfbA9Br8GYwZ7QqclQHA'

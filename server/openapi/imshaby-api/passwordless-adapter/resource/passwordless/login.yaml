@@ -1,0 +1,47 @@
+openapi: "3.0.3"
+info:
+  title: Модели запросов и ответов для эндпоинта /api/passwordless/login
+  version: "1"
+paths:
+  /api/passwordless/login:
+    post:
+      tags:
+        - PasswordlessAdapter
+      operationId: finishPasswordlessLogin
+      summary: Завершить процесс беспарольного входа
+      requestBody:
+        $ref: '#/components/requestBodies/Finish passwordless login request'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Finish passwordless login response'
+
+components:
+  schemas:
+    Finish passwordless login response:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          description: JWT-токен, полученный в результате входа
+          type: string
+          example: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzaXRlIjoiaW1zaGEuYnkifQ.HtVmRcsfYvY4u10zHVH8raeA__C7A8pIdls6mhfUk2c'
+
+  requestBodies:
+    Finish passwordless login request:
+      description: Данные завершения беспарольного входа
+      required: true
+      content:
+        application/json:
+          schema:
+            required:
+              - code
+            properties:
+              code:
+                description: Уникальный код, необходимый для завершения входа в систему
+                type: string
+                example: 'L6G4LRiXdxwtVTX27dM4iVbHfbA9Br8GYwZ7QqclQHA'

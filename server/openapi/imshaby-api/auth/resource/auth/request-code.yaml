@@ -1,0 +1,32 @@
+openapi: "3.0.3"
+info:
+  title: Модели запросов и ответов для эндпоинта /api/auth/request-code
+  version: "1"
+paths:
+  /api/auth/request-code:
+    post:
+      tags:
+        - Auth
+      operationId: sendVerificationCodeToEmail
+      summary: Запрос генерации и получения кода верификации
+      requestBody:
+        $ref: '#/components/requestBodies/Send verification code to email request'
+      responses:
+        '200':
+          description: OK
+
+components:
+  requestBodies:
+    Send verification code to email request:
+      description: Данные для генерации и получения кода верификации
+      required: true
+      content:
+        application/json:
+          schema:
+            required:
+              - email
+            properties:
+              email:
+                description: email пользователя
+                type: string
+                example: 'example@mail.com'

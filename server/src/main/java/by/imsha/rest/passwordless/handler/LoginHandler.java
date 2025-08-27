@@ -1,19 +1,18 @@
 package by.imsha.rest.passwordless.handler;
 
-import by.imsha.properties.PasswordlessApiProperties;
 import by.imsha.rest.passwordless.exception.PasswordlessApiException;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import api_specification.by.imsha.common.fusionauth.public_client.api.FusionauthPublicApiClient;
+import api_specification.by.imsha.common.fusionauth.public_client.model.SendCodeByEmailRequest;
+import by.imsha.rest.passwordless.mapper.FusionauthMapper;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.client.RestTemplate;
 
 /**
  * Обработчик запроса на аутентификацию по коду
@@ -24,23 +23,18 @@ import org.springframework.web.client.RestTemplate;
 @Slf4j
 public class LoginHandler {
 
-    private final PasswordlessApiProperties passwordlessApiProperties;
-    private final RestTemplate passwordlessPublicRestTemplate;
+    private final FusionauthPublicApiClient fusionauthPublicApiClient;
+    private final FusionauthMapper fusionauthMapper;
 
     public String handle(@Valid @NotNull(message = "Входные параметры обязательны для заполнения")
-                                 Input input) {
+                         Input input) {
         try {
             log.info("[VERBOSE] Received code: '{}'", input.getCode());
 
-            ResponseBody response = passwordlessPublicRestTemplate.postForObject(
-                    passwordlessApiProperties.getUri().getLogin(),
-                    RequestBody.builder()
-                            .code(input.getCode())
-                            .build(),
-                    ResponseBody.class
-            );
-
-            return response.getToken();
+            return fusionauthPublicApiClient.authByCode(
+                            fusionauthMapper.map(input)
+                    ).getBody()
+                    .getToken();
         } catch (Exception exception) {
             throw new PasswordlessApiException("Ошибка при получении токена через Passwordless API", true, exception);
         }
@@ -58,24 +52,5 @@ public class LoginHandler {
          * TODO Вопрос на развитие: возможно захотим валидировать секрет в запросе кода и ответе на login
          */
         String stateSecret;
-    }
-
-    @Builder
-    @Value
-    private static class RequestBody {
-        /**
-         * Уникальный код, необходимый для завершения входа в систему
-         */
-        String code;
-    }
-
-    @Data
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class ResponseBody {
-
-        /**
-         * JWT токен
-         */
-        private String token;
     }
 }

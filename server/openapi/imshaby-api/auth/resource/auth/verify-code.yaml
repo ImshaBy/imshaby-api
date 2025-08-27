@@ -1,0 +1,52 @@
+openapi: "3.0.3"
+info:
+  title: Модели запросов и ответов для эндпоинта /api/auth/verify-code
+  version: "1"
+paths:
+  /api/auth/verify-code:
+    post:
+      tags:
+        - Auth
+      operationId: verifyCode
+      summary: Запрос на проверку кода подтверждения
+      requestBody:
+        $ref: '#/components/requestBodies/Code verification request'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Code verification response'
+
+components:
+  schemas:
+    Code verification response:
+      type: object
+      required:
+        - valid
+      properties:
+        valid:
+          description: Признак валидности полученного кода
+          type: boolean
+          example: true
+
+  requestBodies:
+    Code verification request:
+      description: Данные для проверку кода подтверждения
+      required: true
+      content:
+        application/json:
+          schema:
+            required:
+              - email
+              - confirmationCode
+            properties:
+              email:
+                description: email пользователя
+                type: string
+                example: 'example@mail.com'
+              confirmationCode:
+                description: код подтверждения
+                type: string
+                example: '1234'

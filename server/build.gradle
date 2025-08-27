@@ -1,7 +1,10 @@
+import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
+
 plugins {
     id 'java'
     id 'org.springframework.boot'
     id 'io.spring.dependency-management'
+    id 'org.openapi.generator' version '7.14.0'
 }
 
 group = 'by.imsha'
@@ -59,6 +62,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter'
     testImplementation 'org.springframework.boot:spring-boot-starter-json'
     testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation "org.wiremock:wiremock-standalone:${wiremockVersion}"
 
     testImplementation 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
@@ -66,10 +70,76 @@ dependencies {
     testImplementation 'org.mongodb:mongodb-driver-sync' //TODO хз зачем он, проверить
 }
 
-processTestResources {
-    // для профиля local необходима директория (заменяем projectBuildDir на путь к директории)
-    expand(["projectBuildDir": layout.buildDirectory.getAsFile().get().getAbsolutePath()])
+sourceSets.main.java.srcDirs += "$buildDir/openapi/generated"
+
+tasks.register('generate passwordless api adapter server', GenerateTask) {
+    generatorName.set("spring")
+    inputSpec.set("$projectDir/openapi/imshaby-api/passwordless-adapter/openapi.yaml")
+    outputDir.set("$buildDir/openapi/generated")
+    ignoreFileOverride.set("$projectDir/.openapi-generator-ignore")
+    configOptions.set([
+            library                             : "spring-boot",
+            invokerPackage                      : "api_specification.by.imsha.server.passwordless.adapter.server",
+            apiPackage                          : "api_specification.by.imsha.server.passwordless.adapter.server.api",
+            modelPackage                        : "api_specification.by.imsha.server.passwordless.adapter.server.model",
+            configPackage                       : "api_specification.by.imsha.server.passwordless.adapter.server.configuration",
+            basePackage                         : "api_specification.by.imsha.server.passwordless.adapter.server",
+            useOptional                         : "true",
+            openApiNullable                     : "false",
+            interfaceOnly                       : "false",
+            sourceFolder                        : "",
+            testOutput                          : "$rootDir/src/test/java",
+            generateApiTests                    : "true",
+            generateModelTests                  : "true",
+            generateBuilders                    : "true",
+            generatedConstructorWithRequiredArgs: "true",
+            generateConstructorWithAllArgs      : "true",
+            useTags                             : "true",
+            useSpringBoot3                      : "true",
+    ])
 }
+
+tasks.register('generate auth server', GenerateTask) {
+    generatorName.set("spring")
+    inputSpec.set("$projectDir/openapi/imshaby-api/auth/openapi.yaml")
+    outputDir.set("$buildDir/openapi/generated")
+    ignoreFileOverride.set("$projectDir/.openapi-generator-ignore")
+    configOptions.set([
+            library                             : "spring-boot",
+            invokerPackage                      : "api_specification.by.imsha.server.auth.server",
+            apiPackage                          : "api_specification.by.imsha.server.auth.server.api",
+            modelPackage                        : "api_specification.by.imsha.server.auth.server.model",
+            configPackage                       : "api_specification.by.imsha.server.auth.server.configuration",
+            basePackage                         : "api_specification.by.imsha.server.auth.server",
+            useOptional                         : "true",
+            openApiNullable                     : "false",
+            interfaceOnly                       : "false",
+            sourceFolder                        : "",
+            testOutput                          : "$rootDir/src/test/java",
+            generateApiTests                    : "true",
+            generateModelTests                  : "true",
+            generateBuilders                    : "true",
+            generatedConstructorWithRequiredArgs: "true",
+            generateConstructorWithAllArgs      : "true",
+            useTags                             : "true",
+            useSpringBoot3                      : "true",
+    ])
+}
+
+tasks.withType(GenerateTask).each { task ->
+    configure(task) {
+        if (task.name != "openApiGenerate") {
+            group = "generation"
+        }
+    }
+}
+
+tasks.register('generate all') {
+    group = "generation"
+    dependsOn tasks.matching { it.group == "generation" && it.name != "generate all" }
+}
+
+compileJava.dependsOn 'generate all'
 
 test {
     useJUnitPlatform()

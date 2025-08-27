@@ -1,0 +1,32 @@
+openapi: "3.0.3"
+info:
+  title: Модели запросов и ответов для эндпоинта /api/passwordless/start
+  version: "1"
+paths:
+  /api/passwordless/start:
+    post:
+      tags:
+        - PasswordlessAdapter
+      operationId: startPasswordlessLogin
+      summary: Начать процесс беспарольного входа
+      requestBody:
+        $ref: '#/components/requestBodies/Start passwordless login request'
+      responses:
+        '200':
+          description: OK
+
+components:
+  requestBodies:
+    Start passwordless login request:
+      description: Данные для начала процесса беспарольного входа и отправки кода на email
+      required: true
+      content:
+        application/json:
+          schema:
+            required:
+              - email
+            properties:
+              email:
+                description: email пользователя для отправки
+                type: string
+                example: 'example@mail.com'

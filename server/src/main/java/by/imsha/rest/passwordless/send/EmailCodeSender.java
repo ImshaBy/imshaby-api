@@ -1,23 +1,19 @@
 package by.imsha.rest.passwordless.send;
 
-import by.imsha.properties.PasswordlessApiProperties;
+import api_specification.by.imsha.common.fusionauth.public_client.api.FusionauthPublicApiClient;
 import by.imsha.rest.passwordless.exception.PasswordlessApiException;
-import lombok.Builder;
+import by.imsha.rest.passwordless.mapper.FusionauthMapper;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.RequestEntity;
-import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.client.RestTemplate;
 
 @RequiredArgsConstructor
 @Validated
 @Slf4j
 public class EmailCodeSender implements CodeSender {
 
-    private final PasswordlessApiProperties passwordlessApiProperties;
-    private final RestTemplate passwordlessPublicRestTemplate;
+    private final FusionauthPublicApiClient fusionauthPublicApiClient;
+    private final FusionauthMapper fusionauthMapper;
 
     /**
      * Отправить код пользователю
@@ -29,30 +25,14 @@ public class EmailCodeSender implements CodeSender {
         try {
             log.info("[VERBOSE] Send to: '{}', code: '{}'", userIdentifier, code);
 
-            ResponseEntity<Void> exchange = passwordlessPublicRestTemplate.exchange(
-                    RequestEntity.post(passwordlessApiProperties.getUri().getSend())
-                            .body(RequestBody.builder()
-                                    .code(code)
-                                    .build()),
-                    Void.class
+            fusionauthPublicApiClient.sendCodeByEmail(
+                    fusionauthMapper.map(code)
             );
-            if (!exchange.getStatusCode().is2xxSuccessful()) {
-                throw new PasswordlessApiException("Получен ответ с HTTP-кодом " + exchange.getStatusCodeValue(), false);
-            }
         } catch (PasswordlessApiException passwordlessApiException) {
             throw passwordlessApiException;
         } catch (Exception exception) {
             throw new PasswordlessApiException("Ошибка при отправке кода",
                     false, exception);
         }
-    }
-
-    @Builder
-    @Value
-    private static class RequestBody {
-        /**
-         * Уникальный код, необходимый для завершения входа в систему
-         */
-        String code;
     }
 }

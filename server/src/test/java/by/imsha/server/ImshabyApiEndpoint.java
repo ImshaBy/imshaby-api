@@ -3,14 +3,20 @@ package by.imsha.server;
 import by.imsha.server.mapping.request.dto.CreateCityDtoMapping;
 import by.imsha.server.mapping.request.dto.UpdateCityDtoMapping;
 import by.imsha.server.mapping.request.dto.UpdateCityLocalizationDtoMapping;
+import by.imsha.server.mapping.request.dto.auth.GenerateAndGetConfirmationCodeRequestDtoMapping;
+import by.imsha.server.mapping.request.dto.auth.VerifyConfirmationCodeRequestDtoMapping;
 import by.imsha.server.mapping.request.dto.mass.MassDtoMapping;
 import by.imsha.server.mapping.request.dto.mass.RefreshMassDtoMapping;
 import by.imsha.server.mapping.request.dto.parish.CreateParishDtoMapping;
 import by.imsha.server.mapping.request.dto.parish.UpdateParishDtoMapping;
 import by.imsha.server.mapping.request.dto.parish.UpdateParishLocalizationDtoMapping;
 import by.imsha.server.mapping.request.dto.parish.UpdateParishStateDtoMapping;
+import by.imsha.server.mapping.request.dto.passwordless.ExchangeAuthenticationCodeForTokenRequestDtoMapping;
+import by.imsha.server.mapping.request.dto.passwordless.GenerateAndGetAuthenticationCodeRequestDtoMapping;
+import by.imsha.server.mapping.request.dto.passwordless.GenerateAndSendAuthenticationCodeRequestDtoMapping;
 import by.imsha.server.mapping.request.dto.webhook.CreateWebHookDtoMapping;
 import by.imsha.server.mapping.response.dto.CreateCityResponseDtoMapping;
+import by.imsha.server.mapping.response.dto.auth.VerifyConfirmationCodeResponseDtoMapping;
 import by.imsha.server.mapping.response.dto.mass.ConfirmRelevanceMassResponseDtoMapping;
 import by.imsha.server.mapping.response.dto.mass.DeleteMassByTimeIntervalResponseDtoMapping;
 import by.imsha.server.mapping.response.dto.mass.DeleteMassResponseDtoMapping;
@@ -21,6 +27,8 @@ import by.imsha.server.mapping.response.dto.parish.GetParishStateResponseDtoMapp
 import by.imsha.server.mapping.response.dto.parish.ParishResponseDtoMapping;
 import by.imsha.server.mapping.response.dto.parish.UpdateParishResponseDtoMapping;
 import by.imsha.server.mapping.response.dto.parish.WeekExpiredParishResponseDtoMapping;
+import by.imsha.server.mapping.response.dto.passwordless.ExchangeAuthenticationCodeForTokenResponseDtoMapping;
+import by.imsha.server.mapping.response.dto.passwordless.GenerateAndGetAuthenticationCodeResponseDtoMapping;
 import by.imsha.server.mapping.response.dto.ping.PingResponseDtoMapping;
 import by.imsha.server.mapping.response.dto.webhook.DeleteWebhookResponseDtoMapping;
 import by.imsha.server.mapping.response.dto.webhook.GetAllWebHookResponseDtoMapping;
@@ -113,6 +121,16 @@ public enum ImshabyApiEndpoint {
             new DeleteWebhookResponseDtoMapping()),
     GET_PING("Получение ping", "/", Method.GET, new FieldValueSetter.Default(),
             new PingResponseDtoMapping()),
+    GENERATE_AND_GET_PASSWORDLESS_CODE("Генерация и получение кода аутентификации", "/api/passwordless/code",
+            Method.POST, new GenerateAndGetAuthenticationCodeRequestDtoMapping(), new GenerateAndGetAuthenticationCodeResponseDtoMapping()),
+    GENERATE_AND_SEND_PASSWORDLESS_CODE("Генерация и отправка кода аутентификации на почту", "/api/passwordless/start",
+            Method.POST, new GenerateAndSendAuthenticationCodeRequestDtoMapping(), new FieldNameGetter.Default()),
+    EXCHANGE_PASSWORDLESS_CODE_FOR_TOKEN("Завершение процесса беспарольного входа", "/api/passwordless/login",
+            Method.POST, new ExchangeAuthenticationCodeForTokenRequestDtoMapping(), new ExchangeAuthenticationCodeForTokenResponseDtoMapping()),
+    GENERATE_AND_SEND_CONFIRMATION_CODE("Генерации и получения кода верификации по email", "/api/auth/request-code",
+            Method.POST, new GenerateAndGetConfirmationCodeRequestDtoMapping(), new FieldNameGetter.Default()),
+    VERIFY_CONFIRMATION_CODE("Верификация кода подтверждения", "/api/auth/verify-code",
+            Method.POST, new VerifyConfirmationCodeRequestDtoMapping(), new VerifyConfirmationCodeResponseDtoMapping()),
     ;
 
     private static final Map<String, ImshabyApiEndpoint> cyrillicCodeEndpointMap;

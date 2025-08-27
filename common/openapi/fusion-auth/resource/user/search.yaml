@@ -1,0 +1,99 @@
+openapi: "3.0.3"
+info:
+  title: Модели запросов и ответов для эндпоинта /api/user/search
+  version: "1"
+paths:
+  /api/user/search:
+    post:
+      security:
+        - apiKey: [ ]
+      tags:
+        - "fusionauth"
+      operationId: searchUsers
+      summary: Поиск пользователей
+      requestBody:
+        $ref: '#/components/requestBodies/Users search request'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Users search response'
+
+components:
+  schemas:
+    Users search response:
+      type: object
+      properties:
+        total:
+          description: Общее количество найденных записей
+          type: integer
+          format: int32
+          example: 100
+        users:
+          type: array
+          items:
+            type: object
+            properties:
+              data:
+                type: object
+                properties:
+                  parishes:
+                    type: object
+                    additionalProperties:
+                      type: string
+              registrations:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    applicationId:
+                      type: string
+                      description: Идентификатор приложения, к которому принадлежит регистрация
+                      example: "10000000-0000-0002-0000-000000000001"
+                    roles:
+                      type: array
+                      items:
+                        type: string
+                        example: "ROLE"
+
+  requestBodies:
+    Users search request:
+      description: Данные для начала процесса беспарольного входа
+      required: true
+      content:
+        application/json:
+          schema:
+            required:
+              - search
+            properties:
+              search:
+                type: object
+                properties:
+                  numberOfResults:
+                    type: integer
+                    format: int32
+                    description: Количество записей на странице (при пагинации)
+                    example: 25
+                  queryString:
+                    type: string
+                    description: Строка поиска
+                    example: "*"
+                  startRow:
+                    type: integer
+                    format: int32
+                    description: Номер первой строки поиска (при пагинации)
+                  sortFields:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          description: Название поля
+                          example: "name"
+                        order:
+                          type: string
+                          description: Направление сортировки (asc\desc)
+                          example: "asc"

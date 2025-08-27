@@ -1,0 +1,17 @@
+openapi: "3.0.3"
+info:
+  title: passwordless api adapter
+  version: "1"
+servers:
+  - url: http://localhost:9091/
+  - url: https://api.imsha.by/
+tags:
+  - name: PasswordlessAdapter
+    description: Адаптер для работы с passwordless-api FusionAuth сервера
+paths:
+  /api/passwordless/start:
+    $ref: 'resource/passwordless/start.yaml#/paths/~1api~1passwordless~1start'
+  /api/passwordless/code:
+    $ref: 'resource/passwordless/code.yaml#/paths/~1api~1passwordless~1code'
+  /api/passwordless/login:
+    $ref: 'resource/passwordless/login.yaml#/paths/~1api~1passwordless~1login'

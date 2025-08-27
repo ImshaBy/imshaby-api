@@ -1,0 +1,48 @@
+openapi: "3.0.3"
+info:
+  title: Модели запросов и ответов для эндпоинта /api/passwordless/login
+  version: "1"
+paths:
+  /api/passwordless/login:
+    post:
+      tags:
+        - "fusionauth public"
+      operationId: authByCode
+      summary: Аутентификация по коду (обмен кода на токен)
+      requestBody:
+        $ref: '#/components/requestBodies/Auth by code request'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth by code response'
+
+components:
+  schemas:
+    Auth by code response:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          description: JWT-токен, полученный в результате входа
+          type: string
+          example: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzaXRlIjoiaW1zaGEuYnkifQ.HtVmRcsfYvY4u10zHVH8raeA__C7A8pIdls6mhfUk2c'
+
+  requestBodies:
+    Auth by code request:
+      title: AuthByCodeRequest
+      description: Данные для аутентификации по коду (обмен кода на токен)
+      required: true
+      content:
+        application/json:
+          schema:
+            required:
+              - code
+            properties:
+              code:
+                description: Уникальный код, необходимый для завершения входа в систему
+                type: string
+                example: 'L6G4LRiXdxwtVTX27dM4iVbHfbA9Br8GYwZ7QqclQHA'
