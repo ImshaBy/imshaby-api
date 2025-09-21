@@ -1,6 +1,7 @@
 package by.imsha.rest;
 
 import by.imsha.domain.Ping;
+import io.sentry.Sentry;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
@@ -26,5 +27,17 @@ public class PingController {
         return ResponseEntity.ok(
                 new Ping("locale: " + locale)
         );
+    }
+
+    @GetMapping("/sentry-test")
+    public ResponseEntity<Ping> sentryTest() {
+        try {
+            throw new Exception("This is a test exception for Sentry integration verification.");
+        } catch (Exception e) {
+            Sentry.captureException(e);
+            return ResponseEntity.ok(
+                    new Ping("Sentry test exception sent! Check your Sentry dashboard.")
+            );
+        }
     }
 }

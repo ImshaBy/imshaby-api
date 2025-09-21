@@ -36,6 +36,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
     implementation 'org.springframework.boot:spring-boot-starter-aop'
+    implementation 'io.sentry:sentry-spring-boot-starter-jakarta'
     implementation "org.cache2k:cache2k-api:${cache2kVersion}"
     implementation "org.cache2k:cache2k-core:${cache2kVersion}"
     implementation "org.cache2k:cache2k-spring:${cache2kVersion}"
