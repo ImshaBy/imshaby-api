@@ -3,12 +3,12 @@ package by.imsha.rest.passwordless.exception;
 import lombok.Getter;
 
 /**
- * Исключение, при работе с passwordless api
+ * Exception when working with passwordless api
  */
 public class PasswordlessApiException extends RuntimeException {
 
     /**
-     * Флаг, указывающий, может ли ошибка сообщаться пользователю
+     * Flag indicating whether the error can be communicated to the user
      */
     @Getter
     private final boolean notifiable;

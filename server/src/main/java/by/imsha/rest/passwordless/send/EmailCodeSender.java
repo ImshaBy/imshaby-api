@@ -16,10 +16,10 @@ public class EmailCodeSender implements CodeSender {
     private final FusionauthMapper fusionauthMapper;
 
     /**
-     * Отправить код пользователю
+     * Send code to user
      *
-     * @param userIdentifier идентификатор пользователя (не используется, но может быть использован для реализации отправки через Telegram например)
-     * @param code           отправляемый код
+     * @param userIdentifier user identifier (not used, but can be used for implementing sending via Telegram for example)
+     * @param code           code to send
      */
     public void send(final String userIdentifier, final String code) {
         try {
@@ -31,7 +31,7 @@ public class EmailCodeSender implements CodeSender {
         } catch (PasswordlessApiException passwordlessApiException) {
             throw passwordlessApiException;
         } catch (Exception exception) {
-            throw new PasswordlessApiException("Ошибка при отправке кода",
+            throw new PasswordlessApiException("Error sending code",
                     false, exception);
         }
     }

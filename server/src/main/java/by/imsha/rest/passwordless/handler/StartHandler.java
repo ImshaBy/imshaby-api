@@ -26,11 +26,11 @@ public class StartHandler {
     private final CodeSender defaultCodeSender;
     private final FusionauthMapper fusionauthMapper;
 
-    public void handle(@Valid @NotNull(message = "Входные параметры обязательны для заполнения") final Input input) {
+    public void handle(@Valid @NotNull(message = "Input parameters are required") final Input input) {
         handle(input, defaultCodeSender);
     }
 
-    public void handle(@Valid @NotNull(message = "Входные параметры обязательны для заполнения") final Input input,
+    public void handle(@Valid @NotNull(message = "Input parameters are required") final Input input,
                        @NotNull final CodeSender codeSender) {
         log.info("Start passwordless login. Data: '{}'", input);
 
@@ -43,7 +43,7 @@ public class StartHandler {
         } catch (PasswordlessApiException passwordlessApiException) {
             throw passwordlessApiException;
         } catch (Exception exception) {
-            throw new PasswordlessApiException("Ошибка инициализации процесса беспарольного входа",
+            throw new PasswordlessApiException("Error initializing passwordless login process: " + exception.getMessage(),
                     false, exception);
         }
     }
@@ -52,17 +52,17 @@ public class StartHandler {
     @Value
     public static class Input {
         /**
-         * Уникальный идентификатор приложения, в которое запрашиваем вход
+         * Unique identifier of the application requesting login
          */
-        @NotBlank(message = "Идентификатор приложения не должен быть пустым")
+        @NotBlank(message = "Application identifier must not be empty")
         String applicationId;
         /**
-         * Идентификатор пользователя для логина. Может быть либо email либо username.
+         * User identifier for login. Can be either email or username.
          */
-        @NotBlank(message = "Идентификатор пользователя (email) не должен быть пустым")
+        @NotBlank(message = "User identifier (email) must not be empty")
         String loginId;
         /**
-         * TODO Вопрос на развитие: возможно захотим валидировать секрет в запросе кода и ответе на login
+         * TODO Development question: we may want to validate the secret in the code request and login response
          */
         String stateSecret;
     }

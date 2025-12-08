@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
 /**
- * Обработчик запроса на аутентификацию по коду
+ * Handler for authentication request by code
  */
 @Component
 @RequiredArgsConstructor
@@ -26,7 +26,7 @@ public class LoginHandler {
     private final FusionauthPublicApiClient fusionauthPublicApiClient;
     private final FusionauthMapper fusionauthMapper;
 
-    public String handle(@Valid @NotNull(message = "Входные параметры обязательны для заполнения")
+    public String handle(@Valid @NotNull(message = "Input parameters are required")
                          Input input) {
         try {
             log.info("[VERBOSE] Received code: '{}'", input.getCode());
@@ -36,7 +36,7 @@ public class LoginHandler {
                     ).getBody()
                     .getToken();
         } catch (Exception exception) {
-            throw new PasswordlessApiException("Ошибка при получении токена через Passwordless API", true, exception);
+            throw new PasswordlessApiException("Error obtaining token through Passwordless API", true, exception);
         }
     }
 
@@ -44,12 +44,12 @@ public class LoginHandler {
     @Value
     public static class Input {
         /**
-         * Уникальный код, отправленный пользователю по email, необходимый для завершения входа в систему
+         * Unique code sent to user by email, required to complete login
          */
-        @NotBlank(message = "Уникальный код, отправленный пользователю по email не должен быть пустым")
+        @NotBlank(message = "Unique code sent to user by email must not be empty")
         String code;
         /**
-         * TODO Вопрос на развитие: возможно захотим валидировать секрет в запросе кода и ответе на login
+         * TODO Development question: we may want to validate the secret in the code request and login response
          */
         String stateSecret;
     }

@@ -3,7 +3,7 @@ package by.imsha.rest.passwordless.send;
 import lombok.Getter;
 
 /**
- * Перехватчик кода, сохраняет значение, вместо отправки
+ * Code interceptor, saves value instead of sending
  */
 public class InterceptingCodeSender implements CodeSender {
 

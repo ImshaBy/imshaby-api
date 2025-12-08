@@ -20,23 +20,23 @@ public class VerifyCodeHandler {
 
     private final ConfirmationCodeGenerator confirmationCodeGenerator;
 
-    public boolean handle(@Valid @NotNull(message = "Входные параметры обязательны для заполнения")
+    public boolean handle(@Valid @NotNull(message = "Input parameters are required")
                           Input input) {
 
         Optional<String> optionalConfirmationCode = confirmationCodeGenerator.getCode(input.getEmail());
 
         if (optionalConfirmationCode.isEmpty()) {
-            log.error("Ошибка при проверке кода. Код для соответствующего email отсутствует в кэше. {}", input);
+            log.error("Error verifying code. Code for corresponding email is not present in cache. {}", input);
             return false;
         }
 
         String confirmationCode = optionalConfirmationCode.get();
 
         if (confirmationCode.equals(input.getConfirmationCode())) {
-            log.info("Успешно пройдена проверка кода. {}", input);
+            log.info("Successfully verified code. {}", input);
             return true;
         } else {
-            log.error("Получен неверный код подтверждения. Ожидаемый код: {}. Полученные данные: {}", confirmationCode,
+            log.error("Invalid confirmation code received. Expected code: {}. Received data: {}", confirmationCode,
                     input);
             return false;
         }
@@ -49,13 +49,13 @@ public class VerifyCodeHandler {
         /**
          * email пользователя
          */
-        @NotBlank(message = "Адрес электронной почты пользователя должен быть заполнен")
+        @NotBlank(message = "User email must be filled")
         String email;
 
         /**
          * Код подтверждения
          */
-        @NotBlank(message = "Код подтверждения должен быть заполнен")
+        @NotBlank(message = "Confirmation code must be filled")
         String confirmationCode;
     }
 }

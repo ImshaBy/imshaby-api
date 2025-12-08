@@ -17,7 +17,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.context.request.NativeWebRequest;
 
 /**
- * Контроллер-адаптер, для использования Passwordless API
+ * Adapter controller for using Passwordless API
  */
 @Controller
 @Slf4j
@@ -48,7 +48,7 @@ public class PasswordlessApiAdapterController extends PasswordlessAdapterApiCont
     @Override
     public ResponseEntity<GeneratePasswordlessLoginCodeResponse> generatePasswordlessLoginCode(GeneratePasswordlessLoginCodeRequest generatePasswordlessLoginCodeRequest) {
 
-        //вместо отправки кода - перехватываем его
+        // instead of sending the code - intercept it
         final InterceptingCodeSender interceptingCodeSender = new InterceptingCodeSender();
 
         startHandler.handle(
@@ -56,7 +56,7 @@ public class PasswordlessApiAdapterController extends PasswordlessAdapterApiCont
                 interceptingCodeSender
         );
 
-        //получаем перехваченный код
+        // get the intercepted code
         final String code = interceptingCodeSender.getCode();
 
         return ResponseEntity.ok(

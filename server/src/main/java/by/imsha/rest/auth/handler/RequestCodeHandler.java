@@ -26,7 +26,7 @@ public class RequestCodeHandler {
     private final ConfirmationCodeGenerator confirmationCodeGenerator;
     private final FusionauthMapper fusionauthMapper;
 
-    public void handle(@Valid @NotNull(message = "Входные параметры обязательны для заполнения")
+    public void handle(@Valid @NotNull(message = "Input parameters are required")
                        Input input) {
 
         try {
@@ -37,9 +37,9 @@ public class RequestCodeHandler {
                     fusionauthMapper.map(confirmationCode, input)
             ).getBody();
 
-            log.info("Результат отправки кода подтверждения на email: {}", response);
+            log.info("Successfully sent confirmation code to email: {}", response);
         } catch (Exception exception) {
-            throw new AuthException("Ошибка отправки кода подтверждения на email", exception);
+            throw new AuthException("Error sending confirmation code to email", exception);
         }
     }
 
@@ -50,7 +50,7 @@ public class RequestCodeHandler {
         /**
          * email пользователя
          */
-        @NotBlank(message = "Адрес электронной почты пользователя")
+        @NotBlank(message = "User email must be filled")
         String email;
     }
 }
