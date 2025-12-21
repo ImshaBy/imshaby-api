@@ -1,4 +1,6 @@
-FROM eclipse-temurin:21-jre-alpine-3.23 as builder
+FROM registry.access.redhat.com/ubi8/openjdk-21 as builder
+
+USER root
 
 RUN microdnf install findutils
 
@@ -8,11 +10,13 @@ WORKDIR /usr/share/sources
 
 RUN ./gradlew :server:build -x test
 
-FROM eclipse-temurin:21-jre-alpine-3.23
+FROM registry.access.redhat.com/ubi8/openjdk-21
 
 WORKDIR /opt/app
 
 COPY --from=builder /usr/share/sources/server/build/libs/server-0.0.1-SNAPSHOT.jar app.jar
+
+USER root
 
 RUN groupadd --gid 1000 javauser && useradd --uid 1000 --gid 1000 -m javauser
 

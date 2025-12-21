@@ -1,10 +1,12 @@
-FROM eclipse-temurin:21-jre-alpine-3.23
+FROM registry.access.redhat.com/ubi8/openjdk-21
 
 WORKDIR /opt/app
 
+USER root
+
 COPY ./server/build/libs/server-0.0.1-SNAPSHOT.jar app.jar
 
-RUN groupadd --gid 1000 javauser && useradd --uid 1000 --gid 1000 -m javauser
+RUN groupadd --gid 1001 javauser && useradd --uid 1001 --gid 1001 -m javauser
 
 RUN chown -R javauser:javauser .
 
