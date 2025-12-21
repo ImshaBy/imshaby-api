@@ -78,3 +78,4 @@ sentry:
   # Ensure exceptions that have been handled by exception resolvers with higher order are sent to Sentry
   exception-resolver-order: -2147483647
   environment: ${SPRING_PROFILES_ACTIVE:development}
+  logs.enabled: ${SENTRY_LOGS_ENABLED:true}
