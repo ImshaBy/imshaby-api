@@ -15,7 +15,10 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.util.CollectionUtils;
@@ -26,6 +29,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * @author Alena Misan
@@ -95,7 +99,7 @@ public class SecurityConfig {
                             .anyRequest().authenticated()
                     )
                     .oauth2ResourceServer(oauth2ResourceServer ->
-                            oauth2ResourceServer.jwt(Customizer.withDefaults())
+                            oauth2ResourceServer.jwt(SecurityConfig::customizeJwtAuthoritiesConverter)
                     );
 
 
@@ -122,4 +126,24 @@ public class SecurityConfig {
         return http.build();
     }
 
+    private static void customizeJwtAuthoritiesConverter(OAuth2ResourceServerConfigurer<HttpSecurity>.JwtConfigurer jwtConfigurer) {
+        JwtGrantedAuthoritiesConverter rolesConverter = new JwtGrantedAuthoritiesConverter();
+        rolesConverter.setAuthoritiesClaimName("roles");
+        rolesConverter.setAuthorityPrefix("ROLE_");
+
+        JwtGrantedAuthoritiesConverter parishesConverter = new JwtGrantedAuthoritiesConverter();
+        parishesConverter.setAuthoritiesClaimName("parishes");
+        parishesConverter.setAuthorityPrefix("PARISH_");
+
+        JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(
+                jwt -> Stream.concat(
+                        rolesConverter.convert(jwt).stream(),
+                        parishesConverter.convert(jwt).stream()
+                ).toList()
+        );
+
+        jwtConfigurer.jwtAuthenticationConverter(jwtAuthenticationConverter);
+    }
 }
