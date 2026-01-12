@@ -11,6 +11,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +62,9 @@ class ParishAuthorizationServiceTest {
     @Test
     void shouldReturnEmptyListWhenJwtHasNoParishesClaim() {
         // Given
-        Jwt jwt = createJwt(Collections.emptyMap());
+        Map<String, Object> claims = new java.util.HashMap<>();
+        claims.put("sub", "user123");
+        Jwt jwt = createJwt(claims);
         setupJwtAuthentication(jwt);
 
         // When
@@ -128,7 +132,9 @@ class ParishAuthorizationServiceTest {
     @Test
     void checkParishKeyAccess_shouldThrowExceptionWhenNoParishes() {
         // Given
-        Jwt jwt = createJwt(Collections.emptyMap());
+        Map<String, Object> claims = new java.util.HashMap<>();
+        claims.put("sub", "user123");
+        Jwt jwt = createJwt(claims);
         setupJwtAuthentication(jwt);
 
         // When/Then
@@ -168,11 +174,11 @@ class ParishAuthorizationServiceTest {
         // Given
         SecurityContext context = mock(SecurityContext.class);
         Authentication authentication = mock(Authentication.class);
-        java.util.Collection<? extends GrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority("ROLE_USER"),
-                new SimpleGrantedAuthority("ROLE_INTERNAL")
-        );
-        when(authentication.getAuthorities()).thenReturn((java.util.Collection<GrantedAuthority>) authorities);
+        Collection<GrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+        authorities.add(new SimpleGrantedAuthority("ROLE_INTERNAL"));
+        
+        when(authentication.getAuthorities()).thenAnswer(invocation -> authorities);
         when(context.getAuthentication()).thenReturn(authentication);
         SecurityContextHolder.setContext(context);
 
@@ -188,10 +194,10 @@ class ParishAuthorizationServiceTest {
         // Given
         SecurityContext context = mock(SecurityContext.class);
         Authentication authentication = mock(Authentication.class);
-        java.util.Collection<? extends GrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority("ROLE_USER")
-        );
-        when(authentication.getAuthorities()).thenReturn((java.util.Collection<GrantedAuthority>) authorities);
+        Collection<GrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+        
+        when(authentication.getAuthorities()).thenAnswer(invocation -> authorities);
         when(context.getAuthentication()).thenReturn(authentication);
         SecurityContextHolder.setContext(context);
 
@@ -231,7 +237,9 @@ class ParishAuthorizationServiceTest {
     @Test
     void hasAnyParishAccess_shouldReturnFalseWhenUserHasNoParishes() {
         // Given
-        Jwt jwt = createJwt(Collections.emptyMap());
+        Map<String, Object> claims = new java.util.HashMap<>();
+        claims.put("sub", "user123");
+        Jwt jwt = createJwt(claims);
         setupJwtAuthentication(jwt);
 
         // When
@@ -242,11 +250,13 @@ class ParishAuthorizationServiceTest {
     }
 
     private Jwt createJwt(Map<String, Object> claims) {
+        Map<String, Object> headers = new java.util.HashMap<>();
+        headers.put("alg", "none");
         return new Jwt(
                 "token",
                 Instant.now(),
                 Instant.now().plusSeconds(3600),
-                Map.of("alg", "none"),
+                headers,
                 claims
         );
     }
