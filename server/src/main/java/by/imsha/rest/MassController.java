@@ -18,7 +18,7 @@ import by.imsha.meilisearch.reader.MeilisearchReader;
 import by.imsha.meilisearch.reader.SearchResult;
 import by.imsha.properties.ImshaProperties;
 import by.imsha.rest.dto.MassCoordinatesResponse;
-import by.imsha.security.ParishAuthorizationService;
+import by.imsha.security.annotation.RequireParishAccess;
 import by.imsha.service.DefaultCityService;
 import by.imsha.service.MassCoordinatesService;
 import by.imsha.service.MassService;
@@ -103,14 +103,9 @@ public class MassController {
     @Autowired
     MassCoordinatesService massCoordinatesService;
 
-    @Autowired
-    private ParishAuthorizationService parishAuthorizationService;
-
     @PostMapping
+    @RequireParishAccess(fromRequestBody = true, bodyField = "parishId")
     public ResponseEntity<Mass> createMass(@RequestBody final Mass mass) {
-        // Проверка прав доступа к приходу
-        parishAuthorizationService.checkParishAccess(mass.getParishId());
-        
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(massService.createMass(mass));
@@ -124,10 +119,8 @@ public class MassController {
     }
 
     @PutMapping("/{massId}")
+    @RequireParishAccess(massIdParam = "massId")
     public ResponseEntity<UpdateEntityInfo> updateMass(@PathVariable("massId") String id, @RequestBody Mass mass) {
-        // Проверка прав доступа к приходу
-        parishAuthorizationService.checkParishAccess(mass.getParishId());
-        
         //из-за кэша не переделывал проверку на existsById
         if (!this.massService.getMass(id).isPresent()) {
             throw new ResourceNotFoundException("resource not found");
@@ -143,12 +136,10 @@ public class MassController {
 
 
     @PutMapping("/refresh/{massId}")
+    @RequireParishAccess(massIdParam = "massId")
     public ResponseEntity<UpdateEntityInfo> refreshMass(@PathVariable("massId") final String id, @RequestBody(required = false) UpdateMassInfo massInfo) {
         final Mass massToUpdate = this.massService.getMass(id)
                 .orElseThrow(() -> new ResourceNotFoundException("resource not found"));
-        
-        // Проверка прав доступа к приходу
-        parishAuthorizationService.checkParishAccess(massToUpdate.getParishId());
 
         if (massInfo == null) {
             massInfo = new UpdateMassInfo();
@@ -165,10 +156,8 @@ public class MassController {
     //TODO Нужно использовать /api/parish/{parishId}/confirm-relevance
     @Deprecated
     @PutMapping(params = "parishId")
+    @RequireParishAccess(parishIdParam = "parishId")
     public ResponseEntity<UpdateEntitiesInfo> refreshMasses(@RequestParam("parishId") String parishId) {
-        // Проверка прав доступа к приходу
-        parishAuthorizationService.checkParishAccess(parishId);
-
         Parish parish = parishService.getParish(parishId).orElseThrow(ResourceNotFoundException::new);
         parish.setLastConfirmRelevance(dateTimeProvider.nowSystemDefaultZone());
         parishService.updateParish(parish);
@@ -181,12 +170,10 @@ public class MassController {
 
 
     @DeleteMapping("/{massId}")
+    @RequireParishAccess(massIdParam = "massId")
     public ResponseEntity<UpdateEntityInfo> removeMass(@PathVariable("massId") String id) {
         final Mass mass = this.massService.getMass(id)
                 .orElseThrow(() -> new ResourceNotFoundException("resource not found"));
-        
-        // Проверка прав доступа к приходу
-        parishAuthorizationService.checkParishAccess(mass.getParishId());
 
         this.massService.removeMass(mass);
 
@@ -196,6 +183,7 @@ public class MassController {
     }
 
     @DeleteMapping(path = "/{massId}", params = "from")
+    @RequireParishAccess(massIdParam = "massId")
     public ResponseEntity<List<UpdateEntityInfo>> removeMassByTimeInterval(@PathVariable("massId") String id,
                                                                            @DateTimeFormat(pattern = "dd-MM-yyyy")
                                                                            @RequestParam("from") LocalDate fromDate,
@@ -203,9 +191,6 @@ public class MassController {
                                                                            @RequestParam(name = "to", required = false) LocalDate toDate) {
         Mass mass = this.massService.getMass(id)
                 .orElseThrow(() -> new ResourceNotFoundException("resource not found"));
-        
-        // Проверка прав доступа к приходу
-        parishAuthorizationService.checkParishAccess(mass.getParishId());
 
         if (toDate != null && fromDate.isAfter(toDate)) {
             throw new InvalidDateIntervalException("Invalid dates", "from", "MASS.012");
@@ -229,10 +214,8 @@ public class MassController {
     }
 
     @DeleteMapping(params = "parishId")
+    @RequireParishAccess(parishIdParam = "parishId")
     public ResponseEntity<UpdateEntitiesInfo> removeMasses(@RequestParam(value = "parishId") String parishId) {
-        // Проверка прав доступа к приходу
-        parishAuthorizationService.checkParishAccess(parishId);
-        
         if (!this.parishService.getParish(parishId).isPresent()) {
             throw new ResourceNotFoundException("resource not found");
         }

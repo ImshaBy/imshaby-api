@@ -16,7 +16,7 @@ import by.imsha.domain.dto.UpdateEntityInfo;
 import by.imsha.domain.dto.mapper.ParishKeyUpdateInfoMapper;
 import by.imsha.exception.ResourceNotFoundException;
 import by.imsha.repository.projection.ParishExpirationInfo;
-import by.imsha.security.ParishAuthorizationService;
+import by.imsha.security.annotation.RequireParishAccess;
 import by.imsha.service.CityService;
 import by.imsha.service.MassService;
 import by.imsha.service.ParishService;
@@ -77,14 +77,9 @@ public class ParishController {
     @Autowired
     private ParishKeyUpdateInfoMapper parishKeyUpdateInfoMapper;
 
-    @Autowired
-    private ParishAuthorizationService parishAuthorizationService;
-
     @PostMapping
+    @RequireParishAccess(fromRequestBody = true, bodyField = "key")
     public ResponseEntity<Parish> createParish(@Valid @RequestBody Parish parish) {
-        // Проверка прав доступа к приходу
-        parishAuthorizationService.checkParishAccess(parish.getKey());
-        
         parish.setState(Parish.State.INITIAL);
         parish.setLastConfirmRelevance(dateTimeProvider.nowSystemDefaultZone());
 
@@ -100,10 +95,8 @@ public class ParishController {
     }
 
     @PutMapping("/{parishId}")
+    @RequireParishAccess(parishIdParam = "parishId")
     public ResponseEntity<UpdateEntityInfo> updateParish(@PathVariable("parishId") String id, @RequestBody ParishInfo parishInfo) {
-        // Проверка прав доступа к приходу
-        parishAuthorizationService.checkParishAccess(id);
-        
         final Parish parishToUpdate = this.parishService.getParish(id)
                 .orElseThrow(ResourceNotFoundException::new);
 
@@ -128,11 +121,9 @@ public class ParishController {
     }
 
     @PutMapping(value = "/{parishId}/state")
+    @RequireParishAccess(parishIdParam = "parishId")
     public ResponseEntity<UpdateEntityInfo> updateParishState(@PathVariable("parishId") String parishId,
                                                               @Valid @RequestBody ParishStateInfo parishStateInfo) {
-        // Проверка прав доступа к приходу
-        parishAuthorizationService.checkParishAccess(parishId);
-        
         final Parish parish = this.parishService.getParish(parishId)
                 .orElseThrow(ResourceNotFoundException::new);
 
@@ -145,13 +136,11 @@ public class ParishController {
     }
 
     @PutMapping(value = "/{parishId}/lang/{locale}")
+    @RequireParishAccess(parishIdParam = "parishId")
     public ResponseEntity<UpdateEntityInfo> createLocalizedParish(@PathVariable("parishId") String id,
                                                                   @AvailableLocale(field = "locale", message = "PARISH.001")
                                                                   @PathVariable("locale") Locale locale,
                                                                   @RequestBody @Valid LocalizedParishInfo localizedParishInfo) {
-        // Проверка прав доступа к приходу
-        parishAuthorizationService.checkParishAccess(id);
-        
         final Parish parishToUpdate = this.parishService.getParish(id)
                 .orElseThrow(ResourceNotFoundException::new);
 
@@ -169,6 +158,7 @@ public class ParishController {
 
 
     @DeleteMapping("/{parishId}")
+    @RequireParishAccess(parishIdParam = "parishId")
     public ResponseEntity<UpdateEntityInfo> removeParish(@PathVariable("parishId") String id,
                                                          @RequestParam(value = "cascade", defaultValue = "false") Boolean cascade) {
         if (!this.parishService.getParish(id).isPresent()) {
@@ -269,10 +259,8 @@ public class ParishController {
     }
 
     @PostMapping("/{parishId}/confirm-relevance")
+    @RequireParishAccess(parishIdParam = "parishId")
     public ResponseEntity<UpdateEntitiesInfo> confirmRelevance(@PathVariable("parishId") String parishId) {
-        // Проверка прав доступа к приходу
-        parishAuthorizationService.checkParishAccess(parishId);
-
         Parish parish = parishService.getParish(parishId).orElseThrow(ResourceNotFoundException::new);
         parish.setLastConfirmRelevance(dateTimeProvider.nowSystemDefaultZone());
         parishService.updateParish(parish);

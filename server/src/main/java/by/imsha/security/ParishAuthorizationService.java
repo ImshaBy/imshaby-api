@@ -92,5 +92,48 @@ public class ParishAuthorizationService {
     public boolean hasAnyParishAccess() {
         return !getAuthorizedParishKeys().isEmpty();
     }
+
+    /**
+     * Проверяет, имеет ли текущий пользователь доступ к указанному приходу по ключу
+     *
+     * @param parishKey ключ прихода
+     * @throws AccessDeniedException если у пользователя нет доступа к приходу
+     */
+    public void checkParishKeyAccess(String parishKey) {
+        if (parishKey == null || parishKey.isBlank()) {
+            throw new IllegalArgumentException("Parish key не должен быть пустым");
+        }
+
+        List<String> authorizedParishes = getAuthorizedParishKeys();
+
+        if (authorizedParishes.isEmpty()) {
+            log.error("Пользователь не имеет доступа ни к одному приходу");
+            throw new AccessDeniedException("Отсутствуют права доступа к приходам");
+        }
+
+        if (!authorizedParishes.contains(parishKey)) {
+            log.error("Пользователь не имеет доступа к приходу с ключом: {}. Доступные приходы: {}", 
+                    parishKey, authorizedParishes);
+            throw new AccessDeniedException("Отсутствует доступ к приходу: " + parishKey);
+        }
+
+        log.debug("Доступ к приходу с ключом {} разрешен", parishKey);
+    }
+
+    /**
+     * Проверяет, имеет ли текущий пользователь роль ROLE_INTERNAL
+     *
+     * @return true если пользователь имеет роль ROLE_INTERNAL
+     */
+    public boolean isInternalRole() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null) {
+            return false;
+        }
+
+        return authentication.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_INTERNAL".equals(authority.getAuthority()));
+    }
 }
 
