@@ -13,13 +13,14 @@ import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.Optional;
 
 /**
  * AOP аспект для автоматической проверки прав доступа к приходам.
@@ -128,46 +129,16 @@ public class ParishAccessAspect {
     }
 
     /**
-     * Извлекает значение поля из объекта через рефлексию
+     * Извлекает значение поля из объекта
      */
     private String extractFieldValue(Object obj, String fieldName) {
         try {
-            Class<?> clazz = obj.getClass();
-            
-            // Пытаемся найти поле напрямую
-            Field field = findField(clazz, fieldName);
-            if (field != null) {
-                field.setAccessible(true);
-                Object value = field.get(obj);
-                return value != null ? value.toString() : null;
-            }
-
-            // Пытаемся вызвать getter метод
-            String getterName = "get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
-            try {
-                Method getter = clazz.getMethod(getterName);
-                Object value = getter.invoke(obj);
-                return value != null ? value.toString() : null;
-            } catch (NoSuchMethodException e) {
-                // Игнорируем, поле не найдено
-            }
-
+            return Optional.of(new BeanWrapperImpl(obj))
+                    .map(beanWrapper -> beanWrapper.getPropertyValue(fieldName))
+                    .map(Object::toString)
+                    .orElse(null);
         } catch (Exception e) {
             log.error("Ошибка при извлечении поля '{}' из объекта {}", fieldName, obj.getClass().getName(), e);
-        }
-        return null;
-    }
-
-    /**
-     * Рекурсивный поиск поля в классе и его родителях
-     */
-    private Field findField(Class<?> clazz, String fieldName) {
-        while (clazz != null) {
-            try {
-                return clazz.getDeclaredField(fieldName);
-            } catch (NoSuchFieldException e) {
-                clazz = clazz.getSuperclass();
-            }
         }
         return null;
     }
