@@ -15,6 +15,7 @@ public class RefreshMassDtoMapping implements FieldValueSetter {
     public static final String START_DATE_FIELD_QUALIFIER = "Дата начала";
     public static final String SINGLE_START_TIMESTAMP_FIELD_QUALIFIER = "Начало времени";
     public static final String TIME_FIELD_QUALIFIER = "Время";
+    public static final String PARISH_ID_FIELD_QUALIFIER = "Идентификатор парафии";
 
     @Override
     public ObjectNode apply(ObjectNode jsonNode, String fieldName, Object fieldValue) {
@@ -50,6 +51,9 @@ public class RefreshMassDtoMapping implements FieldValueSetter {
         }
         if (fieldName.equals(END_DATE_FIELD_QUALIFIER)) {
             return jsonNode.put("endDate", (String) fieldValue);
+        }
+        if (fieldName.equals(PARISH_ID_FIELD_QUALIFIER)) {
+            return jsonNode.put("parishId", (String) fieldValue);
         }
         throw new IllegalArgumentException("Неизвестное поле '" + fieldName + "' в модели обновления службы");
     }
