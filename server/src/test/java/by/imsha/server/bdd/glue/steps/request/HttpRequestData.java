@@ -19,6 +19,7 @@ import java.util.function.Function;
 @ScenarioScope
 public class HttpRequestData {
 
+    public static final String AUTHORIZATION_HEADER_NAME = "Authorization";
     public static final String API_KEY_HEADER_NAME = "X-Api-Key";
     public static final String TEST_API_KEY = "TEST_API_KEY";
     public static final String INTERNAL_TEST_API_KEY = "TEST_INTERNAL_API_KEY";

@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.stream.Collectors;
 
 import static by.imsha.server.bdd.glue.steps.request.HttpRequestData.API_KEY_HEADER_NAME;
+import static by.imsha.server.bdd.glue.steps.request.HttpRequestData.AUTHORIZATION_HEADER_NAME;
 import static by.imsha.server.bdd.glue.steps.request.HttpRequestData.INTERNAL_TEST_API_KEY;
 import static by.imsha.server.bdd.glue.steps.request.HttpRequestData.TEST_API_KEY;
 import static io.restassured.RestAssured.given;
@@ -44,6 +45,20 @@ public class BaseHttpRequestSteps {
     @And("^при запросе не используются никакие способы авторизации$")
     public void cleanAuthorizationFunction() {
         httpRequestData.setAuthorizationFunction(null);
+    }
+
+    /**
+     * Использовать при отправке запросов авторизацию через jwt
+     * пример использования
+     * <p>
+     * ИСПОЛЬЗУЕТСЯ В БЛОКЕ Предыстория ДЛЯ ИСПОЛЬЗОВАНИЯ В НЕСКОЛЬКИХ СЦЕНАРИЯХ В ОДНОМ ФАЙЛЕ
+     * <p>
+     * Предыстория:
+     * __Допустим для авторизации используется jwt-токен с ключом парафии "parishKey"
+     */
+    @And("^для авторизации используется jwt-токен с ключом парафии \"(.+)\"$")
+    public void authorizeWithJWTAndParishKey(String parishKey) {
+        httpRequestData.setAuthorizationFunction(requestSpecification -> requestSpecification.header(AUTHORIZATION_HEADER_NAME, "Bearer %s".formatted(parishKey)));
     }
 
     /**

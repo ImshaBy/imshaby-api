@@ -21,6 +21,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.util.CollectionUtils;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -159,6 +160,11 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
                 HttpStatus.BAD_REQUEST,
                 webRequest
         );
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Object> handleAccessDeniedException(final AccessDeniedException exception, final WebRequest webRequest) {
+        return handleExceptionInternal(exception, null, new HttpHeaders(), HttpStatus.FORBIDDEN, webRequest);
     }
 
     @ExceptionHandler(PasswordlessApiException.class)
