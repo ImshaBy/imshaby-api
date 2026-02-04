@@ -1,4 +1,49 @@
-{{- if .Values.ingress.enabled -}}
+{{- if .Values.workloads }}
+{{- range $wName, $w := .Values.workloads }}
+{{- if ($w.ingress | default dict).enabled }}
+---
+{{- $fullName := include "workload.fullname" (dict "ctx" $ "name" $wName) -}}
+{{- $svcPort := ($w.service | default dict).port | default (($.Values.service | default dict).port) | default 80 -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "workload.labels" (dict "ctx" $ "name" $wName) | nindent 4 }}
+  annotations:
+    {{- with ($w.ingress | default dict).annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with ($.Values.ingress | default dict).annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if ((($w.ingress | default dict).className) | default (($.Values.ingress | default dict).className)) }}
+  ingressClassName: {{ ($w.ingress | default dict).className | default (($.Values.ingress | default dict).className) }}
+  {{- end }}
+  rules:
+  {{- range (($w.ingress | default dict).hosts | default list) }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+        {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $svcPort }}
+        {{- end }}
+  {{- end }}
+  {{- with ((($w.ingress | default dict).tls) | default (($.Values.ingress | default dict).tls)) }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- else }}
+{{- if .Values.ingress.enabled }}
 {{- $fullName := include "my-app.fullname" . -}}
 {{- $svcPort := .Values.service.port -}}
 apiVersion: networking.k8s.io/v1
@@ -38,4 +83,5 @@ spec:
   tls:
     {{- toYaml . | nindent 4 }}
   {{- end }}
+{{- end }}
 {{- end }}

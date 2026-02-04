@@ -1,4 +1,29 @@
-{{- if .Values.config -}}
+{{- if .Values.workloads }}
+{{- range $wName, $w := .Values.workloads }}
+{{- $config := $w.config | default $.Values.config -}}
+{{- if $config }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "workload.fullname" (dict "ctx" $ "name" $wName) }}-config
+  labels:
+    {{- include "workload.labels" (dict "ctx" $ "name" $wName) | nindent 4 }}
+data:
+  {{- range $key, $value := $config }}
+  {{- if not (kindIs "map" $value) }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  {{- end }}
+  {{- with $config.additionalVars }}
+  {{- range $key, $value := . }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- else }}
+{{- if .Values.config }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -16,4 +41,5 @@ data:
   {{ $key }}: {{ $value | quote }}
     {{- end }}
   {{- end }}
+{{- end }}
 {{- end }}

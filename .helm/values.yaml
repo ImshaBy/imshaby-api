@@ -118,3 +118,22 @@ podAnnotations: {}
 # ========== Дополнительные параметры ==========
 extraEnv: []
 extraEnvFrom: []
+
+# ========== Multiple workloads (optional) ==========
+# When present and non-empty, the chart renders one Deployment/Service/Ingress/ConfigMap per entry.
+# Each key is the workload name (e.g. api, worker). Omit or leave empty for legacy single-deployment mode.
+# See docs: specs/003-multi-deploy-namespace/contracts/helm-values-workloads.md
+workloads:
+  multisearch:
+    image:
+      repository: "cr.yandex/crp8o64j2cl644b4pjki/imshaby-mass-index-creator-prod"
+      tag: latest
+    replicaCount: 1
+    service:
+      enabled: true
+      port: 80
+      targetPort: 7700
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"

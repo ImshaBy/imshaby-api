@@ -1,4 +1,58 @@
-{{- if .Values.autoscaling.enabled -}}
+{{- if .Values.workloads }}
+{{- range $wName, $w := .Values.workloads }}
+{{- if (($w.autoscaling | default dict).enabled) }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "workload.fullname" (dict "ctx" $ "name" $wName) }}
+  labels:
+    {{- include "workload.labels" (dict "ctx" $ "name" $wName) | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "workload.fullname" (dict "ctx" $ "name" $wName) }}
+  minReplicas: {{ ($w.autoscaling | default dict).minReplicas | default $.Values.autoscaling.minReplicas }}
+  maxReplicas: {{ ($w.autoscaling | default dict).maxReplicas | default $.Values.autoscaling.maxReplicas }}
+  metrics:
+    {{- if (($w.autoscaling | default dict).targetCPUUtilizationPercentage | default $.Values.autoscaling.targetCPUUtilizationPercentage) }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ ($w.autoscaling | default dict).targetCPUUtilizationPercentage | default $.Values.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if (($w.autoscaling | default dict).targetMemoryUtilizationPercentage | default $.Values.autoscaling.targetMemoryUtilizationPercentage) }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ ($w.autoscaling | default dict).targetMemoryUtilizationPercentage | default $.Values.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+      - type: Pods
+        value: 4
+        periodSeconds: 15
+      selectPolicy: Max
+{{- end }}
+{{- end }}
+{{- else }}
+{{- if (.Values.autoscaling | default dict).enabled }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -46,4 +100,5 @@ spec:
         value: 4
         periodSeconds: 15
       selectPolicy: Max
+{{- end }}
 {{- end }}

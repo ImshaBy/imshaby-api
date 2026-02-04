@@ -21,3 +21,6 @@
 .idea/
 *.tmproj
 .vscode/
+# Local lint/test only (not used by Copier)
+values-lint.yaml
+values-multi.yaml

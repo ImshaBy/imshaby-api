@@ -98,6 +98,79 @@ Generate environment variables from config
 {{- end }}
 
 {{/*
+Workload-scoped fullname (multi-workload mode).
+Input: dict with "ctx" (root context) and "name" (workload name, map key).
+Output: Release.Name-workloadName, truncated to 63 chars, no trailing hyphen.
+*/}}
+{{- define "workload.fullname" -}}
+{{- $ctx := .ctx -}}
+{{- $name := .name -}}
+{{- printf "%s-%s" $ctx.Release.Name $name | trunc 63 | trimSuffix "-" -}}
+{{- end }}
+
+{{/*
+Workload-scoped labels (FR-009: identifiable in logs/metrics).
+Input: dict with "ctx" (root context) and "name" (workload name).
+*/}}
+{{- define "workload.labels" -}}
+{{- $ctx := .ctx -}}
+{{- $name := .name -}}
+helm.sh/chart: {{ include "my-app.chart" $ctx | quote }}
+app.kubernetes.io/name: {{ $ctx.Chart.Name | quote }}
+app.kubernetes.io/component: {{ $name | quote }}
+app.kubernetes.io/instance: {{ $ctx.Release.Name | quote }}
+{{- if $ctx.Chart.AppVersion }}
+app.kubernetes.io/version: {{ $ctx.Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ $ctx.Release.Service | quote }}
+{{- end }}
+
+{{/*
+Workload-scoped selector labels (for Deployment selector and Service).
+*/}}
+{{- define "workload.selectorLabels" -}}
+{{- $ctx := .ctx -}}
+{{- $name := .name -}}
+app.kubernetes.io/name: {{ $ctx.Chart.Name | quote }}
+app.kubernetes.io/instance: {{ $ctx.Release.Name | quote }}
+app.kubernetes.io/component: {{ $name | quote }}
+{{- end }}
+
+{{/*
+Environment variables for a workload (multi-workload mode).
+Input: dict with "ctx" (root context) and "w" (workload values object).
+Uses w.config with fallback to ctx.Values.config.
+*/}}
+{{- define "workload.envVars" -}}
+{{- $ctx := .ctx -}}
+{{- $w := .w -}}
+{{- $config := $w.config | default $ctx.Values.config | default dict -}}
+- name: APP_ENV
+  value: {{ ($config.env | default "production") | quote }}
+- name: LOG_LEVEL
+  value: {{ ($config.logLevel | default "info") | quote }}
+- name: POD_NAME
+  valueFrom:
+    fieldRef:
+      fieldPath: metadata.name
+- name: POD_NAMESPACE
+  valueFrom:
+    fieldRef:
+      fieldPath: metadata.namespace
+- name: POD_IP
+  valueFrom:
+    fieldRef:
+      fieldPath: status.podIP
+{{- $config := $w.config | default $ctx.Values.config | default dict -}}
+{{- with $config.additionalVars }}
+{{- range $key, $value := . }}
+- name: {{ $key | upper }}
+  value: {{ $value | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
 Generate image pull secret
 */}}
 {{- define "my-app.imagePullSecret" -}}
