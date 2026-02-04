@@ -89,6 +89,11 @@ jobs:
     needs: [build-backend-mailisearch, build-backend-api]
     
     steps:
+    - name: Checkout with tag
+      uses: actions/checkout@v4
+      with:
+          ref: ${{ github.ref_name }}
+    
     - name: Setup Kubernetes tools
       run: |
         # Install kubectl
