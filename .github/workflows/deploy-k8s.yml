@@ -133,17 +133,8 @@ jobs:
         
         # Deploy using Helm
         helm upgrade --install imshaby-api ./.helm \
-          --set image.tag=$IMAGE_TAG \
-          --set image.repository=cr.yandex/$CR_REGISTRY/$CR_REPOSITORY \
-          --debug \
-          --atomic \
-          --timeout 8m \
-          --namespace backend \
-          -f ./.helm/values.yaml
-
-        helm upgrade --install imshaby-multisearch ./.helm \
+          --set workloads.api.image.tag=$IMAGE_TAG \
           --set workloads.multisearch.image.tag=$IMAGE_TAG \
-          --set workloads.multisearch.image.repository=cr.yandex/$CR_REGISTRY/imshaby-mass-index-creator-prod \
           --debug \
           --atomic \
           --timeout 8m \
@@ -151,5 +142,5 @@ jobs:
           -f ./.helm/values.yaml
         
         # Verify deployment
-        kubectl rollout status deployment/imshaby-api -n backend --timeout=300s
-        kubectl rollout status deployment/imshaby-multisearch -n backend --timeout=300s
+        # kubectl rollout status deployment/imshaby-api -n backend --timeout=300s
+        # kubectl rollout status deployment/imshaby-multisearch -n backend --timeout=300s
