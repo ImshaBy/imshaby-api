@@ -1,6 +1,8 @@
-FROM openjdk:21-jdk
+FROM registry.access.redhat.com/ubi8/openjdk-21
 
 WORKDIR /opt/app
+
+USER root
 
 COPY ./mass-index-creator/build/libs/mass-index-creator-0.0.1-SNAPSHOT.jar app.jar
 

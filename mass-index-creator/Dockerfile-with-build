@@ -1,4 +1,6 @@
-FROM openjdk:21-jdk as builder
+FROM registry.access.redhat.com/ubi8/openjdk-21 as builder
+
+USER root
 
 RUN microdnf install findutils
 
@@ -8,11 +10,13 @@ WORKDIR /usr/share/sources
 
 RUN ./gradlew :mass-index-creator:build -x test
 
-FROM openjdk:21-jdk
+FROM registry.access.redhat.com/ubi8/openjdk-21
 
 WORKDIR /opt/app
 
 COPY --from=builder /usr/share/sources/mass-index-creator/build/libs/mass-index-creator-0.0.1-SNAPSHOT.jar app.jar
+
+USER root
 
 RUN groupadd --gid 1000 javauser && useradd --uid 1000 --gid 1000 -m javauser
 
