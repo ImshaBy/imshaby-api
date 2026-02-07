@@ -12,4 +12,4 @@ RUN chown -R javauser:javauser .
 
 USER javauser
 
-ENTRYPOINT ["/usr/java/openjdk-21/bin/java", "-jar", "-XX:MaxRAMPercentage=85", "-XX:MinRAMPercentage=85", "/opt/app/app.jar"]
+ENTRYPOINT ["/usr/lib/jvm/java-21/bin/java", "-jar", "-XX:MaxRAMPercentage=85", "-XX:MinRAMPercentage=85", "/opt/app/app.jar"]
