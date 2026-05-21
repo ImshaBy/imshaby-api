@@ -21,16 +21,23 @@ public class DynamicCorsConfiguration extends CorsConfiguration {
             return null;
         }
         String lowerCaseRequestOrigin = requestOrigin.toLowerCase();
+
         Set<String> allowedOrigins = corsConfigService.getLowerCaseOrigins();
-        if (ObjectUtils.isEmpty(allowedOrigins)) {
-            List<String> defaultAllowedOrigins = getAllowedOrigins();
-            if (ObjectUtils.isEmpty(defaultAllowedOrigins)) {
-                return null;
-            }
-            allowedOrigins = defaultAllowedOrigins.stream()
+
+        List<String> staticOrigins = getAllowedOrigins();
+        if (!ObjectUtils.isEmpty(staticOrigins)) {
+            Set<String> staticSet = staticOrigins.stream()
                     .map(String::toLowerCase)
                     .collect(Collectors.toSet());
+            if (ObjectUtils.isEmpty(allowedOrigins)) {
+                allowedOrigins = staticSet;
+            } else {
+                allowedOrigins.addAll(staticSet);
+            }
+        }
 
+        if (ObjectUtils.isEmpty(allowedOrigins)) {
+            return null;
         }
         if (allowedOrigins.contains(ALL)) {
             validateAllowCredentials();

@@ -25,6 +25,9 @@ public class CorsConfigService {
 
     private final CorsConfigRepository corsConfigRepository;
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "corsConfiguration", allEntries = true)
+    })
     public Cors create(final @Valid Cors cors) {
         return corsConfigRepository.save(cors);
     }
@@ -37,6 +40,9 @@ public class CorsConfigService {
         return corsConfigRepository.findAll(PageRequest.of(page, size));
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "corsConfiguration", allEntries = true)
+    })
     public Cors update(@Valid Cors cors) {
         return corsConfigRepository.save(cors);
     }
