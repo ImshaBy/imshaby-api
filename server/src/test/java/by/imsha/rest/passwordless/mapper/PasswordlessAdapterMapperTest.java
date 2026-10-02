@@ -56,4 +56,27 @@ class PasswordlessAdapterMapperTest {
                 .isInstanceOfSatisfying(ResponseStatusException.class,
                         e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST));
     }
+
+    /**
+     * Через сгенерированный MapStruct-класс, а не только метод: метод выбора приложения не должен
+     * применяться к остальным строковым полям (email, код из письма).
+     */
+    @Test
+    void generatedMapperTouchesOnlyTheApplicationId() {
+        final FusionauthProperties properties = new FusionauthProperties();
+        properties.setApplicationId(DEFAULT_APP);
+        properties.setAllowedApplicationIds(List.of(BACKOFFICE_APP));
+        final PasswordlessAdapterMapperImpl generated = new PasswordlessAdapterMapperImpl();
+        generated.passwordlessApiProperties = properties;
+
+        final var start = new api_specification.by.imsha.server.passwordless.adapter.server.model.StartPasswordlessLoginRequest();
+        start.setEmail("admin@imsha.by");
+        start.setApplicationId(BACKOFFICE_APP);
+        assertThat(generated.map(start).getLoginId()).isEqualTo("admin@imsha.by");
+        assertThat(generated.map(start).getApplicationId()).isEqualTo(BACKOFFICE_APP);
+
+        final var finish = new api_specification.by.imsha.server.passwordless.adapter.server.model.FinishPasswordlessLoginRequest();
+        finish.setCode("123456789");
+        assertThat(generated.map(finish).getCode()).isEqualTo("123456789");
+    }
 }

@@ -10,6 +10,7 @@ import by.imsha.rest.passwordless.handler.LoginHandler;
 import by.imsha.rest.passwordless.handler.StartHandler;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -35,6 +36,9 @@ public abstract class PasswordlessAdapterMapper {
      * @return идентификатор приложения для FusionAuth
      * @throws ResponseStatusException 400, если приложение не входит в список разрешённых
      */
+    // @Named обязателен: без него MapStruct счёл бы метод общим преобразованием String -> String
+    // и применил бы ко всем строковым полям (email, код из письма), а не только к applicationId.
+    @Named("resolveApplicationId")
     protected String resolveApplicationId(final String requested) {
         final String defaultApplicationId = passwordlessApiProperties.getApplicationId();
 
