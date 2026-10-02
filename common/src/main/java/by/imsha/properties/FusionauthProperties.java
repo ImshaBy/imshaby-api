@@ -6,6 +6,9 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Параметры для работы с fusionAuth
  */
@@ -29,6 +32,13 @@ public class FusionauthProperties {
     @NotBlank
     @Deprecated
     private String applicationId;
+
+    /**
+     * Приложения, в которые клиент вправе запросить беспарольный вход помимо {@link #applicationId}.
+     * Идентификатор из запроса вне этого списка отклоняется: эндпоинт открыт, и без списка любой
+     * мог бы запускать письма через шаблон любого приложения тенанта.
+     */
+    private List<String> allowedApplicationIds = new ArrayList<>();
 
     /**
      *  Идентификатор шаблона сообщения с кодом подтверждения
