@@ -30,3 +30,11 @@ components:
                 description: email пользователя для отправки
                 type: string
                 example: 'example@mail.com'
+              applicationId:
+                description: >-
+                  Идентификатор приложения FusionAuth, в которое запрашивается вход. От него зависит,
+                  какой шаблон письма уйдёт пользователю. Необязателен: без него используется
+                  приложение по умолчанию. Допустимы только приложения из списка разрешённых
+                  (fusionauth.allowed-application-ids), иначе 400.
+                type: string
+                example: 'adf0a804-0f48-43d9-a43c-566d377d8fcb'

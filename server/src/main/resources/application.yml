@@ -61,6 +61,13 @@ meilisearch:
 
 fusionauth:
   application-id: adf0a804-0f48-43d9-a43c-566d377d8fcb
+  # Приложения, которые клиент может указать в /api/passwordless/start помимо application-id:
+  # от приложения зависит шаблон письма со ссылкой входа. Пусто — только по умолчанию.
+  allowed-application-ids:
+    - 3c219e58-ed0e-4b18-ad48-f4f92793ae32 # FusionAuth
+    - ab7868a4-9b1b-4cde-9cc6-72fa1bbe0b0f # Imsha by
+    - 1f99412a-b65b-4acf-87f7-1dc21d93b127 # QA Imsha by
+    - e401ff8a-6d65-4dde-b0c9-db4880f1688d # backoffice
   url: https://identity.imsha.by
   security:
     apiKey:
