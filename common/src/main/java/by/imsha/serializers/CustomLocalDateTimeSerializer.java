@@ -2,9 +2,9 @@ package by.imsha.serializers;
 
 
 import by.imsha.utils.ServiceUtils;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.SerializationContext;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -20,15 +20,15 @@ import java.time.format.DateTimeFormatter;
  * @author Andrei Misan
  */
 @Component
-public class CustomLocalDateTimeSerializer extends JsonSerializer<LocalDateTime> {
+public class CustomLocalDateTimeSerializer extends ValueSerializer<LocalDateTime> {
 
     private String dateTimeFormat = "dd-MM-yyyy HH:mm:ss";
     private DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateTimeFormat);
 
 
     @Override
-    public void serialize(LocalDateTime date, JsonGenerator gen, SerializerProvider provider)
-            throws IOException{
+    public void serialize(LocalDateTime date, JsonGenerator gen, SerializationContext provider)
+            {
         ZonedDateTime timeString = ServiceUtils.localDateTimeToZoneDateTime(date, ZoneId.systemDefault(), ServiceUtils.BEL_ZONE_ID);
         gen.writeString(timeString.format(formatter));
     }

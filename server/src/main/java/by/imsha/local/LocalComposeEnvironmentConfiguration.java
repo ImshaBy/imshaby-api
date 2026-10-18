@@ -2,8 +2,8 @@ package by.imsha.local;
 
 import by.imsha.rest.passwordless.exception.PasswordlessApiException;
 import by.imsha.rest.passwordless.handler.LoginHandler;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.JWTParser;

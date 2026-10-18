@@ -4,7 +4,7 @@ import by.imsha.meilisearch.model.SearchRecord;
 import by.imsha.meilisearch.writer.exception.MeilisearchWriterException;
 import by.imsha.meilisearch.writer.feign.MeilisearchApiFeignClient;
 import by.imsha.meilisearch.writer.feign.dto.request.DeleteDocumentsByFilterRequest;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.meilisearch.sdk.Client;
 import com.meilisearch.sdk.Index;
 import com.meilisearch.sdk.exceptions.MeilisearchApiException;

@@ -2,7 +2,7 @@ package by.imsha.meilisearch.reader.config;
 
 import by.imsha.meilisearch.reader.DefaultMeilisearchReader;
 import by.imsha.meilisearch.reader.MeilisearchReader;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.meilisearch.sdk.Client;
 import com.meilisearch.sdk.Config;
 import com.meilisearch.sdk.exceptions.MeilisearchException;

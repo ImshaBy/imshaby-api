@@ -2,7 +2,7 @@ package by.imsha;
 
 import by.imsha.validation.ConstraintViolationPayloadBase64Coder;
 import by.imsha.validation.mass.UniqueMassValidatorHelper;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

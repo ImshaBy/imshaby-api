@@ -1,8 +1,8 @@
 package by.imsha.serializers;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.SerializationContext;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -15,14 +15,14 @@ import java.time.format.DateTimeFormatter;
  * @author Andrei Misan
  */
 @Component
-public class LocalTimeSerializer extends JsonSerializer<LocalTime> {
+public class LocalTimeSerializer extends ValueSerializer<LocalTime> {
 
 
     private String timeFormat = "HH:mm";
 
     @Override
-    public void serialize(LocalTime time, JsonGenerator gen, SerializerProvider provider)
-            throws IOException{
+    public void serialize(LocalTime time, JsonGenerator gen, SerializationContext provider)
+            {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(timeFormat);
         gen.writeString(time.format(formatter));
     }

@@ -3,8 +3,8 @@ package by.imsha.meilisearch.reader;
 import by.imsha.meilisearch.model.SearchRecord;
 import by.imsha.meilisearch.model.SearchResultItem;
 import by.imsha.meilisearch.reader.exception.MeilisearchReaderException;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.meilisearch.sdk.Client;
 import com.meilisearch.sdk.Index;
 import com.meilisearch.sdk.SearchRequest;
@@ -106,7 +106,7 @@ public class DefaultMeilisearchReader implements MeilisearchReader {
         } catch (MeilisearchException exception) {
             throw new MeilisearchReaderException("Failed to search. Index uid = '%s'".formatted(index.getUid()),
                     exception);
-        } catch (JsonProcessingException exception) {
+        } catch (JacksonException exception) {
             throw new MeilisearchReaderException("Failed read search response. Index uid = '%s'".formatted(index.getUid()),
                     exception);
         }

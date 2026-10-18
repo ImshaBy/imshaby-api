@@ -3,7 +3,7 @@ package by.imsha.domain.dto;
 import by.imsha.serializers.CustomLocalDateTimeSerializer;
 import by.imsha.utils.ServiceUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 import lombok.Data;
 
 import java.io.Serializable;

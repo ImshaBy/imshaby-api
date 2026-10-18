@@ -4,7 +4,7 @@ import by.imsha.domain.Mass;
 import by.imsha.utils.Constants;
 import by.imsha.utils.DateTimeProvider;
 import by.imsha.validation.ConstraintViolationPayloadBase64Coder;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import lombok.Builder;
@@ -72,7 +72,7 @@ public class MassDaysValidator implements ConstraintValidator<MassDaysValid, Mas
                             + constraintViolationPayloadBase64Coder.encode(result))
                     .addPropertyNode(DAYS_FIELD_NAME)
                     .addConstraintViolation();
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Unable to serialize error payload {}", result, e);
 
             context.buildConstraintViolationWithTemplate(context.getDefaultConstraintMessageTemplate())

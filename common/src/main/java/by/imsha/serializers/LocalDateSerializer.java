@@ -2,9 +2,9 @@ package by.imsha.serializers;
 
 
 import by.imsha.utils.Constants;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.SerializationContext;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -18,14 +18,14 @@ import java.time.format.DateTimeFormatter;
  * @author Andrei Misan
  */
 @Component
-public class LocalDateSerializer extends JsonSerializer<LocalDate> {
+public class LocalDateSerializer extends ValueSerializer<LocalDate> {
 
 
     private DateTimeFormatter formatter = DateTimeFormatter.ofPattern(Constants.DATE_FORMAT);
 
     @Override
-    public void serialize(LocalDate date, JsonGenerator gen, SerializerProvider provider)
-            throws IOException{
+    public void serialize(LocalDate date, JsonGenerator gen, SerializationContext provider)
+            {
         gen.writeString(date.format(formatter));
     }
 

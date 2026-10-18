@@ -1,16 +1,16 @@
 package by.imsha.meilisearch.serialization;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.SerializationContext;
 
 import java.io.IOException;
 import java.time.LocalDate;
 
-public class LocalDate2TimestampSerializer extends JsonSerializer<LocalDate> {
+public class LocalDate2TimestampSerializer extends ValueSerializer<LocalDate> {
 
     @Override
-    public void serialize(LocalDate localDate, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+    public void serialize(LocalDate localDate, JsonGenerator jsonGenerator, SerializationContext serializerProvider)  {
         jsonGenerator.writeNumber(localDate.toEpochDay());
     }
 }
