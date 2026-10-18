@@ -4,7 +4,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot'
     id 'io.spring.dependency-management'
-    id 'org.openapi.generator' version '7.14.0'
+    id 'org.openapi.generator' version '7.25.0'
 }
 
 group = 'by.imsha'
@@ -30,19 +30,19 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter-tomcat'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-webclient'
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
-    implementation 'org.springframework.boot:spring-boot-actuator'
-    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
-    implementation 'org.springframework.boot:spring-boot-starter-aop'
-    implementation "io.sentry:sentry-spring-boot-starter-jakarta:8.21.1"
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-security-oauth2-resource-server'
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'org.springframework:spring-aspects'
+    implementation 'io.sentry:sentry-spring-boot-4-starter:8.60.0'
     implementation "org.cache2k:cache2k-api:${cache2kVersion}"
     implementation "org.cache2k:cache2k-core:${cache2kVersion}"
     implementation "org.cache2k:cache2k-spring:${cache2kVersion}"
     implementation 'org.projectlombok:lombok'
     implementation "org.mapstruct:mapstruct:${mapstructVersion}"
-    implementation "ch.qos.logback.contrib:logback-jackson:${logbackVersion}"
     implementation "ch.qos.logback.contrib:logback-json-classic:${logbackVersion}"
     implementation "org.codehaus.janino:janino:${janinoVersion}"
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
@@ -53,16 +53,13 @@ dependencies {
     annotationProcessor "org.projectlombok:lombok-mapstruct-binding:${lombokMapstructBindingVersion}"
 
     testImplementation 'org.springframework.security:spring-security-test'
-    testImplementation 'io.rest-assured:rest-assured'
-
-    testImplementation 'org.junit.platform:junit-platform-suite'
-    testImplementation 'io.cucumber:cucumber-java:7.15.0'
-    testImplementation 'io.cucumber:cucumber-junit-platform-engine:7.15.0'
-    testImplementation 'io.cucumber:cucumber-spring:7.15.0'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-restclient'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.springframework.boot:spring-boot-starter'
     testImplementation 'org.springframework.boot:spring-boot-starter-json'
-    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:junit-jupiter:1.21.4'
     testImplementation "org.wiremock:wiremock-standalone:${wiremockVersion}"
 
     testImplementation 'org.projectlombok:lombok'
@@ -75,9 +72,9 @@ sourceSets.main.java.srcDirs += "$buildDir/openapi/generated"
 
 tasks.register('generate passwordless api adapter server', GenerateTask) {
     generatorName.set("spring")
-    inputSpec.set("$projectDir/openapi/imshaby-api/passwordless-adapter/openapi.yaml")
-    outputDir.set("$buildDir/openapi/generated")
-    ignoreFileOverride.set("$projectDir/.openapi-generator-ignore")
+    inputSpec.set(file('openapi/imshaby-api/passwordless-adapter/openapi.yaml'))
+    outputDir.set(layout.buildDirectory.dir('openapi/generated'))
+    ignoreFileOverride.set(file('.openapi-generator-ignore'))
     configOptions.set([
             library                             : "spring-boot",
             invokerPackage                      : "api_specification.by.imsha.server.passwordless.adapter.server",
@@ -96,15 +93,16 @@ tasks.register('generate passwordless api adapter server', GenerateTask) {
             generatedConstructorWithRequiredArgs: "true",
             generateConstructorWithAllArgs      : "true",
             useTags                             : "true",
-            useSpringBoot3                      : "true",
+            useSpringBoot4                      : "true",
+            useJackson3                         : "true",
     ])
 }
 
 tasks.register('generate auth server', GenerateTask) {
     generatorName.set("spring")
-    inputSpec.set("$projectDir/openapi/imshaby-api/auth/openapi.yaml")
-    outputDir.set("$buildDir/openapi/generated")
-    ignoreFileOverride.set("$projectDir/.openapi-generator-ignore")
+    inputSpec.set(file('openapi/imshaby-api/auth/openapi.yaml'))
+    outputDir.set(layout.buildDirectory.dir('openapi/generated'))
+    ignoreFileOverride.set(file('.openapi-generator-ignore'))
     configOptions.set([
             library                             : "spring-boot",
             invokerPackage                      : "api_specification.by.imsha.server.auth.server",
@@ -123,7 +121,8 @@ tasks.register('generate auth server', GenerateTask) {
             generatedConstructorWithRequiredArgs: "true",
             generateConstructorWithAllArgs      : "true",
             useTags                             : "true",
-            useSpringBoot3                      : "true",
+            useSpringBoot4                      : "true",
+            useJackson3                         : "true",
     ])
 }
 
