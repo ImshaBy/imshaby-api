@@ -36,7 +36,7 @@ public class CityService {
     }
 
     @Caching(evict = {
-            @CacheEvict(cacheNames = "cityCache", condition = "#result != null"),
+            @CacheEvict(cacheNames = "cityCache", key = "#p0"),
             @CacheEvict(cacheNames = "pendingParishes", key = "'parishCity:' + #p0"),
             @CacheEvict(cacheNames = "citiesWithParishCache", allEntries = true)
     })

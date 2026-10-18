@@ -21,6 +21,7 @@ public interface ParishRepository extends QuerableMongoRepository<Parish, String
     @Caching(evict = {
             @CacheEvict(cacheNames = "parishCache", key = "#p0.id"),
             @CacheEvict(cacheNames = "pendingParishes", key = "'parishCity:' + #p0.cityId"),
+            @CacheEvict(cacheNames = "notApprovedAndNotDisabledParishesMassCoordinates", allEntries = true),
             @CacheEvict(cacheNames = "citiesWithParishCache", allEntries = true)
     })
     Parish save(Parish parish);
@@ -29,6 +30,7 @@ public interface ParishRepository extends QuerableMongoRepository<Parish, String
     @Caching(evict = {
             @CacheEvict(cacheNames = "parishCache"),
             @CacheEvict(cacheNames = "pendingParishes", allEntries = true),
+            @CacheEvict(cacheNames = "notApprovedAndNotDisabledParishesMassCoordinates", allEntries = true),
             @CacheEvict(cacheNames = "citiesWithParishCache", allEntries = true)
     })
     void deleteParishById(String id);

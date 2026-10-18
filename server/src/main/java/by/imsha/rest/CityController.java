@@ -12,6 +12,7 @@ import by.imsha.utils.Constants;
 import by.imsha.validation.common.AvailableLocale;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -89,8 +90,8 @@ public class CityController {
 
     @GetMapping
     public ResponseEntity<Page<City>> getAllCity(
-            final @RequestParam(value = "page", defaultValue = Constants.DEFAULT_PAGE_NUM) int page,
-            final @RequestParam(value = "size", defaultValue = Constants.DEFAULT_PAGE_SIZE) int size,
+            final @Min(0) @RequestParam(value = "page", defaultValue = Constants.DEFAULT_PAGE_NUM) int page,
+            final @Min(1) @RequestParam(value = "size", defaultValue = Constants.DEFAULT_PAGE_SIZE) int size,
             final HttpServletRequest request) {
 
         logHeaders(request);

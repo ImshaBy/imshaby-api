@@ -8,6 +8,7 @@ import by.imsha.domain.dto.MassFilterValue;
 import by.imsha.domain.dto.MassInfo;
 import by.imsha.domain.dto.MassNav;
 import by.imsha.domain.dto.MassSchedule;
+import by.imsha.exception.InvalidFilterException;
 import by.imsha.meilisearch.model.SearchRecord;
 import by.imsha.repository.MassRepository;
 import by.imsha.repository.ParishRepository;
@@ -188,8 +189,12 @@ public class MassService {
             return null;
         }
         int[] offsetAndLimit = ServiceUtils.calculateOffsetAndLimit(offset, limit);
-        Condition<GeneralQueryBuilder> condition = pipeline.apply(filter, Mass.class);
-        return ServiceUtils.buildMongoQuery(sort, offsetAndLimit[0], offsetAndLimit[1], condition, mongoVisitor);
+        try {
+            Condition<GeneralQueryBuilder> condition = pipeline.apply(filter, Mass.class);
+            return ServiceUtils.buildMongoQuery(sort, offsetAndLimit[0], offsetAndLimit[1], condition, mongoVisitor);
+        } catch (RuntimeException exception) {
+            throw new InvalidFilterException(filter, exception);
+        }
     }
 
     public List<Mass> filterOutOnlyOnline(List<Mass> masses){
@@ -285,11 +290,7 @@ public class MassService {
     }
 
 
-    //TODO flush massCache by mass id
-    @Caching(evict = {
-            @CacheEvict(cacheNames = "massCache", key = "'massesByParish:' + #p0"),
-            @CacheEvict(cacheNames = "massCache", key = "'oldestMass:' + #p0")
-    })
+    @CacheEvict(cacheNames = "massCache", allEntries = true)
     public List<Mass> removeMasses(String parishId){
         return massRepository.deleteByParishId(parishId);
     }
