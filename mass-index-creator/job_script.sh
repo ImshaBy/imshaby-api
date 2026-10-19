@@ -1,1 +1,2 @@
-/usr/lib/jvm/java-21/bin/java -jar -XX:MaxRAMPercentage=85 -XX:MinRAMPercentage=85 /opt/app/app.jar
+#!/bin/sh
+exec java -XX:MaxRAMPercentage=85 -XX:MinRAMPercentage=85 -jar /opt/app/app.jar

@@ -1,16 +1,16 @@
-FROM registry.access.redhat.com/ubi8/openjdk-21 as builder
+FROM eclipse-temurin:25-jdk-noble AS builder
 
 USER root
 
-RUN microdnf install findutils
+RUN apt-get update && apt-get install -y --no-install-recommends findutils && rm -rf /var/lib/apt/lists/*
 
 ADD ./ /usr/share/sources
 
 WORKDIR /usr/share/sources
 
-RUN ./gradlew :mass-index-creator:build -x test
+RUN chmod +x ./gradlew && ./gradlew :mass-index-creator:build -x test
 
-FROM registry.access.redhat.com/ubi8/openjdk-21
+FROM eclipse-temurin:25-jdk-noble
 
 WORKDIR /opt/app
 
@@ -18,10 +18,10 @@ COPY --from=builder /usr/share/sources/mass-index-creator/build/libs/mass-index-
 
 USER root
 
-RUN groupadd --gid 1000 javauser && useradd --uid 1000 --gid 1000 -m javauser
+RUN groupadd --gid 1001 javauser && useradd --uid 1001 --gid 1001 -m javauser
 
 RUN chown -R javauser:javauser .
 
 USER javauser
 
-ENTRYPOINT ["/usr/java/openjdk-21/bin/java", "-jar", "-XX:MaxRAMPercentage=85", "-XX:MinRAMPercentage=85", "/opt/app/app.jar"]
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=85", "-XX:MinRAMPercentage=85", "-jar", "/opt/app/app.jar"]

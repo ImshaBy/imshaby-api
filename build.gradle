@@ -5,7 +5,7 @@ subprojects {
 
     plugins.withId('java') {
         java {
-            sourceCompatibility = JavaVersion.VERSION_21
+            sourceCompatibility = JavaVersion.VERSION_25
         }
         tasks.withType(JavaCompile).configureEach {
             options.encoding = 'UTF-8'
