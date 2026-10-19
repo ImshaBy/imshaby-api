@@ -1,11 +1,3 @@
-pluginManagement {
-    plugins {
-        id 'org.springframework.boot' version "${springBootVersion}"
-        id 'io.spring.dependency-management' version "${dependencyManagementPluginVersion}"
-        id "io.sentry.jvm.gradle" version "${sentryVersion}"
-    }
-}
-
 rootProject.name = 'imshaby-api'
 
 include 'server'

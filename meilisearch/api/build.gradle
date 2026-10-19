@@ -1,7 +1,7 @@
 plugins {
     id 'java-library'
-    id 'org.springframework.boot' apply false
-    id 'io.spring.dependency-management'
+    alias(libs.plugins.spring.boot) apply false
+    alias(libs.plugins.dependency.management)
 }
 
 group = 'by.imsha.meilisearch'
@@ -9,13 +9,13 @@ version = '0.0.1-SNAPSHOT'
 
 dependencyManagement {
     imports {
-        mavenBom(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+        mavenBom(libs.spring.boot.bom.get().toString())
     }
 }
 
 dependencies {
-    api 'tools.jackson.core:jackson-databind'
+    api libs.jackson.databind
 
-    implementation 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
+    implementation libs.lombok
+    annotationProcessor libs.lombok
 }

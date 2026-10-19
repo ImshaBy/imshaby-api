@@ -1,7 +1,7 @@
 plugins {
     id 'java-library'
-    id 'org.springframework.boot' apply false
-    id 'io.spring.dependency-management'
+    alias(libs.plugins.spring.boot) apply false
+    alias(libs.plugins.dependency.management)
 }
 
 group = 'by.imsha.meilisearch'
@@ -9,23 +9,23 @@ version = '0.0.1-SNAPSHOT'
 
 dependencyManagement {
     imports {
-        mavenBom(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+        mavenBom(libs.spring.boot.bom.get().toString())
     }
 }
 
 dependencies {
     api project(':meilisearch:api')
 
-    api 'jakarta.validation:jakarta.validation-api'
+    api libs.jakarta.validation
 
-    implementation 'org.springframework.boot:spring-boot-autoconfigure'
-    implementation "com.meilisearch.sdk:meilisearch-java:${meilisearchSdkVersion}"
-    implementation "org.slf4j:slf4j-api"
+    implementation libs.spring.boot.autoconfigure
+    implementation libs.meilisearch.sdk
+    implementation libs.slf4j
 
-    implementation 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
+    implementation libs.lombok
+    annotationProcessor libs.lombok
 
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.testcontainers:junit-jupiter:1.21.4'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation libs.spring.boot.starter.test
+    testImplementation libs.testcontainers.junit
+    testRuntimeOnly libs.junit.platform.launcher
 }
