@@ -10,14 +10,6 @@ plugins {
 group = 'by.imsha'
 version = '0.0.1-SNAPSHOT'
 
-java {
-    sourceCompatibility = '21'
-}
-
-repositories {
-    mavenCentral()
-}
-
 dependencyManagement {
     imports {
         mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudDependenciesVersion}"
@@ -64,13 +56,12 @@ dependencies {
 
     testImplementation 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
-
-    testImplementation 'org.mongodb:mongodb-driver-sync' //TODO хз зачем он, проверить
 }
 
-sourceSets.main.java.srcDirs += "$buildDir/openapi/generated"
+sourceSets.main.java.srcDir(layout.buildDirectory.dir('openapi/generated'))
 
 tasks.register('generate passwordless api adapter server', GenerateTask) {
+    group = 'generation'
     generatorName.set("spring")
     inputSpec.set(file('openapi/imshaby-api/passwordless-adapter/openapi.yaml'))
     outputDir.set(layout.buildDirectory.dir('openapi/generated'))
@@ -99,6 +90,7 @@ tasks.register('generate passwordless api adapter server', GenerateTask) {
 }
 
 tasks.register('generate auth server', GenerateTask) {
+    group = 'generation'
     generatorName.set("spring")
     inputSpec.set(file('openapi/imshaby-api/auth/openapi.yaml'))
     outputDir.set(layout.buildDirectory.dir('openapi/generated'))
@@ -126,21 +118,10 @@ tasks.register('generate auth server', GenerateTask) {
     ])
 }
 
-tasks.withType(GenerateTask).each { task ->
-    configure(task) {
-        if (task.name != "openApiGenerate") {
-            group = "generation"
-        }
-    }
-}
-
 tasks.register('generate all') {
     group = "generation"
-    dependsOn tasks.matching { it.group == "generation" && it.name != "generate all" }
+    dependsOn tasks.named('generate passwordless api adapter server'),
+            tasks.named('generate auth server')
 }
 
-compileJava.dependsOn 'generate all'
-
-test {
-    useJUnitPlatform()
-}
+tasks.named('compileJava') { dependsOn tasks.named('generate all') }

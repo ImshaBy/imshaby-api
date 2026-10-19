@@ -10,16 +10,7 @@ plugins {
 group = 'by.imsha'
 version = '0.0.1-SNAPSHOT'
 
-repositories {
-    mavenCentral()
-}
-
-java {
-    sourceCompatibility = '21'
-}
-
 tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
     options.compilerArgs << '-parameters'
 }
 
@@ -62,9 +53,10 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-sourceSets.main.java.srcDirs += "$buildDir/openapi/generated"
+sourceSets.main.java.srcDir(layout.buildDirectory.dir('openapi/generated'))
 
 tasks.register('generate FusionAuth Secured API Feign client', GenerateTask) {
+    group = 'generation'
     generatorName.set("spring")
     inputSpec.set(file('openapi/fusion-auth/openapi-secured.yaml'))
     outputDir.set(layout.buildDirectory.dir('openapi/generated'))
@@ -94,6 +86,7 @@ tasks.register('generate FusionAuth Secured API Feign client', GenerateTask) {
 }
 
 tasks.register('generate FusionAuth Public API Feign client', GenerateTask) {
+    group = 'generation'
     generatorName.set("spring")
     inputSpec.set(file('openapi/fusion-auth/openapi-public.yaml'))
     outputDir.set(layout.buildDirectory.dir('openapi/generated'))
@@ -123,21 +116,10 @@ tasks.register('generate FusionAuth Public API Feign client', GenerateTask) {
     ])
 }
 
-tasks.withType(GenerateTask).each { task ->
-    configure(task) {
-        if (task.name != "openApiGenerate") {
-            group = "generation"
-        }
-    }
-}
-
 tasks.register('generate all') {
     group = "generation"
-    dependsOn tasks.matching { it.group == "generation" && it.name != "generate all" }
+    dependsOn tasks.named('generate FusionAuth Secured API Feign client'),
+            tasks.named('generate FusionAuth Public API Feign client')
 }
 
-compileJava.dependsOn 'generate all'
-
-test {
-    useJUnitPlatform()
-}
+tasks.named('compileJava') { dependsOn tasks.named('generate all') }

@@ -1,1 +1,17 @@
-ext {}
+subprojects {
+    repositories {
+        mavenCentral()
+    }
+
+    plugins.withId('java') {
+        java {
+            sourceCompatibility = JavaVersion.VERSION_21
+        }
+        tasks.withType(JavaCompile).configureEach {
+            options.encoding = 'UTF-8'
+        }
+        tasks.withType(Test).configureEach {
+            useJUnitPlatform()
+        }
+    }
+}

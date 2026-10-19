@@ -7,18 +7,6 @@ plugins {
 group = 'by.imsha'
 version = '0.0.1-SNAPSHOT'
 
-java {
-    sourceCompatibility = '21'
-}
-
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
-}
-
-repositories {
-    mavenCentral()
-}
-
 dependencyManagement {
     imports {
         mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudDependenciesVersion}"
@@ -53,10 +41,4 @@ dependencies {
 
     testImplementation 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
-
-    testImplementation 'org.mongodb:mongodb-driver-sync' //TODO хз зачем он, проверить
-}
-
-test {
-    useJUnitPlatform()
 }

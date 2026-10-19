@@ -7,18 +7,6 @@ plugins {
 group = 'by.imsha.meilisearch'
 version = '0.0.1-SNAPSHOT'
 
-repositories {
-    mavenCentral()
-}
-
-java {
-    sourceCompatibility = '21'
-}
-
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
-}
-
 dependencyManagement {
     imports {
         mavenBom(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
@@ -40,8 +28,4 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.testcontainers:junit-jupiter:1.21.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-}
-
-test {
-    useJUnitPlatform()
 }
