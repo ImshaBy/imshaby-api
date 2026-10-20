@@ -118,10 +118,32 @@ tasks.register('generate auth server', GenerateTask) {
     ])
 }
 
+tasks.register('generate inactive parish map v2 server', GenerateTask) {
+    group = 'generation'
+    generatorName.set('spring')
+    inputSpec.set(file('openapi/imshaby-api/feature/parish/inactive/map/v2/openapi.yaml'))
+    outputDir.set(layout.buildDirectory.dir('openapi/generated'))
+    ignoreFileOverride.set(file('.openapi-generator-ignore'))
+    configOptions.set([
+            library: 'spring-boot',
+            invokerPackage: 'api_specification.by.imsha.server.inactive_parish_map.v2.server',
+            apiPackage: 'api_specification.by.imsha.server.inactive_parish_map.v2.server.api',
+            modelPackage: 'api_specification.by.imsha.server.inactive_parish_map.v2.server.model',
+            configPackage: 'api_specification.by.imsha.server.inactive_parish_map.v2.server.configuration',
+            basePackage: 'api_specification.by.imsha.server.inactive_parish_map.v2.server',
+            useOptional: 'true', openApiNullable: 'false', interfaceOnly: 'false',
+            sourceFolder: '', generateApiTests: 'false', generateModelTests: 'false',
+            generateBuilders: 'true', generatedConstructorWithRequiredArgs: 'true',
+            generatedConstructorWithAllArgs: 'true', useTags: 'true',
+            useSpringBoot4: 'true', useJackson3: 'true'
+    ])
+}
+
 tasks.register('generate all') {
     group = "generation"
     dependsOn tasks.named('generate passwordless api adapter server'),
-            tasks.named('generate auth server')
+            tasks.named('generate auth server'),
+            tasks.named('generate inactive parish map v2 server')
 }
 
 tasks.named('compileJava') { dependsOn tasks.named('generate all') }

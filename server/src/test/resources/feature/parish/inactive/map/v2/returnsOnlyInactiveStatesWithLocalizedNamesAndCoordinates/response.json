@@ -1,0 +1,5 @@
+[
+  {"id":"initial","geo":{"lat":53.900001525878906,"lng":27.56999969482422},"name":"Translated initial","state":"INITIAL"},
+  {"id":"pending","name":"Pending","state":"PENDING","geo":null},
+  {"id":"disabled","geo":{"lat":53.900001525878906,"lng":27.56999969482422},"name":"Disabled","state":"DISABLED"}
+]

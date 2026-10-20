@@ -136,6 +136,10 @@ public class ParishService {
         return parishRepository.findAllNotApprovedAndNotDisabled();
     }
 
+    public List<Parish> findInactiveForMap() {
+        return parishRepository.findAllExceptApproved();
+    }
+
     public Optional<Parish> findParishByKey(final String key) {
         return parishRepository.findParishByKey(key);
     }
