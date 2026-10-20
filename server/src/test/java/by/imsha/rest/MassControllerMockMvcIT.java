@@ -621,6 +621,47 @@ class MassControllerMockMvcIT {
                 .isEqualTo(json.readTree(fixture("response.json")));
     }
 
+    @Test void weekKeepsNavigationForParishWithoutMasses() throws Exception {
+        City city = cities.save(City.builder().id("city-1").name("Minsk").key("minsk").build());
+        Parish parish = new Parish();
+        parish.setId("parish-1");
+        parish.setName("St. Mary");
+        parish.setCityId(city.getId());
+        parish.setState(Parish.State.APPROVED);
+        parishes.save(parish);
+
+        MvcResult result = mvc.perform(get(URL + "/week")
+                        .param("parishId", parish.getId()).param("date", "24-06-2024")
+                        .param("online", "true").param("rorate", "true").param("massLang", "pl"))
+                .andExpect(status().isOk()).andReturn();
+        assertThat(json.readTree(result.getResponse().getContentAsString(StandardCharsets.UTF_8)))
+                .isEqualTo(json.readTree(fixture("response.json")));
+    }
+
+    @Test void indexedWeekKeepsNavigationForParishWithoutMasses() throws Exception {
+        City city = cities.save(City.builder().id("city-1").name("Minsk").key("minsk").build());
+        Parish parish = new Parish();
+        parish.setId("parish-1");
+        parish.setName("St. Mary");
+        parish.setCityId(city.getId());
+        parish.setState(Parish.State.APPROVED);
+        parishes.save(parish);
+        when(meilisearchReader.searchAllMasses(any(MassSearchFilter.class)))
+                .thenReturn(SearchResult.builder().hits(List.of()).facetDistribution(Map.of()).build());
+
+        MvcResult result = mvc.perform(get(URL + "/week-indexed")
+                        .cookie(new Cookie("cityId", city.getId()))
+                        .param("parishId", parish.getId()).param("date", "24-06-2024")
+                        .param("online", "true").param("rorate", "true").param("massLang", "pl"))
+                .andExpect(status().isOk()).andReturn();
+        assertThat(json.readTree(result.getResponse().getContentAsString(StandardCharsets.UTF_8)))
+                .isEqualTo(json.readTree(fixture("response.json")));
+        ArgumentCaptor<MassSearchFilter> filter = ArgumentCaptor.forClass(MassSearchFilter.class);
+        verify(meilisearchReader).searchAllMasses(filter.capture());
+        assertThat(filter.getValue().cityId()).isEqualTo(city.getId());
+        assertThat(filter.getValue().parishId()).isEqualTo(parish.getId());
+    }
+
     @Test void weekDefaultsToTodayAndDefaultCityWithoutCookie() throws Exception {
         City city = cities.save(City.builder().id("city-1").name("Minsk").key("minsk").build());
         Parish parish = new Parish();

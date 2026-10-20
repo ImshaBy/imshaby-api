@@ -414,10 +414,6 @@ public class MassService {
                                        String parishId, String online, String massLang,
                                        boolean rorate){
 
-        if (massSchedule.getMassesByDay() == null || massSchedule.getMassesByDay().isEmpty()) {
-            return MassNav.EMPTY_NAV;
-        }
-
         MassNav nav = new MassNav();
         Collection<Map<LocalTime, List<MassInfo>>> massInfosByTime = massSchedule.getMassesByDay().values();
 
