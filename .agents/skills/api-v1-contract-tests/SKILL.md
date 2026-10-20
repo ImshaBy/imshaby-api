@@ -1,29 +1,29 @@
 ---
 name: api-v1-contract-tests
-description: Add or extend HTTP contract tests for imshaby-api v1 controllers before Spring Boot migration. Use when covering another controller with MockMvc and preserving current API behavior.
+description: Добавлять или расширять HTTP-контрактные тесты контроллеров API v1 в imshaby-api перед миграцией Spring Boot. Применять при покрытии очередного контроллера через MockMvc с сохранением текущего поведения API.
 ---
 
-# API v1 contract tests
+# Контрактные тесты API v1
 
-Build protective tests for one requested controller at a time. Use `server/src/test/java/by/imsha/rest/CityControllerMockMvcIT.java` and `server/src/test/resources/city-mockmvc/` as examples of the test boundary and fixture layout, not as a checklist to copy mechanically.
+Добавляй защитные тесты для одного запрошенного контроллера за раз. Используй `server/src/test/java/by/imsha/rest/CityControllerMockMvcIT.java` и `server/src/test/resources/city-mockmvc/` как примеры границы теста и размещения фикстур, а не как шаблон для буквального копирования.
 
-## Establish the contract
+## Установить действующий контракт
 
-- Read the controller, DTOs, domain objects, mappers, service and persistence constraints used by its routes. Inventory annotations that affect request or response data, including custom deserializers, Jackson annotations and validation constraints.
-- Compare every route and important behavior with the relevant existing Cucumber scenarios. Preserve observed API v1 behavior; report surprising behavior or bugs explicitly instead of silently treating them as intended design.
-- Select cases that protect meaningful migration risks: success, authorization, missing resources, validation boundaries, serialization, pagination, uniqueness and state changes where applicable. Do not add permutations without a distinct contract assertion.
+- Прочитай контроллер, DTO, доменные объекты, мапперы, сервис и ограничения хранилища, которые влияют на маршруты. Учти аннотации запроса и ответа, включая десериализаторы, аннотации Jackson и ограничения валидации.
+- Сопоставь маршруты и важное поведение с существующими сценариями Cucumber. Сохраняй наблюдаемое поведение API v1; неожиданное поведение или ошибки указывай явно, а не выдавай молча за проектное решение.
+- Выбирай случаи, защищающие от существенных регрессий: успешные запросы, доступ, отсутствие ресурса, границы валидации, сериализацию, пагинацию, уникальность и смену состояния, когда это применимо. Не добавляй варианты без отдельной проверки контракта.
 
-## Test shape
+## Форма тестов
 
-- Exercise HTTP through `MockMvc` with the Spring application context and real MongoDB through Testcontainers. Route external HTTP clients to controlled local stubs. Keep tests independent by resetting database, caches and stubs; run shared-state tests sequentially.
-- Keep request and expected response JSON in `server/src/test/resources/<controller>-mockmvc/<testMethod>/`. Use unique method names; include the operation when needed to distinguish otherwise identical cases. Give each test that uses fixtures its own folder and copy a fixture when several tests use the same JSON. Use short filenames within the test folder. Tests without fixtures need no folder; an existing empty `.gitkeep` folder may remain.
-- Assert status, significant headers, full JSON structure and values, and persisted state when it matters. Read JSON as UTF-8. For generated IDs, assert type and format, then substitute the observed ID in the expected fixture.
-- Assert pagination metadata and page contents without depending on unspecified database order. When the API has no stable sort, verify the exact expected set in a single page large enough to contain it, and verify that separate page responses contain only expected records; do not assert that independent page requests form a stable partition.
-- Cover every validation and data-format annotation exercised by the controller, including accepted and rejected boundaries. Test error responses and verify failed writes did not persist partial data when relevant.
-- Keep helpers small and named for an observable contract. Prefer existing JUnit, Spring Test and AssertJ capabilities; add a dependency only when it materially improves several tests.
+- Выполняй HTTP-запросы через `MockMvc` с контекстом Spring и реальной MongoDB в Testcontainers. Внешние HTTP-клиенты направляй на контролируемые локальные заглушки. Сбрасывай базу, кэши и заглушки между тестами; тесты с общим состоянием выполняй последовательно.
+- Размещай JSON-запросы и ожидаемые ответы в `server/src/test/resources/<controller>-mockmvc/<testMethod>/`. Используй уникальные имена методов; добавляй операцию в имя, когда иначе случаи не различить. Каждому тесту с фикстурами выделяй собственную папку и копируй фикстуру, если она нужна нескольким тестам. Используй короткие имена файлов. Тесту без фикстур папка не нужна; существующая пустая папка с `.gitkeep` может остаться.
+- Проверяй статус, значимые заголовки, полную структуру и значения JSON, а также сохранённое состояние, когда это важно. Читай JSON как UTF-8. Для генерируемых ID проверяй тип и формат, затем подставляй полученный ID в ожидаемую фикстуру.
+- Проверяй метаданные пагинации и содержимое страниц без предположений о неоговорённом порядке базы. Если стабильная сортировка не задана, проверяй точный набор на одной достаточно большой странице, а для отдельных страниц — что записи принадлежат ожидаемому набору. Не утверждай, что независимые запросы страниц всегда дают стабильное разбиение.
+- Покрывай ограничения валидации и формата данных, которые использует контроллер, включая допустимые и недопустимые границы. Проверяй ответы об ошибках и отсутствие частично сохранённых данных после неуспешной записи, когда это важно.
+- Делай вспомогательные методы небольшими и называй их по наблюдаемому поведению. Предпочитай уже имеющиеся JUnit, Spring Test и AssertJ; добавляй зависимость только при существенной пользе для нескольких тестов.
 
-## Scope and verification
+## Область изменений и проверка
 
-- Add tests and test resources only unless the user explicitly requests production changes. Do not change dependencies, API v2, or remove Cucumber scenarios as part of protective coverage.
-- Follow the checkout's `AGENTS.md` and use its prescribed Testcontainers test runner. Keep local Docker and tunnel settings out of repository files. If the environment is unavailable, report it without changing production code or dependencies to accommodate the machine.
-- Run the requested controller's tests, inspect failures, and report the actual result, covered routes and remaining material gaps. Leave unrelated controllers and user files untouched.
+- Добавляй только тесты и тестовые ресурсы, если пользователь не запросил производственные изменения. В рамках одного лишь защитного покрытия не меняй зависимости, API v2 и сценарии Cucumber.
+- Следуй локальному `AGENTS.md` и запускай Testcontainers через предписанный там скрипт. Не переноси настройки Docker и туннеля в репозиторий. Если среда недоступна, сообщи об этом, не меняя ради неё производственный код или зависимости.
+- Запусти тесты запрошенного контроллера, изучи ошибки и сообщи фактический результат, покрытые маршруты и существенные пробелы. Не меняй несвязанные контроллеры и пользовательские файлы.
