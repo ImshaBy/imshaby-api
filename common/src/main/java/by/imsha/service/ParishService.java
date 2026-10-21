@@ -50,10 +50,6 @@ public class ParishService {
         return parishRepository.save(parish);
     }
 
-    public List<Parish> createParishesWithList(List<Parish> parishes){
-        return parishRepository.saveAll(parishes);
-    }
-
     public Parish getParishByUser(String userId){
         return parishRepository.findByUserId(userId);
     }

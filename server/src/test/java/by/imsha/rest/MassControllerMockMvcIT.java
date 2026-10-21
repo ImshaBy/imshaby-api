@@ -27,6 +27,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.Cache;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
@@ -549,6 +550,35 @@ class MassControllerMockMvcIT {
         assertThat(filter.getValue().dateTimeTo().toLocalDate()).isEqualTo(LocalDate.of(2024, 6, 24));
     }
 
+    @Test void mapReturnsUnapprovedParishes() throws Exception {
+        cities.save(City.builder().id("city-1").name("Minsk").key("minsk").build());
+        Parish pending = new Parish();
+        pending.setId("pending-parish");
+        pending.setName("Pending parish");
+        pending.setAddress("Church street 1");
+        pending.setImgPath("/pending.jpg");
+        pending.setCityId("city-1");
+        pending.setKey("pending-parish");
+        pending.setState(Parish.State.PENDING);
+        parishes.save(pending);
+        for (Parish.State state : List.of(Parish.State.APPROVED, Parish.State.DISABLED)) {
+            Parish excluded = new Parish();
+            excluded.setId(state.name().toLowerCase());
+            excluded.setName(state.name());
+            excluded.setCityId("city-1");
+            excluded.setKey(state.name().toLowerCase());
+            excluded.setState(state);
+            parishes.save(excluded);
+        }
+        when(meilisearchReader.searchNearestMasses(any(MassSearchFilter.class)))
+                .thenReturn(SearchResult.builder().hits(List.of()).facetDistribution(Map.of()).build());
+        MvcResult result = mvc.perform(get(URL + "/map")
+                        .param("dateTimeFrom", "2024-06-24T00:00:00+03:00"))
+                .andExpect(status().isOk()).andReturn();
+        assertThat(json.readTree(result.getResponse().getContentAsString(StandardCharsets.UTF_8)))
+                .isEqualTo(json.readTree(fixture("response.json")));
+    }
+
     @Test void mapRequiresDateTimeFrom() throws Exception {
         MvcResult result = mvc.perform(get(URL + "/map")).andExpect(status().isBadRequest()).andReturn();
         assertThat(json.readTree(result.getResponse().getContentAsString(StandardCharsets.UTF_8)))
@@ -562,7 +592,7 @@ class MassControllerMockMvcIT {
                 .isEqualTo(json.readTree(fixture("response.json")));
     }
 
-    @Test void mapPassesExplicitEndAndAllParishes() throws Exception {
+    @Test void mapPassesExplicitEndAndReturnsUnapprovedParish() throws Exception {
         Parish pending = new Parish();
         pending.setName("Pending");
         pending.setCityId("city-1");
@@ -570,18 +600,17 @@ class MassControllerMockMvcIT {
         pending = parishes.save(pending);
         when(meilisearchReader.searchNearestMasses(any(MassSearchFilter.class)))
                 .thenReturn(SearchResult.builder().hits(List.of()).facetDistribution(Map.of()).build());
-        JsonNode result = json.readTree(mvc.perform(get(URL + "/map").param("dateTimeFrom", "2024-06-24T00:00:00+03:00")
-                        .param("dateTimeTo", "2024-06-25T12:00:00+03:00")
-                        .param("allParishes", "true"))
-                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8));
+        MvcResult result = mvc.perform(get(URL + "/map").param("dateTimeFrom", "2024-06-24T00:00:00+03:00")
+                        .param("dateTimeTo", "2024-06-25T12:00:00+03:00"))
+                .andExpect(status().isOk()).andReturn();
         ArgumentCaptor<MassSearchFilter> filter = ArgumentCaptor.forClass(MassSearchFilter.class);
         verify(meilisearchReader).searchNearestMasses(filter.capture());
         assertThat(filter.getValue().dateTimeTo()).isEqualTo(OffsetDateTime.parse("2024-06-25T12:00:00+03:00"));
-        assertThat(result.path("massCoordinates").size()).isEqualTo(1);
-        assertThat(result.path("massCoordinates").get(0).path("parish").path("id").asText()).isEqualTo(pending.getId());
+        assertThat(json.readTree(result.getResponse().getContentAsString(StandardCharsets.UTF_8)))
+                .isEqualTo(json.readTree(fixture("response.json").replace("${id}", pending.getId())));
     }
 
-    @Test void mapAllParishesRefreshesPendingCoordinatesAfterStateChange() throws Exception {
+    @Test void mapUnapprovedParishesCacheRefreshesAfterStateChange() throws Exception {
         Parish pending = new Parish();
         pending.setName("Pending");
         pending.setCityId("city-1");
@@ -591,25 +620,57 @@ class MassControllerMockMvcIT {
                 .thenReturn(SearchResult.builder().hits(List.of()).facetDistribution(Map.of()).build());
         String path = URL + "/map";
         String date = "2024-06-24T00:00:00+03:00";
-        JsonNode initial = json.readTree(mvc.perform(get(path).param("dateTimeFrom", date)
-                        .param("allParishes", "true"))
+        JsonNode initial = json.readTree(mvc.perform(get(path).param("dateTimeFrom", date).param("lang", "be"))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8));
-        assertThat(initial.path("massCoordinates").size()).isEqualTo(1);
-        assertThat(initial.path("massCoordinates").get(0).path("parish").path("id").asText())
-                .isEqualTo(pending.getId());
+        assertThat(initial).isEqualTo(json.readTree(fixture("initial-response.json").replace("${id}", pending.getId())));
+        Cache cache = caches.getCache("unapprovedParishes");
+        assertThat(cache).isNotNull();
+        Object cachedList = cache.get("be").get();
+        assertThat(cachedList).isInstanceOf(List.class);
+        JsonNode repeated = json.readTree(mvc.perform(get(path).param("dateTimeFrom", date).param("lang", "be"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8));
+        assertThat(repeated).isEqualTo(initial);
+        assertThat(cache.get("be").get()).isSameAs(cachedList);
         mvc.perform(put("/api/parish/{id}/state", pending.getId()).header("X-Api-Key", KEY)
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("state-request.json")))
                 .andExpect(status().isOk());
         assertThat(parishes.findById(pending.getId()).orElseThrow().getState())
                 .isEqualTo(Parish.State.APPROVED);
-        JsonNode after = json.readTree(mvc.perform(get(path).param("dateTimeFrom", date)
-                        .param("allParishes", "true"))
+        assertThat(cache.get("be")).isNull();
+        JsonNode after = json.readTree(mvc.perform(get(path).param("dateTimeFrom", date).param("lang", "be"))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8));
-        assertThat(after.path("massCoordinates").size()).isZero();
-        JsonNode excluded = json.readTree(mvc.perform(get(path).param("dateTimeFrom", date)
-                        .param("allParishes", "false"))
-                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8));
-        assertThat(excluded).isEqualTo(json.readTree(fixture("without-pending-response.json")));
+        assertThat(after).isEqualTo(json.readTree(fixture("after-response.json")));
+        assertThat(cache.get("be").get()).isInstanceOf(List.class);
+    }
+
+    @Test void mapUnapprovedParishesCacheRefreshesAfterSaveAndDelete() throws Exception {
+        when(meilisearchReader.searchNearestMasses(any(MassSearchFilter.class)))
+                .thenReturn(SearchResult.builder().hits(List.of()).facetDistribution(Map.of()).build());
+        String date = "2024-06-24T00:00:00+03:00";
+        MvcResult empty = mvc.perform(get(URL + "/map").param("dateTimeFrom", date).param("lang", "be"))
+                .andExpect(status().isOk()).andReturn();
+        assertThat(json.readTree(empty.getResponse().getContentAsString(StandardCharsets.UTF_8)))
+                .isEqualTo(json.readTree(fixture("empty-response.json")));
+        assertThat(caches.getCache("unapprovedParishes").get("be")).isNotNull();
+
+        Parish pending = new Parish();
+        pending.setId("saved-pending");
+        pending.setName("Saved pending");
+        pending.setCityId("city-1");
+        pending.setState(Parish.State.PENDING);
+        parishes.save(pending);
+        assertThat(caches.getCache("unapprovedParishes").get("be")).isNull();
+        MvcResult added = mvc.perform(get(URL + "/map").param("dateTimeFrom", date).param("lang", "be"))
+                .andExpect(status().isOk()).andReturn();
+        assertThat(json.readTree(added.getResponse().getContentAsString(StandardCharsets.UTF_8)))
+                .isEqualTo(json.readTree(fixture("added-response.json")));
+
+        parishes.deleteParishById(pending.getId());
+        assertThat(caches.getCache("unapprovedParishes").get("be")).isNull();
+        MvcResult deleted = mvc.perform(get(URL + "/map").param("dateTimeFrom", date).param("lang", "be"))
+                .andExpect(status().isOk()).andReturn();
+        assertThat(json.readTree(deleted.getResponse().getContentAsString(StandardCharsets.UTF_8)))
+                .isEqualTo(json.readTree(fixture("empty-response.json")));
     }
 
     @Test void weekReturnsEmptyScheduleForUnknownParish() throws Exception {

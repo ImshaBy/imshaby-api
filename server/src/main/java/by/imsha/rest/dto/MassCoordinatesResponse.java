@@ -5,7 +5,8 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.OffsetDateTime;
 import java.util.List;
 
-public record MassCoordinatesResponse(List<MassCoordinate> massCoordinates) {
+public record MassCoordinatesResponse(List<MassCoordinate> massCoordinates,
+                                      List<UnapprovedParish> unapprovedParishes) {
 
     public record MassCoordinate(@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
                                  OffsetDateTime massDateTime,
@@ -16,5 +17,9 @@ public record MassCoordinatesResponse(List<MassCoordinate> massCoordinates) {
     }
 
     public record Geo(Double lat, Double lng) {
+    }
+
+    public record UnapprovedParish(String address, String cityName, String imgPath,
+                                   String name, String id, Boolean volunteerNeeded) {
     }
 }

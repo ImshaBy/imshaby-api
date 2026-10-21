@@ -5,8 +5,13 @@ import by.imsha.meilisearch.reader.SearchResult;
 import by.imsha.rest.dto.MassCoordinatesResponse;
 import by.imsha.rest.dto.MassCoordinatesResponse.MassCoordinate;
 import by.imsha.rest.dto.MassCoordinatesResponse.Parish;
+import by.imsha.rest.dto.MassCoordinatesResponse.UnapprovedParish;
+import by.imsha.service.CityService;
+import by.imsha.service.VolunteerService;
+import by.imsha.utils.LocalizedUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -14,33 +19,56 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
+import static by.imsha.utils.LocalizedUtils.getLocalizedParishAddress;
+import static by.imsha.utils.LocalizedUtils.getLocalizedParishName;
+
 @Mapper(componentModel = "spring")
-public interface MassCoordinatesMapper {
+public abstract class MassCoordinatesMapper {
 
     //TODO всюду используется зона +3 (нужно хорошо всё обдумать и отрефакторить)
-    ZoneOffset BEL_ZONE_OFFSET = ZoneOffset.ofHours(3);
+    protected static final ZoneOffset BEL_ZONE_OFFSET = ZoneOffset.ofHours(3);
 
-    default MassCoordinatesResponse map(SearchResult searchResult, List<MassCoordinate> notApprovedAndNotDisabledParishesMassCoordinates) {
-        List<MassCoordinate> massCoordinates = new ArrayList<>(notApprovedAndNotDisabledParishesMassCoordinates);
+    @Autowired
+    private VolunteerService volunteerService;
 
-        massCoordinates.addAll(mapSearchResultItems(searchResult.hits()));
+    @Autowired
+    private CityService cityService;
 
-        return new MassCoordinatesResponse(massCoordinates);
+    public MassCoordinatesResponse map(SearchResult searchResult,
+                                       List<UnapprovedParish> unapprovedParishes) {
+
+        return new MassCoordinatesResponse(
+                mapSearchResultItems(searchResult.hits()),
+                unapprovedParishes
+        );
     }
 
-    List<MassCoordinate> mapSearchResultItems(List<SearchResultItem> searchResultItems);
+    public List<UnapprovedParish> mapUnapprovedParishes(List<by.imsha.domain.Parish> parishes, String locale) {
+        return parishes.stream().map(parish -> mapToUnapprovedParish(parish, locale)).toList();
+    }
+
+    private UnapprovedParish mapToUnapprovedParish(by.imsha.domain.Parish parish, String locale) {
+        String cityName = cityService.retrieveCity(parish.getCityId())
+                .map(city -> LocalizedUtils.getLocalizedCityName(city, locale))
+                .orElse(null);
+        return new UnapprovedParish(getLocalizedParishAddress(parish, locale), cityName, parish.getImgPath(),
+                getLocalizedParishName(parish, locale), parish.getId(),
+                volunteerService.volunteerNeededByParishName(parish.getKey(), true));
+    }
+
+    public abstract List<MassCoordinate> mapSearchResultItems(List<SearchResultItem> searchResultItems);
 
     @Mapping(target = "massDateTime", source = "dateTime")
     @Mapping(target = "parish", source = ".")
-    MassCoordinate map(SearchResultItem searchResultItem);
+    public abstract MassCoordinate map(SearchResultItem searchResultItem);
 
     @Mapping(target = "id", source = "parish.id")
     @Mapping(target = "geo", source = "geo")
     @Mapping(target = "actual", source = "parish.actual")
     @Mapping(target = "state", source = "parish.state")
-    Parish mapToParish(SearchResultItem searchResultItem);
+    public abstract Parish mapToParish(SearchResultItem searchResultItem);
 
-    default OffsetDateTime map(LocalDateTime localDateTime) {
+    public OffsetDateTime map(LocalDateTime localDateTime) {
         if (localDateTime == null) {
             return null;
         }
@@ -48,16 +76,16 @@ public interface MassCoordinatesMapper {
         return OffsetDateTime.of(localDateTime, BEL_ZONE_OFFSET);
     }
 
-    List<MassCoordinate> map(List<by.imsha.domain.Parish> parishes);
+    public abstract List<MassCoordinate> map(List<by.imsha.domain.Parish> parishes);
 
     @Mapping(target = "massDateTime", ignore = true)
     @Mapping(target = "parish", source = ".")
-    MassCoordinate map(by.imsha.domain.Parish parish);
+    public abstract MassCoordinate map(by.imsha.domain.Parish parish);
 
     @Mapping(target = "id", source = "id")
     @Mapping(target = "actual", expression = "java(!parish.isNeedUpdate())")
     @Mapping(target = "state", source = "state")
     @Mapping(target = "geo.lng", source = "gps.longitude")
     @Mapping(target = "geo.lat", source = "gps.latitude")
-    Parish mapToParish(by.imsha.domain.Parish parish);
+    public abstract Parish mapToParish(by.imsha.domain.Parish parish);
 }
