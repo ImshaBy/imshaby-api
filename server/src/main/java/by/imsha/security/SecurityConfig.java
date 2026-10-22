@@ -42,13 +42,13 @@ public class SecurityConfig {
 
     private static final String PRODUCTION_PROFILE = "prod";
     private static final String QA_PROFILE = "qa";
-    private static final String LOCAL_PROFILE = "local";
+    private static final String LOCAL_FUSIONAUTH_PROFILE = "local-fusionauth";
 
     /**
-     * Включаем работу с аннотациями только для профилей prod и qa
+     * Включаем работу с аннотациями для профилей с реальной авторизацией
      */
     @Configuration
-    @Profile(value = {PRODUCTION_PROFILE, QA_PROFILE, LOCAL_PROFILE})
+    @Profile(value = {PRODUCTION_PROFILE, QA_PROFILE, LOCAL_FUSIONAUTH_PROFILE})
     @EnableMethodSecurity(prePostEnabled = true, securedEnabled = true)
     public static class SecurityAnnotationsEnableConfiguration {
     }
@@ -79,8 +79,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        //защищаем только на prod и qa
-        if (environment.acceptsProfiles(Profiles.of(PRODUCTION_PROFILE, QA_PROFILE, LOCAL_PROFILE))) {
+        //защищаем запросы в профилях с реальной авторизацией
+        if (environment.acceptsProfiles(Profiles.of(PRODUCTION_PROFILE, QA_PROFILE, LOCAL_FUSIONAUTH_PROFILE))) {
             BearerTokenAuthenticationEntryPoint bearerEntryPoint = new BearerTokenAuthenticationEntryPoint();
             AuthenticationEntryPoint contractEntryPoint = (request, response, exception) -> {
                 bearerEntryPoint.commence(request, response, exception);
