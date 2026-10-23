@@ -5,6 +5,7 @@ import by.imsha.meilisearch.reader.SearchResult;
 import by.imsha.rest.dto.MassCoordinatesResponse;
 import by.imsha.rest.dto.MassCoordinatesResponse.MassCoordinate;
 import by.imsha.rest.dto.MassCoordinatesResponse.Parish;
+import by.imsha.rest.dto.MassCoordinatesResponse.Geo;
 import by.imsha.rest.dto.MassCoordinatesResponse.UnapprovedParish;
 import by.imsha.service.CityService;
 import by.imsha.service.VolunteerService;
@@ -53,8 +54,13 @@ public abstract class MassCoordinatesMapper {
                 .orElse(null);
         return new UnapprovedParish(getLocalizedParishAddress(parish, locale), cityName, parish.getImgPath(),
                 getLocalizedParishName(parish, locale), parish.getId(),
-                volunteerService.volunteerNeededByParishName(parish.getKey(), true));
+                volunteerService.volunteerNeededByParishName(parish.getKey(), true),
+                mapGeo(parish.getGps()), parish.getState().name());
     }
+
+    @Mapping(target = "lat", source = "latitude")
+    @Mapping(target = "lng", source = "longitude")
+    public abstract Geo mapGeo(by.imsha.domain.Coordinate coordinate);
 
     public abstract List<MassCoordinate> mapSearchResultItems(List<SearchResultItem> searchResultItems);
 

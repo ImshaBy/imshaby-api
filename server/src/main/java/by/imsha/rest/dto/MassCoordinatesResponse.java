@@ -20,6 +20,6 @@ public record MassCoordinatesResponse(List<MassCoordinate> massCoordinates,
     }
 
     public record UnapprovedParish(String address, String cityName, String imgPath,
-                                   String name, String id, Boolean volunteerNeeded) {
+                                   String name, String id, Boolean volunteerNeeded, Geo geo, String state) {
     }
 }

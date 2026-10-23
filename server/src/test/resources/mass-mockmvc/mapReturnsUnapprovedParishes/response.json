@@ -1,1 +1,1 @@
-{"massCoordinates":[],"unapprovedParishes":[{"address":"Church street 1","cityName":"Minsk","imgPath":"/pending.jpg","name":"Pending parish","id":"pending-parish","volunteerNeeded":false}]}
+{"massCoordinates":[],"unapprovedParishes":[{"address":"Church street 1","cityName":"Minsk","imgPath":"/pending.jpg","name":"Pending parish","id":"pending-parish","volunteerNeeded":false,"geo":{"lat":53.5,"lng":27.25},"state":"PENDING"}]}

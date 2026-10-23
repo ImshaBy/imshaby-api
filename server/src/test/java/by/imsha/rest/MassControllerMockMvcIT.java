@@ -557,6 +557,7 @@ class MassControllerMockMvcIT {
         pending.setName("Pending parish");
         pending.setAddress("Church street 1");
         pending.setImgPath("/pending.jpg");
+        pending.setGps(new by.imsha.domain.Coordinate(53.5f, 27.25f));
         pending.setCityId("city-1");
         pending.setKey("pending-parish");
         pending.setState(Parish.State.PENDING);
