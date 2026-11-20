@@ -1,9 +1,9 @@
 {{- if .Values.workloads }}
 {{- range $wName, $w := .Values.workloads }}
 {{- if ($w.ingress | default dict).enabled }}
----
 {{- $fullName := include "workload.fullname" (dict "ctx" $ "name" $wName) -}}
 {{- $svcPort := ($w.service | default dict).port | default (($.Values.service | default dict).port) | default 80 -}}
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

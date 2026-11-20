@@ -133,6 +133,13 @@ workloads:
       enabled: true
       port: 80
       targetPort: 8080
+    secrets:
+      enabled: true
+      existingSecret: api-prod
+    readinessProbe:
+      tcpSocket:
+        port: http
+      periodSeconds: 5
     resources:
       requests:
         memory: "640Mi"
@@ -143,14 +150,15 @@ workloads:
     ingress:
       enabled: true
       className: "nginx"
-      annotations:
-        nginx.ingress.kubernetes.io/rewrite-target: /
       hosts:
         - host: "api.imsha.by"
           paths:
             - path: /
               pathType: Prefix
-      tls: []
+      tls:
+        - hosts:
+            - api.imsha.by
+          secretName: api-imsha-by-tls
   multisearch:
     image:
       repository: "cr.yandex/crp8o64j2cl644b4pjki/imshaby-mass-index-creator-prod"
@@ -160,6 +168,9 @@ workloads:
       enabled: true
       port: 80
       targetPort: 7700
+    secrets:
+      enabled: true
+      existingSecret: meilisearch-prod
     resources:
       requests:
         memory: "128Mi"
