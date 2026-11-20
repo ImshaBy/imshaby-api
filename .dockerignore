@@ -4,3 +4,5 @@
 **/build
 **/*.log
 **/node_modules
+!server/build/libs/server-0.0.1-SNAPSHOT.jar
+!mass-index-creator/build/libs/mass-index-creator-0.0.1-SNAPSHOT.jar
