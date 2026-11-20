@@ -1,7 +1,7 @@
 package by.imsha.domain.dto;
 
 import by.imsha.serializers.TrimStringDeserializer;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 
 

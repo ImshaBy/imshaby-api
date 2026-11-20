@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/openjdk-21
+FROM eclipse-temurin:25-jdk-noble
 
 WORKDIR /opt/app
 
@@ -12,4 +12,4 @@ RUN chown -R javauser:javauser .
 
 USER javauser
 
-ENTRYPOINT ["/usr/lib/jvm/java-21/bin/java", "-jar", "-XX:MaxRAMPercentage=85", "-XX:MinRAMPercentage=85", "/opt/app/app.jar"]
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=85", "-XX:MinRAMPercentage=85", "-jar", "/opt/app/app.jar"]

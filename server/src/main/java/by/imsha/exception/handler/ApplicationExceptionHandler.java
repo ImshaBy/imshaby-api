@@ -1,6 +1,7 @@
 package by.imsha.exception.handler;
 
 import by.imsha.exception.InvalidDateIntervalException;
+import by.imsha.exception.InvalidFilterException;
 import by.imsha.exception.ResourceNotFoundException;
 import by.imsha.exception.model.ErrorResponse;
 import by.imsha.exception.model.RequestInfo;
@@ -19,8 +20,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
-import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.CollectionUtils;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -92,6 +93,12 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
 
         return handleExceptionInternal(exception, new FieldErrorsWrapper(errors), new HttpHeaders(),
                 HttpStatus.BAD_REQUEST, webRequest);
+    }
+
+    @ExceptionHandler(InvalidFilterException.class)
+    protected ResponseEntity<Object> handleInvalidFilterException(final InvalidFilterException exception,
+                                                                  final WebRequest webRequest) {
+        return handleExceptionInternal(exception, null, new HttpHeaders(), HttpStatus.BAD_REQUEST, webRequest);
     }
 
     @Override

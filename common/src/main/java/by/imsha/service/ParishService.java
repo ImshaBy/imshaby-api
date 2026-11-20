@@ -5,6 +5,7 @@ import by.imsha.domain.LocalizedParish;
 import by.imsha.domain.Parish;
 import by.imsha.domain.dto.ParishInfo;
 import by.imsha.domain.dto.mapper.ParishInfoMapper;
+import by.imsha.exception.InvalidFilterException;
 import by.imsha.repository.ParishRepository;
 import by.imsha.repository.projection.ParishExpirationInfo;
 import by.imsha.utils.ServiceUtils;
@@ -49,10 +50,6 @@ public class ParishService {
         return parishRepository.save(parish);
     }
 
-    public List<Parish> createParishesWithList(List<Parish> parishes){
-        return parishRepository.saveAll(parishes);
-    }
-
     public Parish getParishByUser(String userId){
         return parishRepository.findByUserId(userId);
     }
@@ -75,8 +72,13 @@ public class ParishService {
         }
 
         int[] offsetAndLimit = ServiceUtils.calculateOffsetAndLimit(offset, limit);
-        Condition<GeneralQueryBuilder> condition = pipeline.apply(filter, Parish.class);
-        Query query = ServiceUtils.buildMongoQuery(sort, offsetAndLimit[0], offsetAndLimit[1], condition, mongoVisitor);
+        Query query;
+        try {
+            Condition<GeneralQueryBuilder> condition = pipeline.apply(filter, Parish.class);
+            query = ServiceUtils.buildMongoQuery(sort, offsetAndLimit[0], offsetAndLimit[1], condition, mongoVisitor);
+        } catch (RuntimeException exception) {
+            throw new InvalidFilterException(filter, exception);
+        }
         List<Parish> parishes = this.parishRepository.search(query, Parish.class);
         return parishes;
     }
@@ -128,6 +130,10 @@ public class ParishService {
 
     public List<Parish> findAllNotApprovedAndNotDisabled() {
         return parishRepository.findAllNotApprovedAndNotDisabled();
+    }
+
+    public List<Parish> findInactiveForMap() {
+        return parishRepository.findAllExceptApproved();
     }
 
     public Optional<Parish> findParishByKey(final String key) {

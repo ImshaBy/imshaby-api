@@ -1,7 +1,7 @@
 package by.imsha.repository.projection;
 
 import by.imsha.serializers.CustomLocalDateTimeSerializer;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 import lombok.Data;
 
 import java.time.LocalDateTime;

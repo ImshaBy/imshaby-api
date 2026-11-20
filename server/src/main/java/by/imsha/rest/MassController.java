@@ -2,12 +2,7 @@ package by.imsha.rest;
 
 import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
-import by.imsha.domain.dto.MassDay;
-import by.imsha.domain.dto.MassNav;
-import by.imsha.domain.dto.MassSchedule;
-import by.imsha.domain.dto.UpdateEntitiesInfo;
-import by.imsha.domain.dto.UpdateEntityInfo;
-import by.imsha.domain.dto.UpdateMassInfo;
+import by.imsha.domain.dto.*;
 import by.imsha.domain.dto.mapper.MassInfoMapper;
 import by.imsha.exception.InvalidDateIntervalException;
 import by.imsha.exception.ResourceNotFoundException;
@@ -18,42 +13,26 @@ import by.imsha.meilisearch.reader.MeilisearchReader;
 import by.imsha.meilisearch.reader.SearchResult;
 import by.imsha.properties.ImshaProperties;
 import by.imsha.rest.dto.MassCoordinatesResponse;
+import by.imsha.rest.dto.MassCoordinatesResponse.UnapprovedParish;
 import by.imsha.service.DefaultCityService;
-import by.imsha.service.MassCoordinatesService;
 import by.imsha.service.MassService;
 import by.imsha.service.ParishService;
 import by.imsha.service.ScheduleFactory;
 import by.imsha.utils.DateTimeProvider;
+import by.imsha.utils.UserLocaleHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.time.*;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
@@ -100,7 +79,8 @@ public class MassController {
     MassCoordinatesMapper massCoordinatesResponseMapper;
 
     @Autowired
-    MassCoordinatesService massCoordinatesService;
+    @Lazy
+    MassController self;
 
     @PostMapping
     public ResponseEntity<Mass> createMass(@RequestBody final Mass mass) {
@@ -227,10 +207,7 @@ public class MassController {
                                                        OffsetDateTime dateTimeFrom,
                                                        @RequestParam(value = "dateTimeTo", required = false)
                                                        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-                                                       OffsetDateTime dateTimeTo,
-                                                       @RequestParam(value = "allParishes", required = false,
-                                                               defaultValue = "false")
-                                                       boolean allParishes
+                                                       OffsetDateTime dateTimeTo
     ) {
 
         if (dateTimeTo == null) {
@@ -248,9 +225,15 @@ public class MassController {
                                 .dateTimeFrom(dateTimeFrom)
                                 .dateTimeTo(dateTimeTo)
                                 .build()),
-                        allParishes ? massCoordinatesService.getNotApprovedAndNotDisabledParishesMassCoordinates() : List.of()
+                        self.getUnapprovedParishes(UserLocaleHolder.getUserLocale().orElse(""))
                 )
         );
+    }
+
+    @Cacheable(cacheNames = "unapprovedParishes", key = "#locale", sync = true)
+    public List<UnapprovedParish> getUnapprovedParishes(String locale) {
+        return massCoordinatesResponseMapper.mapUnapprovedParishes(
+                parishService.findAllNotApprovedAndNotDisabled(), locale);
     }
 
     @GetMapping("/week-indexed")

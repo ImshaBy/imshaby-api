@@ -15,13 +15,15 @@ springdoc:
     enabled: true
 
 spring:
+  mongodb:
+    uri: "mongodb://localhost:27017/imshaby"
   data:
     mongodb:
-      uri: "mongodb://localhost:27017/imshaby"
       auto-index-creation: true
   jackson:
-    serialization:
-      WRITE_DATES_AS_TIMESTAMPS: true
+    datatype:
+      datetime:
+        write-dates-as-timestamps: true
   web:
     locale: "be_BY"
   security:

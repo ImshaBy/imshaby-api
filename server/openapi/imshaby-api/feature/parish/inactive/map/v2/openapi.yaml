@@ -1,0 +1,44 @@
+openapi: 3.0.3
+info:
+  title: Inactive parish map API v2
+  version: '2'
+paths:
+  /api/v2/parishes/inactive/map:
+    get:
+      tags: [InactiveParishMap]
+      operationId: getInactiveParishesForMap
+      summary: Inactive parishes for map markers
+      responses:
+        '200':
+          description: Parishes in every state except the active APPROVED state
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InactiveParishMapItem'
+components:
+  schemas:
+    InactiveParishMapItem:
+      type: object
+      required: [id, name, state]
+      properties:
+        id:
+          type: string
+        geo:
+          $ref: '#/components/schemas/InactiveParishMapGeo'
+        name:
+          type: string
+        state:
+          type: string
+          description: Parish state; every current and future state other than APPROVED may appear
+    InactiveParishMapGeo:
+      type: object
+      required: [lat, lng]
+      properties:
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double

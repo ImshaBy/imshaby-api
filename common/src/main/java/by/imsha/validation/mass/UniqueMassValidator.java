@@ -7,7 +7,7 @@ import by.imsha.validation.ConstraintViolationPayloadBase64Coder;
 import by.imsha.validation.mass.UniqueMassValidatorHelper.CommonPeriodCalculator;
 import by.imsha.validation.mass.UniqueMassValidatorHelper.MassPeriodType;
 import by.imsha.validation.mass.UniqueMassValidatorHelper.Period;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import lombok.Builder;
@@ -142,7 +142,7 @@ public class UniqueMassValidator implements ConstraintValidator<UniqueMass, Mass
                             + constraintViolationPayloadBase64Coder.encode(result))
                     .addPropertyNode(TIME_FIELD_NAME)
                     .addConstraintViolation();
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Unable to serialize error payload {}", result, e);
 
             context.buildConstraintViolationWithTemplate(context.getDefaultConstraintMessageTemplate())

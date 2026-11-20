@@ -10,13 +10,16 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.cors.CorsConfiguration;
@@ -39,14 +42,14 @@ public class SecurityConfig {
 
     private static final String PRODUCTION_PROFILE = "prod";
     private static final String QA_PROFILE = "qa";
-    private static final String LOCAL_PROFILE = "local";
+    private static final String LOCAL_FUSIONAUTH_PROFILE = "local-fusionauth";
 
     /**
-     * Включаем работу с аннотациями только для профилей prod и qa
+     * Включаем работу с аннотациями для профилей с реальной авторизацией
      */
     @Configuration
-    @Profile(value = {PRODUCTION_PROFILE, QA_PROFILE, LOCAL_PROFILE})
-    @EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
+    @Profile(value = {PRODUCTION_PROFILE, QA_PROFILE, LOCAL_FUSIONAUTH_PROFILE})
+    @EnableMethodSecurity(prePostEnabled = true, securedEnabled = true)
     public static class SecurityAnnotationsEnableConfiguration {
     }
 
@@ -76,8 +79,17 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        //защищаем только на prod и qa
-        if (environment.acceptsProfiles(Profiles.of(PRODUCTION_PROFILE, QA_PROFILE, LOCAL_PROFILE))) {
+        //защищаем запросы в профилях с реальной авторизацией
+        if (environment.acceptsProfiles(Profiles.of(PRODUCTION_PROFILE, QA_PROFILE, LOCAL_FUSIONAUTH_PROFILE))) {
+            BearerTokenAuthenticationEntryPoint bearerEntryPoint = new BearerTokenAuthenticationEntryPoint();
+            AuthenticationEntryPoint contractEntryPoint = (request, response, exception) -> {
+                bearerEntryPoint.commence(request, response, exception);
+                String challenge = response.getHeader(HttpHeaders.WWW_AUTHENTICATE);
+                if (challenge != null) {
+                    response.setHeader(HttpHeaders.WWW_AUTHENTICATE,
+                            challenge.replaceFirst("(?:, )? ?resource_metadata=\"[^\"]*\"", ""));
+                }
+            };
             http.authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
                             //ping controller
                             .requestMatchers(HttpMethod.GET, "/").permitAll()
@@ -85,6 +97,7 @@ public class SecurityConfig {
                             .requestMatchers(HttpMethod.POST, "/api/passwordless/login").permitAll()
                             .requestMatchers(HttpMethod.GET, "/api/mass/week").permitAll()
                             .requestMatchers(HttpMethod.GET, "/api/mass/map").permitAll()
+                            .requestMatchers(HttpMethod.GET, "/api/v2/parishes/inactive/map").permitAll()
                             .requestMatchers(HttpMethod.GET, "/api/mass/week-indexed").permitAll()
                             .requestMatchers(HttpMethod.GET, "/api/mass/parish-week").permitAll()
                             .requestMatchers(HttpMethod.GET, "/api/parish/*/state").permitAll()
@@ -94,9 +107,10 @@ public class SecurityConfig {
                             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/v3/api-docs.yaml").permitAll()
                             .anyRequest().authenticated()
                     )
-                    .oauth2ResourceServer(oauth2ResourceServer ->
-                            oauth2ResourceServer.jwt(Customizer.withDefaults())
-                    );
+                    .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(contractEntryPoint))
+                    .oauth2ResourceServer(oauth2ResourceServer -> oauth2ResourceServer
+                            .authenticationEntryPoint(contractEntryPoint)
+                            .jwt(Customizer.withDefaults()));
 
 
             //при наличии API ключей добавляем фильтр для работы с ними

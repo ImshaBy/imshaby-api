@@ -1,0 +1,1 @@
+{"timestamp":"${timestamp}","requestInfo":{"method":"POST","uri":"/api/mass","pathInfo":"/api/mass","query":null},"errors":[{"field":"days","code":"MASS.009","payload":null,"message":"should be empty for single mass"}]}

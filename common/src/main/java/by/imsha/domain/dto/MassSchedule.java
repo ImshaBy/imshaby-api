@@ -4,7 +4,7 @@ import by.imsha.domain.Mass;
 import by.imsha.domain.dto.mapper.MassInfoMapper;
 import by.imsha.serializers.LocalDateSerializer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 import lombok.Getter;
 import lombok.Setter;
 

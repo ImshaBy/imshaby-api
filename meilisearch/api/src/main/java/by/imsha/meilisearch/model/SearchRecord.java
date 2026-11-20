@@ -2,7 +2,7 @@ package by.imsha.meilisearch.model;
 
 import by.imsha.meilisearch.serialization.LocalDateTime2TimestampSerializer;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 import lombok.Builder;
 import lombok.experimental.UtilityClass;
 

@@ -1,13 +1,18 @@
-FROM openjdk:21-jdk
+FROM eclipse-temurin:25-jdk-noble
 
 WORKDIR /opt/app
 
-COPY ./mass-index-creator/build/libs/mass-index-creator-0.0.1-SNAPSHOT.jar app.jar
+USER root
 
-RUN groupadd --gid 1000 javauser && useradd --uid 1000 --gid 1000 -m javauser
+COPY ./mass-index-creator/build/libs/mass-index-creator-0.0.1-SNAPSHOT.jar app.jar
+COPY ./mass-index-creator/job_script.sh script.sh
+COPY ./mass-index-creator/periodic_script.sh periodic_script.sh
+
+RUN groupadd --gid 1001 javauser && useradd --uid 1001 --gid 1001 -m javauser
 
 RUN chown -R javauser:javauser .
+RUN chmod +x /opt/app/script.sh /opt/app/periodic_script.sh
 
 USER javauser
 
-ENTRYPOINT ["/usr/java/openjdk-21/bin/java", "-jar", "-XX:MaxRAMPercentage=85", "-XX:MinRAMPercentage=85", "/opt/app/app.jar"]
+ENTRYPOINT ["/opt/app/periodic_script.sh"]

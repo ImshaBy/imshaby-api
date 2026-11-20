@@ -2,10 +2,10 @@ package by.imsha.serializers;
 
 
 import by.imsha.utils.Constants;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ValueDeserializer;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -19,13 +19,13 @@ import java.time.format.DateTimeFormatter;
  * @author Andrei Misan
  */
 @Component
-public class LocalDateDeserializer extends JsonDeserializer<LocalDate> {
+public class LocalDateDeserializer extends ValueDeserializer<LocalDate> {
 
 
     private DateTimeFormatter formatter = DateTimeFormatter.ofPattern(Constants.DATE_FORMAT);
 
     @Override
-    public LocalDate deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+    public LocalDate deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)  {
         return LocalDate.parse(jsonParser.getValueAsString(), formatter);
     }
 

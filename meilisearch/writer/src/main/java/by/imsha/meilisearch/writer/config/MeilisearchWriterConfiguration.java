@@ -4,7 +4,7 @@ import by.imsha.meilisearch.model.SearchRecord;
 import by.imsha.meilisearch.writer.DefaultMeilisearchWriter;
 import by.imsha.meilisearch.writer.MeilisearchWriter;
 import by.imsha.meilisearch.writer.feign.MeilisearchApiFeignClient;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.meilisearch.sdk.Client;
 import com.meilisearch.sdk.Config;
 import com.meilisearch.sdk.model.Faceting;

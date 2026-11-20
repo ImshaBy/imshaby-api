@@ -1,16 +1,16 @@
 package by.imsha.meilisearch.serialization;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ValueDeserializer;
 
 import java.io.IOException;
 import java.time.LocalTime;
 
-public class Seconds2LocalTimeDeserializer extends JsonDeserializer<LocalTime> {
+public class Seconds2LocalTimeDeserializer extends ValueDeserializer<LocalTime> {
 
     @Override
-    public LocalTime deserialize(final JsonParser jsonParser, final DeserializationContext ctxt) throws IOException {
+    public LocalTime deserialize(final JsonParser jsonParser, final DeserializationContext ctxt)  {
         return LocalTime.ofSecondOfDay(jsonParser.getIntValue());
     }
 }

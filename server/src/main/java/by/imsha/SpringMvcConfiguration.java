@@ -12,8 +12,7 @@ public class SpringMvcConfiguration {
 
     @Bean
     public LocaleResolver localeResolver(WebProperties webProperties, ImshaProperties imshaProperties) {
-        CookieLocaleResolver cookieLocaleResolver = new CookieLocaleResolver();
-        cookieLocaleResolver.setCookieName(imshaProperties.getLangCookie());
+        CookieLocaleResolver cookieLocaleResolver = new CookieLocaleResolver(imshaProperties.getLangCookie());
         cookieLocaleResolver.setDefaultLocale(webProperties.getLocale());
         return cookieLocaleResolver;
     }

@@ -9,7 +9,6 @@ import org.springframework.data.mongodb.repository.support.MongoRepositoryFactor
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.RepositoryMetadata;
-import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 
 import java.io.Serializable;
 
@@ -25,7 +24,7 @@ public class QuerableMongoRepositoryFactoryBean<T extends Repository<S, ID>, S, 
     }
 
     @Override
-    protected RepositoryFactorySupport getFactoryInstance(MongoOperations operations) {
+    protected MongoRepositoryFactory getFactoryInstance(MongoOperations operations) {
         return new QuerableMongoRepositoryFactory<S, ID>(operations);
     }
 
