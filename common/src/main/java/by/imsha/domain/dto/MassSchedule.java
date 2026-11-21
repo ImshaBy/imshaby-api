@@ -11,12 +11,12 @@ import lombok.Setter;
 import java.io.Serializable;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 
 /**
  * @author Alena Misan
@@ -62,9 +62,32 @@ public class MassSchedule implements Serializable {
     @Deprecated(forRemoval = true)
     private Map<WeekDayTimeKey, List<Mass>> weekMasses;
 
-    @Getter
     @JsonIgnore
-    private Map<DayOfWeek, Map<LocalTime, List<MassInfo>>> massesByDay;
+    private final Map<DayOfWeek, Map<LocalTime, List<MassInfo>>> massesByDay;
+
+    private final Map<LocalDate, Map<LocalTime, List<MassInfo>>> occurrencesByDate = new HashMap<>();
+
+    @JsonIgnore
+    public Map<DayOfWeek, Map<LocalTime, List<MassInfo>>> getMassesByDay() {
+        if (occurrencesByDate.isEmpty()) {
+            return massesByDay;
+        }
+        Map<DayOfWeek, Map<LocalTime, List<MassInfo>>> combined = new HashMap<>();
+        massesByDay.forEach((day, hours) -> mergeHours(combined.computeIfAbsent(day, key -> new HashMap<>()), hours));
+        occurrencesByDate.forEach((date, hours) ->
+                mergeHours(combined.computeIfAbsent(date.getDayOfWeek(), key -> new HashMap<>()), hours));
+        return combined;
+    }
+
+    public void populateOccurrence(MassInfo mass, LocalDateTime occurrence) {
+        occurrencesByDate.computeIfAbsent(occurrence.toLocalDate(), date -> new HashMap<>())
+                .computeIfAbsent(occurrence.toLocalTime(), time -> new ArrayList<>())
+                .add(mass);
+    }
+
+    private static void mergeHours(Map<LocalTime, List<MassInfo>> target, Map<LocalTime, List<MassInfo>> source) {
+        source.forEach((time, masses) -> target.computeIfAbsent(time, key -> new ArrayList<>()).addAll(masses));
+    }
 
     public void populateContainers(Mass mass, DayOfWeek dayOfWeek, LocalTime time) {
         populateContainers(massInfoMapper.toMassInfo(mass), dayOfWeek, time);
@@ -100,44 +123,25 @@ public class MassSchedule implements Serializable {
         int counter = 0;
 
         while (counter < days) {
-            Map<LocalTime, List<MassInfo>> massHours = getMassesByDay().get(startDate.getDayOfWeek());
-
-            if (massHours != null && massHours.size() > 0) {
-                final MassDay massDay = new MassDay(startDate);
-                massDay.setMassHours(new ArrayList<>(massHours.size()));
-
-                if (onlyValidMasses) {
-                    //
-                    massHours.forEach((time, massInfos) ->
-                            massDay.getMassHours().add(new MassDay.MassHour(time, massInfos)));
-                } else {
-
-                    for (Map.Entry<LocalTime, List<MassInfo>> massHourEntry : massHours.entrySet()) {
-                        LocalTime hour = massHourEntry.getKey();
-                        List<MassInfo> data = massHourEntry.getValue();
-                        LocalDate date = massDay.getDate();
-                        Predicate<MassInfo> massInfoPredicate = massInfo ->
-                        {
-                            boolean result = false;
-                            if (massInfo.getStartDate() != null) {
-                                result = massInfo.getStartDate().isAfter(date);
-                            }
-                            if (massInfo.getEndDate() != null && !result) {
-                                result = massInfo.getEndDate().isBefore(date);
-                            }
-                            return result;
-                        };
-                        data.removeIf(massInfoPredicate);
-                        if (data.size() > 0) {
-                            MassDay.MassHour massHour = new MassDay.MassHour(hour, data);
-                            massDay.getMassHours().add(massHour);
-                        }
-                    }
-                }
-                if (massDay.getMassHours().size() > 0) {
-                    massDay.getMassHours().sort((h1, h2) -> h1.getHour().compareTo(h2.getHour()));
-                    schedule.add(massDay);
-                }
+            final LocalDate date = startDate;
+            Map<LocalTime, List<MassInfo>> legacyHours = massesByDay.getOrDefault(date.getDayOfWeek(), Map.of());
+            if (!onlyValidMasses) {
+                legacyHours.values().forEach(masses -> masses.removeIf(mass ->
+                        (mass.getStartDate() != null && mass.getStartDate().isAfter(date))
+                                || (mass.getEndDate() != null && mass.getEndDate().isBefore(date))));
+            }
+            Map<LocalTime, List<MassInfo>> hours = new HashMap<>();
+            mergeHours(hours, legacyHours);
+            mergeHours(hours, occurrencesByDate.getOrDefault(date, Map.of()));
+            List<MassDay.MassHour> massHours = hours.entrySet().stream()
+                    .filter(entry -> !entry.getValue().isEmpty())
+                    .sorted(Map.Entry.comparingByKey())
+                    .map(entry -> new MassDay.MassHour(entry.getKey(), entry.getValue()))
+                    .toList();
+            if (!massHours.isEmpty()) {
+                MassDay massDay = new MassDay(date);
+                massDay.setMassHours(massHours);
+                schedule.add(massDay);
             }
 
             startDate = startDate.plusDays(1);

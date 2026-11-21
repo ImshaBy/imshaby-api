@@ -37,12 +37,8 @@ public class MassIndexService {
         final LocalDate today = dateTimeProvider.today();
         // вчера (-1 день)
         final LocalDate startDate = today.minusDays(1);
-        // вчера + 6 дней недели
-        final LocalDate endDate = startDate.plusDays(6);
-
-        // ещё 2 дня, чтобы охватить текущую неделю +-1день
-        final LocalDate additionalStartDate = endDate.plusDays(1);
-        final LocalDate additionalEndDate = additionalStartDate.plusDays(1);
+        final LocalDate additionalStartDate = startDate.plusDays(7);
+        final LocalDate endExclusive = additionalStartDate.plusDays(2);
 
         for (City city : cityService.getAllCities()) {
             List<Mass> masses = massService.getMassByCity(city.getId());
@@ -53,13 +49,13 @@ public class MassIndexService {
                         .filter(mass -> !pendingParishIds.contains(mass.getParishId()))
                         .toList();
             }
-            MassSchedule massHolder = scheduleFactory.build(masses, startDate, endDate);
+            MassSchedule massHolder = scheduleFactory.build(masses, startDate, additionalStartDate);
             massHolder.createSchedule(7);
             List<MassDay> massDays = massHolder.getSchedule();
 
             appendMassDaysToSearchRecords(searchRecords, massDays, city);
 
-            massHolder = scheduleFactory.build(masses, additionalStartDate, additionalEndDate);
+            massHolder = scheduleFactory.build(masses, additionalStartDate, endExclusive);
             massHolder.createSchedule(2);
             massDays = massHolder.getSchedule();
 

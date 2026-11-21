@@ -11,6 +11,7 @@ import by.imsha.validation.mass.MassGroups.Duplicate;
 import by.imsha.validation.mass.MassGroups.Periodic;
 import by.imsha.validation.mass.MassGroups.Single;
 import by.imsha.validation.mass.UniqueMass;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import tools.jackson.databind.annotation.JsonDeserialize;
 import tools.jackson.databind.annotation.JsonSerialize;
 import jakarta.validation.constraints.NotEmpty;
@@ -103,6 +104,13 @@ public class Mass {
     @JsonSerialize(using = LocalDateSerializer.class)
     private LocalDate endDate;
 
+    // The original fields above remain the v1 and index projection.
+    @JsonIgnore
+    private CalendarDescription calendar;
+
+    public record CalendarDescription(String dtstart, String rrule) {
+    }
+
     public Mass(String langCode, String cityId, long duration, String parishId, String time, long start, int[] days,
                 LocalDate startDate, LocalDate endDate, Boolean online, Boolean rorate, String notes, boolean deleted,
                 Map<String, LocalizedMass> localizedInfo) {
@@ -121,12 +129,14 @@ public class Mass {
         this.rorate = rorate;
         this.notes = notes;
         this.deleted = deleted;
-        this.localizedInfo = new HashMap<>(localizedInfo);
+        this.localizedInfo = localizedInfo == null ? null : new HashMap<>(localizedInfo);
     }
 
     public Mass(Mass mass) {
-        this(mass.langCode, mass.cityId, mass.duration, mass.parishId, mass.time, mass.singleStartTimestamp, mass.days,
+        this(mass.langCode, mass.cityId, mass.duration == null ? 0 : mass.duration, mass.parishId,
+                mass.time, mass.singleStartTimestamp, mass.days,
                 mass.startDate, mass.endDate, mass.online, mass.rorate, mass.notes, mass.deleted, mass.localizedInfo);
+        this.duration = mass.duration;
     }
 
     public boolean isPeriodic() {

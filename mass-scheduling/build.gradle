@@ -1,0 +1,36 @@
+plugins {
+    id 'java-library'
+}
+
+// This module has only the JDK on its production classpath.
+def checkPackageBoundaries = tasks.register('checkPackageBoundaries') {
+    dependsOn tasks.named('classes')
+    inputs.files(sourceSets.main.output.classesDirs)
+    doLast {
+        def dependencies = providers.exec {
+            def bin = new File(System.getProperty('java.home'), 'bin')
+            def windowsExecutable = new File(bin, 'jdeps.exe')
+            commandLine windowsExecutable.isFile() ? windowsExecutable : new File(bin, 'jdeps'),
+                    '-verbose:class', '-filter:none'
+            args sourceSets.main.output.classesDirs.files
+        }.standardOutput.asText.get()
+        def forbidden = dependencies.readLines().findAll { line ->
+            def edge = line.trim().split(/\s+/)
+            if (edge.size() < 3 || edge[1] != '->') {
+                return false
+            }
+            def domain = 'by.imsha.mass.scheduling.domain.'
+            def application = 'by.imsha.mass.scheduling.application.'
+            if (edge[0].startsWith(domain)) {
+                return !edge[2].startsWith('java.') && !edge[2].startsWith(domain)
+            }
+            edge[0].startsWith(application) && !edge[2].startsWith('java.') &&
+                    !edge[2].startsWith(domain) && !edge[2].startsWith(application)
+        }
+        if (forbidden) {
+            throw new GradleException("Forbidden mass scheduling dependencies:\n" + forbidden.join('\n'))
+        }
+    }
+}
+
+tasks.named('check') { dependsOn checkPackageBoundaries }

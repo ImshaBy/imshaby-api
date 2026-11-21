@@ -15,3 +15,9 @@ subprojects {
         }
     }
 }
+
+configure([project(':common'), project(':server'), project(':mass-index-creator')]) {
+    plugins.withId('java') {
+        tasks.named('check') { dependsOn ':mass-scheduling:checkPackageBoundaries' }
+    }
+}

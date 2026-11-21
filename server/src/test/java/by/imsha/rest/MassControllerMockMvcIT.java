@@ -12,6 +12,8 @@ import by.imsha.meilisearch.reader.SearchResult;
 import by.imsha.meilisearch.reader.MassSearchFilter;
 import by.imsha.meilisearch.model.SearchResultItem;
 import by.imsha.meilisearch.model.Geo;
+import org.bson.Document;
+import org.bson.types.ObjectId;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -29,6 +31,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.Cache;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -78,6 +81,7 @@ class MassControllerMockMvcIT {
     }
     @Autowired MockMvc mvc;
     @Autowired MassRepository masses;
+    @Autowired MongoTemplate mongo;
     @Autowired ParishRepository parishes;
     @Autowired CityRepository cities;
     @Autowired CacheManager caches;
@@ -94,6 +98,24 @@ class MassControllerMockMvcIT {
     }
     private String fixture(String name) throws Exception {
         return new ClassPathResource(directory + name).getContentAsString(StandardCharsets.UTF_8);
+    }
+
+    private Document storedMass(String id) {
+        return mongo.getCollection(mongo.getCollectionName(Mass.class))
+                .find(new Document("_id", new ObjectId(id))).first();
+    }
+
+    private void assertCalendar(String id, String dtstart, String rrule) {
+        assertThat(storedMass(id).get("calendar", Document.class))
+                .containsEntry("dtstart", dtstart)
+                .containsEntry("rrule", rrule);
+    }
+
+    private void assertReadMatchesCreation(String id, JsonNode created) throws Exception {
+        MvcResult result = mvc.perform(get(URL + "/" + id).header("X-Api-Key", KEY))
+                .andExpect(status().isOk()).andReturn();
+        assertThat(json.readTree(result.getResponse().getContentAsString(StandardCharsets.UTF_8)))
+                .isEqualTo(created);
     }
     private Mass saved(String parishId) {
         Mass mass = new Mass();
@@ -144,6 +166,99 @@ class MassControllerMockMvcIT {
                 .replace("${id}", id)
                 .replace("${lastModifiedDate}", checkedModified(body))));
         assertThat(masses.findById(id).orElseThrow().getDays()).containsExactly(1);
+        assertCalendar(id, "DTSTART;TZID=Europe/Minsk:00010101T080000", "FREQ=WEEKLY;BYDAY=MO");
+        assertReadMatchesCreation(id, body);
+    }
+
+    @Test void createBoundedWeeklyMassKeepsOriginalDatesAndDayOrder() throws Exception {
+        String request = new ClassPathResource(
+                "feature/mass/schedule/v1/createBoundedWeeklyMassKeepsOriginalDatesAndDayOrder/request.json")
+                .getContentAsString(StandardCharsets.UTF_8);
+        MvcResult result = mvc.perform(post(URL).header("X-Api-Key", KEY)
+                        .contentType(MediaType.APPLICATION_JSON).content(request))
+                .andExpect(status().isCreated()).andReturn();
+        JsonNode body = json.readTree(result.getResponse().getContentAsString(StandardCharsets.UTF_8));
+        String id = body.path("id").asText();
+
+        assertThat(body.path("startDate").asText()).isEqualTo("01/01/2025");
+        assertThat(body.path("endDate").asText()).isEqualTo("01/10/2025");
+        Mass stored = masses.findById(id).orElseThrow();
+        assertThat(stored.getStartDate()).isEqualTo(LocalDate.of(2025, 1, 1));
+        assertThat(stored.getEndDate()).isEqualTo(LocalDate.of(2025, 1, 10));
+        assertThat(stored.getDays()).containsExactly(5, 1);
+        assertThat(stored.getDuration()).isEqualTo(2700L);
+        assertCalendar(id, "DTSTART;TZID=Europe/Minsk:20250103T080000",
+                "FREQ=WEEKLY;BYDAY=MO,FR;UNTIL=20250110T050000Z");
+        assertReadMatchesCreation(id, body);
+    }
+
+    @Test void storedRuleControlsV1AndWeeklyCalendarWhenLegacyFieldsDisagree() throws Exception {
+        Parish parish = new Parish();
+        parish.setName("St. Mary");
+        parish.setCityId("city-1");
+        parish.setState(Parish.State.APPROVED);
+        parish = parishes.save(parish);
+        Mass mass = saved(parish.getId());
+        mass.setDays(new int[]{1, 5, 3});
+        mass.setStartDate(LocalDate.of(2024, 5, 1));
+        mass.setEndDate(LocalDate.of(2024, 5, 31));
+        mass.setCalendar(new Mass.CalendarDescription("DTSTART;TZID=Europe/Minsk:20240626T113000",
+                "FREQ=WEEKLY;BYDAY=WE,FR;UNTIL=20240628T083000Z"));
+        masses.save(mass);
+
+        JsonNode detail = json.readTree(mvc.perform(get(URL + "/" + mass.getId()).header("X-Api-Key", KEY))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(detail.path("time").asText()).isEqualTo("11:30");
+        assertThat(detail.path("days")).isEqualTo(json.readTree("[5,3]"));
+        assertThat(detail.path("startDate").asText()).isEqualTo("05/01/2024");
+        assertThat(detail.path("endDate").asText()).isEqualTo("05/31/2024");
+        JsonNode filtered = json.readTree(mvc.perform(get(URL).header("X-Api-Key", KEY)
+                        .param("filter", "parishId==" + parish.getId()))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(filtered.size()).isEqualTo(1);
+        assertThat(filtered.get(0)).isEqualTo(detail);
+
+        JsonNode week = weekForParish(parish.getId(), "24-06-2024");
+        assertThat(week.size()).isEqualTo(2);
+        assertThat(week.get(0).path("date").asText()).isEqualTo("06/26/2024");
+        assertThat(week.get(1).path("date").asText()).isEqualTo("06/28/2024");
+        for (JsonNode day : week) {
+            JsonNode hours = day.path("massHours");
+            assertThat(hours.size()).isEqualTo(1);
+            assertThat(hours.get(0).path("hour").asText()).isEqualTo("11:30");
+            assertThat(hours.get(0).path("data").get(0).path("id").asText()).isEqualTo(mass.getId());
+        }
+        assertThat(weekForParish(parish.getId(), "17-06-2024").isEmpty()).isTrue();
+        assertThat(weekForParish(parish.getId(), "01-07-2024").isEmpty()).isTrue();
+    }
+
+    @Test void storedSingleRuleUsesItsTimestampAcrossTheLocalDateBoundary() throws Exception {
+        Parish parish = new Parish();
+        parish.setName("St. Mary");
+        parish.setCityId("city-1");
+        parish.setState(Parish.State.APPROVED);
+        parish = parishes.save(parish);
+        Mass mass = saved(parish.getId());
+        mass.setCalendar(new Mass.CalendarDescription("DTSTART:20240624T223000Z",
+                "FREQ=DAILY;UNTIL=20240624T223000Z"));
+        masses.save(mass);
+
+        JsonNode detail = json.readTree(mvc.perform(get(URL + "/" + mass.getId()).header("X-Api-Key", KEY))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(detail.path("singleStartTimestamp").asLong())
+                .isEqualTo(java.time.Instant.parse("2024-06-24T22:30:00Z").getEpochSecond());
+        assertThat(detail.path("periodic").asBoolean()).isFalse();
+        assertThat(detail.path("time").isNull()).isTrue();
+        JsonNode week = weekForParish(parish.getId(), "24-06-2024");
+        assertThat(week.size()).isEqualTo(1);
+        assertThat(week.get(0).path("date").asText()).isEqualTo("06/25/2024");
+        assertThat(week.get(0).path("massHours").get(0).path("hour").asText()).isEqualTo("01:30");
+    }
+
+    private JsonNode weekForParish(String parishId, String date) throws Exception {
+        MvcResult result = mvc.perform(get(URL + "/week").param("parishId", parishId).param("date", date))
+                .andExpect(status().isOk()).andReturn();
+        return json.readTree(result.getResponse().getContentAsString()).path("schedule");
     }
 
     @Test void missingCityIsRejectedWithoutWrite() throws Exception {
@@ -155,6 +270,7 @@ class MassControllerMockMvcIT {
 
     @Test void getExistingAndMissingMass() throws Exception {
         Mass mass = saved("parish-1");
+        assertThat(storedMass(mass.getId())).doesNotContainKey("calendar");
         JsonNode body = json.readTree(mvc.perform(get(URL + "/" + mass.getId()).header("X-Api-Key", KEY))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
         assertThat(body.path("id").asText()).isEqualTo(mass.getId());
@@ -171,6 +287,7 @@ class MassControllerMockMvcIT {
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isOk()).andReturn(), mass.getId());
         assertThat(masses.findById(mass.getId()).orElseThrow().getTime()).isEqualTo("09:00");
+        assertCalendar(mass.getId(), "DTSTART;TZID=Europe/Minsk:00010101T090000", "FREQ=WEEKLY;BYDAY=MO");
     }
 
     @Test void refreshMassChangesOnlyProvidedField() throws Exception {
@@ -182,6 +299,7 @@ class MassControllerMockMvcIT {
         assertThat(updated.getTime()).isEqualTo("09:00");
         assertThat(updated.getCityId()).isEqualTo("city-1");
         assertThat(updated.getParishId()).isEqualTo("parish-1");
+        assertCalendar(mass.getId(), "DTSTART;TZID=Europe/Minsk:00010101T090000", "FREQ=WEEKLY;BYDAY=MO");
     }
 
     @Test void deleteMassRemovesIt() throws Exception {
@@ -289,6 +407,8 @@ class MassControllerMockMvcIT {
         Mass stored = masses.findById(id).orElseThrow();
         assertThat(stored.getSingleStartTimestamp()).isEqualTo(1_700_000_000L);
         assertThat(stored.getTime()).isNull();
+        assertCalendar(id, "DTSTART:20231114T221320Z", "FREQ=DAILY;UNTIL=20231114T221320Z");
+        assertReadMatchesCreation(id, body);
     }
 
     @Test void singleMassRejectsTime() throws Exception {
@@ -428,6 +548,10 @@ class MassControllerMockMvcIT {
         assertThat(after.getEndDate()).isEqualTo(LocalDate.of(2025, 1, 31));
         assertThat(before.getDays()).containsExactly(1);
         assertThat(after.getDays()).containsExactly(1);
+        assertCalendar(original.getId(), "DTSTART;TZID=Europe/Minsk:20250106T080000",
+                "FREQ=WEEKLY;BYDAY=MO;UNTIL=20250107T050000Z");
+        assertCalendar(createdId, "DTSTART;TZID=Europe/Minsk:20250120T080000",
+                "FREQ=WEEKLY;BYDAY=MO;UNTIL=20250131T050000Z");
     }
 
     @Test void removeStartOfPeriodicMassKeepsOriginalId() throws Exception {
@@ -900,14 +1024,19 @@ class MassControllerMockMvcIT {
         parish.setCityId("city-1");
         parish.setState(Parish.State.APPROVED);
         parish = parishes.save(parish);
-        Mass mass = saved(parish.getId());
+        String request = new ClassPathResource("feature/mass/schedule/v1/weekReturnsApprovedParishMass/request.json")
+                .getContentAsString(StandardCharsets.UTF_8).replace("${parishId}", parish.getId());
+        MvcResult creation = mvc.perform(post(URL).header("X-Api-Key", KEY)
+                        .contentType(MediaType.APPLICATION_JSON).content(request))
+                .andExpect(status().isCreated()).andReturn();
+        String massId = json.readTree(creation.getResponse().getContentAsString()).path("id").asText();
         MvcResult result = mvc.perform(get(URL + "/week")
                         .param("parishId", parish.getId()).param("date", "24-06-2024"))
                 .andExpect(status().isOk()).andReturn();
         JsonNode body = json.readTree(result.getResponse().getContentAsString(StandardCharsets.UTF_8));
         assertThat(body).isEqualTo(json.readTree(fixture("response.json")
                 .replace("${parishId}", parish.getId())
-                .replace("${massId}", mass.getId())
+                .replace("${massId}", massId)
                 .replace("${lastModifiedDate}", checkedModified(body.path("schedule").get(0).path("massHours").get(0).path("data").get(0)))));
     }
 
