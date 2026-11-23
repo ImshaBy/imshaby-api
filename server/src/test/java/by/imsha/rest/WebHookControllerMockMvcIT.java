@@ -1,7 +1,6 @@
 package by.imsha.rest;
 
 import by.imsha.Application;
-import by.imsha.domain.EntityWebhook;
 import by.imsha.repository.EntityWebhookRepository;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -30,6 +29,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -56,9 +56,11 @@ class WebHookControllerMockMvcIT {
     @Autowired EntityWebhookRepository hooks;
     @Autowired CacheManager caches;
     @Autowired ObjectMapper json;
+    private V1TestApi api;
     private String directory;
     @BeforeEach void isolate(TestInfo info) {
         directory = "webhook-mockmvc/" + info.getTestMethod().orElseThrow().getName() + "/";
+        api = new V1TestApi(mvc, json);
         hooks.deleteAll();
         caches.getCacheNames().forEach(name -> caches.getCache(name).clear());
         IDENTITY.resetAll();
@@ -66,8 +68,12 @@ class WebHookControllerMockMvcIT {
     private String fixture(String name) throws Exception {
         return new ClassPathResource(directory + name).getContentAsString(StandardCharsets.UTF_8);
     }
-    private EntityWebhook saved(String type) {
-        return hooks.save(EntityWebhook.builder().type(type).key("minsk").url("https://example.org/callback").build());
+    private String saved(String type) throws Exception {
+        return saved(type, "minsk");
+    }
+
+    private String saved(String type, String key) throws Exception {
+        return api.create("/hook/" + type, Map.of("key", key, "url", "https://example.org/callback"), status().isOk());
     }
     private void assertJson(MvcResult result, String id) throws Exception {
         assertThat(result.getResponse().getContentType()).startsWith(MediaType.APPLICATION_JSON_VALUE);
@@ -80,7 +86,7 @@ class WebHookControllerMockMvcIT {
         String id = json.readTree(result.getResponse().getContentAsString()).path("id").asText();
         assertThat(id).matches("[0-9a-f]{24}");
         assertJson(result, id);
-        assertThat(hooks.findById(id).orElseThrow().getType()).isEqualTo("city");
+        assertThat(api.getEntity("/hook", id).path("type").asText()).isEqualTo("city");
     }
     @Test void createParish() throws Exception {
         MvcResult result = mvc.perform(post("/hook/parish").header("X-Api-Key", "TEST_API_KEY")
@@ -88,28 +94,28 @@ class WebHookControllerMockMvcIT {
         String id = json.readTree(result.getResponse().getContentAsString()).path("id").asText();
         assertThat(id).matches("[0-9a-f]{24}");
         assertJson(result, id);
-        assertThat(hooks.findById(id).orElseThrow().getType()).isEqualTo("parish");
+        assertThat(api.getEntity("/hook", id).path("type").asText()).isEqualTo("parish");
     }
     @Test void getHook() throws Exception {
-        EntityWebhook hook = saved("city");
-        assertJson(mvc.perform(get("/hook/" + hook.getId()).header("X-Api-Key", "TEST_API_KEY"))
-                .andExpect(status().isOk()).andReturn(), hook.getId());
+        String hook = saved("city");
+        assertJson(mvc.perform(get("/hook/" + hook).header("X-Api-Key", "TEST_API_KEY"))
+                .andExpect(status().isOk()).andReturn(), hook);
     }
     @Test void listHooks() throws Exception {
-        EntityWebhook hook = saved("city");
+        String hook = saved("city");
         assertJson(mvc.perform(get("/hook").param("page", "0").param("size", "1").header("X-Api-Key", "TEST_API_KEY"))
-                .andExpect(status().isOk()).andReturn(), hook.getId());
+                .andExpect(status().isOk()).andReturn(), hook);
     }
     @Test void deleteHook() throws Exception {
-        EntityWebhook hook = saved("city");
-        MvcResult cached = mvc.perform(get("/hook/" + hook.getId()).header("X-Api-Key", "TEST_API_KEY"))
+        String hook = saved("city");
+        MvcResult cached = mvc.perform(get("/hook/" + hook).header("X-Api-Key", "TEST_API_KEY"))
                 .andExpect(status().isOk()).andReturn();
         assertThat(json.readTree(cached.getResponse().getContentAsString(StandardCharsets.UTF_8)))
-                .isEqualTo(json.readTree(fixture("get-response.json").replace("${id}", hook.getId())));
-        assertJson(mvc.perform(delete("/hook/" + hook.getId()).header("X-Api-Key", "TEST_API_KEY"))
-                .andExpect(status().isOk()).andReturn(), hook.getId());
-        assertThat(hooks.findById(hook.getId())).isEmpty();
-        mvc.perform(get("/hook/" + hook.getId()).header("X-Api-Key", "TEST_API_KEY"))
+                .isEqualTo(json.readTree(fixture("get-response.json").replace("${id}", hook)));
+        assertJson(mvc.perform(delete("/hook/" + hook).header("X-Api-Key", "TEST_API_KEY"))
+                .andExpect(status().isOk()).andReturn(), hook);
+        api.expectMissing("/hook", hook);
+        mvc.perform(get("/hook/" + hook).header("X-Api-Key", "TEST_API_KEY"))
                 .andExpect(status().isNotFound());
     }
 
@@ -117,14 +123,14 @@ class WebHookControllerMockMvcIT {
         mvc.perform(post("/hook/city").header("X-Api-Key", "TEST_API_KEY")
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isBadRequest());
-        assertThat(hooks.count()).isZero();
+        assertThat(api.page("/hook").path("totalElements").asInt()).isZero();
     }
 
     @Test void missingUrlIsRejected() throws Exception {
         mvc.perform(post("/hook/parish").header("X-Api-Key", "TEST_API_KEY")
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isBadRequest());
-        assertThat(hooks.count()).isZero();
+        assertThat(api.page("/hook").path("totalElements").asInt()).isZero();
     }
 
     @Test void emptyKeyAndUrlAreAccepted() throws Exception {
@@ -133,16 +139,20 @@ class WebHookControllerMockMvcIT {
                 .andExpect(status().isOk()).andReturn();
         String id = json.readTree(result.getResponse().getContentAsString()).path("id").asText();
         assertThat(id).matches("[0-9a-f]{24}");
-        assertThat(hooks.findById(id).orElseThrow().getKey()).isEmpty();
-        assertThat(hooks.findById(id).orElseThrow().getUrl()).isEmpty();
+        JsonNode observed = api.getEntity("/hook", id);
+        assertThat(observed.path("key").isTextual()).isTrue();
+        assertThat(observed.path("key").asText()).isEmpty();
+        assertThat(observed.path("url").isTextual()).isTrue();
+        assertThat(observed.path("url").asText()).isEmpty();
     }
 
     @Test void duplicateKeyAndTypeIsRejected() throws Exception {
-        EntityWebhook existing = saved("city");
+        String existing = saved("city");
+        JsonNode original = api.getEntity("/hook", existing);
         mvc.perform(post("/hook/city").header("X-Api-Key", "TEST_API_KEY")
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isInternalServerError());
-        assertThat(hooks.findAll()).containsExactly(existing);
+        assertThat(api.page("/hook").path("content")).containsExactly(original);
     }
 
     @Test void sameKeyIsAcceptedForDifferentTypes() throws Exception {
@@ -150,7 +160,7 @@ class WebHookControllerMockMvcIT {
         mvc.perform(post("/hook/parish").header("X-Api-Key", "TEST_API_KEY")
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isOk());
-        assertThat(hooks.findAll()).extracting(EntityWebhook::getType)
+        assertThat(api.page("/hook").path("content")).extracting(hook -> hook.path("type").asText())
                 .containsExactlyInAnyOrder("city", "parish");
     }
 
@@ -160,26 +170,26 @@ class WebHookControllerMockMvcIT {
                 .andExpect(status().isNotFound());
         mvc.perform(delete("/hook/" + id).header("X-Api-Key", "TEST_API_KEY"))
                 .andExpect(status().isNotFound());
-        assertThat(hooks.count()).isZero();
+        assertThat(api.page("/hook").path("totalElements").asInt()).isZero();
     }
 
     @Test void anonymousCannotListOrDelete() throws Exception {
-        EntityWebhook existing = saved("city");
+        String existing = saved("city");
         mvc.perform(get("/hook")).andExpect(status().isUnauthorized());
-        mvc.perform(delete("/hook/" + existing.getId())).andExpect(status().isUnauthorized());
-        assertThat(hooks.findById(existing.getId())).isPresent();
+        mvc.perform(delete("/hook/" + existing)).andExpect(status().isUnauthorized());
+        api.getEntity("/hook", existing);
     }
 
     @Test void anonymousCannotCreateHook() throws Exception {
         mvc.perform(post("/hook/city").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"key\":\"minsk\",\"url\":\"https://example.org/callback\"}"))
                 .andExpect(status().isUnauthorized());
-        assertThat(hooks.count()).isZero();
+        assertThat(api.page("/hook").path("totalElements").asInt()).isZero();
     }
 
     @Test void listHooksPaginatesWithoutDuplicates() throws Exception {
-        EntityWebhook one = hooks.save(EntityWebhook.builder().type("city").key("minsk").url("https://example.org/callback").build());
-        EntityWebhook two = hooks.save(EntityWebhook.builder().type("city").key("pinsk").url("https://example.org/callback").build());
+        String one = saved("city", "minsk");
+        String two = saved("city", "pinsk");
         JsonNode first = json.readTree(mvc.perform(get("/hook").param("page", "0").param("size", "1")
                 .header("X-Api-Key", "TEST_API_KEY")).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
         JsonNode second = json.readTree(mvc.perform(get("/hook").param("page", "1").param("size", "1")
@@ -196,8 +206,8 @@ class WebHookControllerMockMvcIT {
         }
         assertThat(List.of(complete.path("content").get(0).path("id").asText(),
                         complete.path("content").get(1).path("id").asText()))
-                .containsExactlyInAnyOrder(one.getId(), two.getId());
-        assertThat(List.of(one.getId(), two.getId())).contains(first.path("content").get(0).path("id").asText(),
+                .containsExactlyInAnyOrder(one, two);
+        assertThat(List.of(one, two)).contains(first.path("content").get(0).path("id").asText(),
                 second.path("content").get(0).path("id").asText());
     }
 }

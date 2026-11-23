@@ -35,8 +35,11 @@ public class MassGroupSequenceProvider implements DefaultGroupSequenceProvider<M
                         ? MassGroups.Periodic.class
                         : MassGroups.Single.class
         );
-        //последней добавляем группу по проверке дубликатов (должна быть последней, так как тяжеловесная)
+        // Сохраняем приоритет существующих ошибок, включая ошибки дублирования.
         defaultGroupSequence.add(MassGroups.Duplicate.class);
+        if (mass.isPeriodic()) {
+            defaultGroupSequence.add(MassGroups.StartWeekday.class);
+        }
 
         return defaultGroupSequence;
     }

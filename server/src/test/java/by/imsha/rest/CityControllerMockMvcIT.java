@@ -1,8 +1,6 @@
 package by.imsha.rest;
 
 import by.imsha.Application;
-import by.imsha.domain.City;
-import by.imsha.domain.LocalizedCity;
 import by.imsha.repository.CityRepository;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
@@ -82,11 +80,13 @@ class CityControllerMockMvcIT {
     @Autowired CityRepository cities;
     @Autowired CacheManager cacheManager;
     @Autowired ObjectMapper objectMapper;
+    private V1TestApi api;
     private String caseDirectory;
 
     @BeforeEach
     void isolate(TestInfo testInfo) {
         caseDirectory = "city-mockmvc/" + testInfo.getTestMethod().orElseThrow().getName() + "/";
+        api = new V1TestApi(mvc, objectMapper);
         cities.deleteAll();
         cacheManager.getCacheNames().forEach(name -> cacheManager.getCache(name).clear());
         IDENTITY.resetAll();
@@ -96,8 +96,23 @@ class CityControllerMockMvcIT {
         return new ClassPathResource(caseDirectory + name).getContentAsString(StandardCharsets.UTF_8);
     }
 
-    private City city(String key, String name) {
-        return cities.save(City.builder().key(key).name(name).build());
+    private String city(String key, String name) throws Exception {
+        return api.city(key, name);
+    }
+
+    private JsonNode cityByKey(String key) throws Exception {
+        for (JsonNode city : api.page(URL).path("content")) {
+            if (city.path("key").asText().equals(key)) {
+                return city;
+            }
+        }
+        throw new AssertionError("City missing from HTTP list: " + key);
+    }
+
+    private void assertCity(String id, String name, String key) throws Exception {
+        JsonNode city = api.getEntity(URL, id);
+        assertThat(city.path("name").asText()).isEqualTo(name);
+        assertThat(city.path("key").asText()).isEqualTo(key);
     }
 
     private void assertJson(MvcResult result, String resource, String id) throws Exception {
@@ -153,7 +168,7 @@ class CityControllerMockMvcIT {
                             .content(fixture("create-valid.json")))
                     .andExpect(status().isCreated())
                     .andExpect(createdCity("create-response.json"));
-            assertThat(cities.findByKey("city-pilot")).isNotNull();
+            assertThat(cityByKey("city-pilot").path("name").asText()).isEqualTo("Pilot city");
         }
 
         @Test void keyIsTrimmedBeforePersistenceAndSerialization() throws Exception {
@@ -161,7 +176,7 @@ class CityControllerMockMvcIT {
                             .content(fixture("request.json")))
                     .andExpect(status().isCreated())
                     .andExpect(createdCity("response.json"));
-            assertThat(cities.findByKey("city-trimmed")).extracting(City::getName)
+            assertThat(cityByKey("city-trimmed").path("name").asText())
                     .isEqualTo("Trimmed key city");
         }
 
@@ -177,7 +192,7 @@ class CityControllerMockMvcIT {
                             .content(fixture("request.json")))
                     .andExpect(status().isBadRequest())
                     .andDo(result -> assertJson(result, "error.json"));
-            assertThat(cities.count()).isZero();
+            assertThat(api.page(URL).path("totalElements").asInt()).isZero();
         }
 
         @Test void createWhitespaceNamePassesNotEmptyValidation() throws Exception {
@@ -185,7 +200,7 @@ class CityControllerMockMvcIT {
                             .content(fixture("request.json")))
                     .andExpect(status().isCreated())
                     .andExpect(createdCity("response.json"));
-            assertThat(cities.findByKey("city-spaces")).extracting(City::getName).isEqualTo("   ");
+            assertThat(cityByKey("city-spaces").path("name").asText()).isEqualTo("   ");
         }
 
         @Test void emptyObjectReturnsValidationError() throws Exception {
@@ -211,8 +226,8 @@ class CityControllerMockMvcIT {
                             .content(fixture("create-no-key-second.json")))
                     .andExpect(status().isInternalServerError())
                     .andDo(result -> assertJson(result, "create-duplicate-error.json"));
-            assertThat(cities.count()).isEqualTo(1);
-            assertThat(cities.findAll()).singleElement().extracting(City::getName)
+            assertThat(api.page(URL).path("totalElements").asInt()).isEqualTo(1);
+            assertThat(api.page(URL).path("content").get(0).path("name").asText())
                     .isEqualTo("First city without key");
         }
 
@@ -222,8 +237,8 @@ class CityControllerMockMvcIT {
                             .content(fixture("create-valid.json")))
                     .andExpect(status().isInternalServerError())
                     .andDo(result -> assertJson(result, "create-duplicate-error.json"));
-            assertThat(cities.count()).isEqualTo(1);
-            assertThat(cities.findByKey("existing-key")).extracting(City::getName).isEqualTo("Pilot city");
+            assertThat(api.page(URL).path("totalElements").asInt()).isEqualTo(1);
+            assertThat(cityByKey("existing-key").path("name").asText()).isEqualTo("Pilot city");
         }
 
         @Test void duplicateKeyFailsAndDoesNotAddCity() throws Exception {
@@ -232,21 +247,21 @@ class CityControllerMockMvcIT {
                             .content(fixture("create-valid.json")))
                     .andExpect(status().isInternalServerError())
                     .andDo(result -> assertJson(result, "create-duplicate-error.json"));
-            assertThat(cities.count()).isEqualTo(1);
-            assertThat(cities.findByKey("city-pilot")).extracting(City::getName).isEqualTo("Existing city");
+            assertThat(api.page(URL).path("totalElements").asInt()).isEqualTo(1);
+            assertThat(cityByKey("city-pilot").path("name").asText()).isEqualTo("Existing city");
         }
 
         @Test void anonymousCannotCreate() throws Exception {
             mvc.perform(post(URL).contentType(MediaType.APPLICATION_JSON).content(fixture("create-valid.json")))
                     .andExpect(status().isUnauthorized()).andDo(CityControllerMockMvcIT::assertUnauthorized);
-            assertThat(cities.count()).isZero();
+            assertThat(api.page(URL).path("totalElements").asInt()).isZero();
         }
 
         @Test void invalidApiKeyCannotCreate() throws Exception {
             mvc.perform(post(URL).header("X-Api-Key", "wrong-key").contentType(MediaType.APPLICATION_JSON)
                             .content(fixture("create-valid.json")))
                     .andExpect(status().isUnauthorized()).andDo(CityControllerMockMvcIT::assertUnauthorized);
-            assertThat(cities.count()).isZero();
+            assertThat(api.page(URL).path("totalElements").asInt()).isZero();
         }
 
         @Test void internalApiKeyCanCreate() throws Exception {
@@ -259,10 +274,10 @@ class CityControllerMockMvcIT {
 
     @Nested class ReadOne {
         @Test void existingCityIsReturned() throws Exception {
-            City city = city("city-pilot", "Pilot city");
-            mvc.perform(get(URL + "/{id}", city.getId()).header("X-Api-Key", API_KEY))
+            String city = city("city-pilot", "Pilot city");
+            mvc.perform(get(URL + "/{id}", city).header("X-Api-Key", API_KEY))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "get-response.json", city.getId()));
+                    .andDo(result -> assertJson(result, "get-response.json", city));
         }
 
         @Test void readOneUnknownCityReturns404() throws Exception {
@@ -293,9 +308,9 @@ class CityControllerMockMvcIT {
         }
 
         @Test void pageAndSizeAreApplied() throws Exception {
-            City first = city("city-first", "First city");
-            City second = city("city-second", "Second city");
-            City third = city("city-third", "Third city");
+            String first = city("city-first", "First city");
+            String second = city("city-second", "Second city");
+            String third = city("city-third", "Third city");
             MvcResult firstPage = mvc.perform(get(URL + "?page=0&size=2").header("X-Api-Key", API_KEY))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.content.length()").value(2))
@@ -320,15 +335,18 @@ class CityControllerMockMvcIT {
                     .andReturn();
             MvcResult completePage = mvc.perform(get(URL + "?page=0&size=3").header("X-Api-Key", API_KEY))
                     .andExpect(status().isOk()).andReturn();
+            JsonNode firstCity = api.getEntity(URL, first);
+            JsonNode secondCity = api.getEntity(URL, second);
+            JsonNode thirdCity = api.getEntity(URL, third);
             assertThat(pageContent(completePage, 3)).containsExactlyInAnyOrder(
-                    objectMapper.valueToTree(first),
-                    objectMapper.valueToTree(second),
-                    objectMapper.valueToTree(third));
+                    firstCity,
+                    secondCity,
+                    thirdCity);
             for (JsonNode item : pageContent(firstPage, 2)) {
-                assertThat(item).isIn(objectMapper.valueToTree(first), objectMapper.valueToTree(second), objectMapper.valueToTree(third));
+                assertThat(item).isIn(firstCity, secondCity, thirdCity);
             }
             for (JsonNode item : pageContent(secondPage, 1)) {
-                assertThat(item).isIn(objectMapper.valueToTree(first), objectMapper.valueToTree(second), objectMapper.valueToTree(third));
+                assertThat(item).isIn(firstCity, secondCity, thirdCity);
             }
         }
 
@@ -349,99 +367,85 @@ class CityControllerMockMvcIT {
 
     @Nested class Update {
         @Test void emptyObjectKeepsExistingCity() throws Exception {
-            City city = city("city-pilot", "Pilot city");
-            mvc.perform(put(URL + "/{id}", city.getId()).header("X-Api-Key", API_KEY)
+            String city = city("city-pilot", "Pilot city");
+            mvc.perform(put(URL + "/{id}", city).header("X-Api-Key", API_KEY)
                             .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "response.json", city.getId()));
-            mvc.perform(get(URL + "/{id}", city.getId()).header("X-Api-Key", API_KEY))
+                    .andDo(result -> assertJson(result, "response.json", city));
+            mvc.perform(get(URL + "/{id}", city).header("X-Api-Key", API_KEY))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "get-response.json", city.getId()));
-            assertThat(cities.findById(city.getId())).get().satisfies(saved -> {
-                assertThat(saved.getName()).isEqualTo("Pilot city");
-                assertThat(saved.getKey()).isEqualTo("city-pilot");
-            });
+                    .andDo(result -> assertJson(result, "get-response.json", city));
+            assertCity(city, "Pilot city", "city-pilot");
         }
 
         @Test void duplicateNameDoesNotPersistPartialUpdate() throws Exception {
-            City source = city("source-key", "Source city");
-            City occupied = city("occupied-key", "Occupied city");
-            mvc.perform(put(URL + "/{id}", source.getId()).header("X-Api-Key", API_KEY)
+            String source = city("source-key", "Source city");
+            city("occupied-key", "Occupied city");
+            var before = api.page(URL).path("content").values();
+            mvc.perform(put(URL + "/{id}", source).header("X-Api-Key", API_KEY)
                             .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                     .andExpect(status().isInternalServerError())
-                    .andDo(result -> assertJson(result, "error.json", source.getId()));
-            assertThat(cities.count()).isEqualTo(2);
-            assertThat(cities.findById(source.getId())).get().satisfies(saved -> {
-                assertThat(saved.getName()).isEqualTo("Source city");
-                assertThat(saved.getKey()).isEqualTo("source-key");
-            });
-            assertThat(cities.findById(occupied.getId())).get().satisfies(saved -> {
-                assertThat(saved.getName()).isEqualTo("Occupied city");
-                assertThat(saved.getKey()).isEqualTo("occupied-key");
-            });
+                    .andDo(result -> assertJson(result, "error.json", source));
+            // A rejected PUT can leave the by-ID cache mutated. The list reads persisted values.
+            JsonNode after = api.page(URL);
+            assertThat(after.path("totalElements").asInt()).isEqualTo(2);
+            assertThat(after.path("content")).containsExactlyInAnyOrderElementsOf(before);
         }
 
         @Test void duplicateKeyDoesNotPersistPartialUpdate() throws Exception {
-            City source = city("source-key", "Source city");
-            City occupied = city("occupied-key", "Occupied city");
-            mvc.perform(put(URL + "/{id}", source.getId()).header("X-Api-Key", API_KEY)
+            String source = city("source-key", "Source city");
+            city("occupied-key", "Occupied city");
+            var before = api.page(URL).path("content").values();
+            mvc.perform(put(URL + "/{id}", source).header("X-Api-Key", API_KEY)
                             .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                     .andExpect(status().isInternalServerError())
-                    .andDo(result -> assertJson(result, "error.json", source.getId()));
-            assertThat(cities.count()).isEqualTo(2);
-            assertThat(cities.findById(source.getId())).get().satisfies(saved -> {
-                assertThat(saved.getName()).isEqualTo("Source city");
-                assertThat(saved.getKey()).isEqualTo("source-key");
-            });
-            assertThat(cities.findById(occupied.getId())).get().satisfies(saved -> {
-                assertThat(saved.getName()).isEqualTo("Occupied city");
-                assertThat(saved.getKey()).isEqualTo("occupied-key");
-            });
+                    .andDo(result -> assertJson(result, "error.json", source));
+            // A rejected PUT can leave the by-ID cache mutated. The list reads persisted values.
+            JsonNode after = api.page(URL);
+            assertThat(after.path("totalElements").asInt()).isEqualTo(2);
+            assertThat(after.path("content")).containsExactlyInAnyOrderElementsOf(before);
         }
 
         @Test void omittedFieldsKeepTheirPreviousValues() throws Exception {
-            City city = city("old-key", "Old city");
-            mvc.perform(put(URL + "/{id}", city.getId()).header("X-Api-Key", API_KEY)
+            String city = city("old-key", "Old city");
+            mvc.perform(put(URL + "/{id}", city).header("X-Api-Key", API_KEY)
                             .contentType(MediaType.APPLICATION_JSON).content(fixture("name-only-request.json")))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "response.json", city.getId()));
-            mvc.perform(get(URL + "/{id}", city.getId()).header("X-Api-Key", API_KEY))
+                    .andDo(result -> assertJson(result, "response.json", city));
+            mvc.perform(get(URL + "/{id}", city).header("X-Api-Key", API_KEY))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "after-name-response.json", city.getId()));
+                    .andDo(result -> assertJson(result, "after-name-response.json", city));
 
-            mvc.perform(put(URL + "/{id}", city.getId()).header("X-Api-Key", API_KEY)
+            mvc.perform(put(URL + "/{id}", city).header("X-Api-Key", API_KEY)
                             .contentType(MediaType.APPLICATION_JSON).content(fixture("key-only-request.json")))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "response.json", city.getId()));
-            mvc.perform(get(URL + "/{id}", city.getId()).header("X-Api-Key", API_KEY))
+                    .andDo(result -> assertJson(result, "response.json", city));
+            mvc.perform(get(URL + "/{id}", city).header("X-Api-Key", API_KEY))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "after-key-response.json", city.getId()));
-            assertThat(cities.findById(city.getId())).get().satisfies(saved -> {
-                assertThat(saved.getName()).isEqualTo("New city");
-                assertThat(saved.getKey()).isEqualTo("new-key");
-            });
+                    .andDo(result -> assertJson(result, "after-key-response.json", city));
+            assertCity(city, "New city", "new-key");
         }
 
         @Test void validRequestUpdatesCity() throws Exception {
-            City city = city("city-pilot", "Old city");
-            mvc.perform(put(URL + "/{id}", city.getId()).header("X-Api-Key", API_KEY)
+            String city = city("city-pilot", "Old city");
+            mvc.perform(put(URL + "/{id}", city).header("X-Api-Key", API_KEY)
                             .contentType(MediaType.APPLICATION_JSON).content(fixture("update-valid.json")))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "updated-response.json", city.getId()));
-            assertThat(cities.findById(city.getId())).get().extracting(City::getName).isEqualTo("Updated city");
+                    .andDo(result -> assertJson(result, "updated-response.json", city));
+            assertThat(api.getEntity(URL, city).path("name").asText()).isEqualTo("Updated city");
         }
 
         @Test void keyIsTrimmedBeforeUpdate() throws Exception {
-            City city = city("old-key", "Old city");
-            mvc.perform(put(URL + "/{id}", city.getId()).header("X-Api-Key", API_KEY)
+            String city = city("old-key", "Old city");
+            mvc.perform(put(URL + "/{id}", city).header("X-Api-Key", API_KEY)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(fixture("request.json")))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "response.json", city.getId()));
-            assertThat(cities.findById(city.getId())).get().extracting(City::getKey).isEqualTo("updated-key");
-            mvc.perform(get(URL + "/{id}", city.getId()).header("X-Api-Key", API_KEY))
+                    .andDo(result -> assertJson(result, "response.json", city));
+            assertThat(api.getEntity(URL, city).path("key").asText()).isEqualTo("updated-key");
+            mvc.perform(get(URL + "/{id}", city).header("X-Api-Key", API_KEY))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "get-response.json", city.getId()));
+                    .andDo(result -> assertJson(result, "get-response.json", city));
         }
 
         @Test void missingBodyReturns400() throws Exception {
@@ -481,86 +485,85 @@ class CityControllerMockMvcIT {
         }
 
         @Test void repeatedLocalizationReplacesOnlyThatLanguage() throws Exception {
-            City city = city("city-pilot", "Pilot city");
-            mvc.perform(put(URL + "/{id}/lang/pl", city.getId()).header("X-Api-Key", API_KEY)
+            String city = city("city-pilot", "Pilot city");
+            mvc.perform(put(URL + "/{id}/lang/pl", city).header("X-Api-Key", API_KEY)
                             .contentType(MediaType.APPLICATION_JSON).content(fixture("polish-request.json")))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "response.json", city.getId()));
-            mvc.perform(put(URL + "/{id}/lang/be", city.getId()).header("X-Api-Key", API_KEY)
+                    .andDo(result -> assertJson(result, "response.json", city));
+            mvc.perform(put(URL + "/{id}/lang/be", city).header("X-Api-Key", API_KEY)
                             .contentType(MediaType.APPLICATION_JSON).content(fixture("first-belarusian-request.json")))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "response.json", city.getId()));
-            mvc.perform(put(URL + "/{id}/lang/be", city.getId()).header("X-Api-Key", API_KEY)
+                    .andDo(result -> assertJson(result, "response.json", city));
+            mvc.perform(put(URL + "/{id}/lang/be", city).header("X-Api-Key", API_KEY)
                             .contentType(MediaType.APPLICATION_JSON).content(fixture("second-belarusian-request.json")))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "response.json", city.getId()));
-            mvc.perform(get(URL + "/{id}", city.getId()).header("X-Api-Key", API_KEY))
+                    .andDo(result -> assertJson(result, "response.json", city));
+            mvc.perform(get(URL + "/{id}", city).header("X-Api-Key", API_KEY))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "get-response.json", city.getId()));
+                    .andDo(result -> assertJson(result, "get-response.json", city));
         }
 
         @Test void validLocaleUpdatesCity() throws Exception {
-            City city = city("city-pilot", "Pilot city");
-            mvc.perform(put(URL + "/{id}/lang/be", city.getId()).header("X-Api-Key", API_KEY)
+            String city = city("city-pilot", "Pilot city");
+            mvc.perform(put(URL + "/{id}/lang/be", city).header("X-Api-Key", API_KEY)
                             .contentType(MediaType.APPLICATION_JSON).content(fixture("localize-valid.json")))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "updated-response.json", city.getId()));
-            assertThat(cities.findById(city.getId())).get().satisfies(saved ->
-                    assertThat(((LocalizedCity) saved.getLocalizedInfo().get("be")).getName()).isEqualTo("Пілотны горад"));
-            mvc.perform(get(URL + "/{id}", city.getId()).header("X-Api-Key", API_KEY))
+                    .andDo(result -> assertJson(result, "updated-response.json", city));
+            assertThat(api.getEntity(URL, city).path("localizedInfo").path("be").path("name").asText())
+                    .isEqualTo("Пілотны горад");
+            mvc.perform(get(URL + "/{id}", city).header("X-Api-Key", API_KEY))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "get-response.json", city.getId()));
+                    .andDo(result -> assertJson(result, "get-response.json", city));
         }
 
         @Test void regionLocaleIsStoredUnderLanguageOnly() throws Exception {
-            City city = city("city-pilot", "Pilot city");
-            mvc.perform(put(URL + "/{id}/lang/be-BY", city.getId()).header("X-Api-Key", API_KEY)
+            String city = city("city-pilot", "Pilot city");
+            mvc.perform(put(URL + "/{id}/lang/be-BY", city).header("X-Api-Key", API_KEY)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(fixture("request.json")))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "response.json", city.getId()));
-            mvc.perform(get(URL + "/{id}", city.getId()).header("X-Api-Key", API_KEY))
+                    .andDo(result -> assertJson(result, "response.json", city));
+            mvc.perform(get(URL + "/{id}", city).header("X-Api-Key", API_KEY))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "get-response.json", city.getId()));
+                    .andDo(result -> assertJson(result, "get-response.json", city));
         }
 
         @Test void missingNameReturns400() throws Exception {
-            City city = city("city-pilot", "Pilot city");
-            mvc.perform(put(URL + "/{id}/lang/be", city.getId()).header("X-Api-Key", API_KEY)
+            String city = city("city-pilot", "Pilot city");
+            mvc.perform(put(URL + "/{id}/lang/be", city).header("X-Api-Key", API_KEY)
                             .contentType(MediaType.APPLICATION_JSON).content(fixture("localize-no-name.json")))
                     .andExpect(status().isBadRequest())
-                    .andDo(result -> assertJson(result, "localize-missing-name-error.json", city.getId()));
+                    .andDo(result -> assertJson(result, "localize-missing-name-error.json", city));
         }
 
         @Test void emptyNameReturns400() throws Exception {
-            City city = city("city-pilot", "Pilot city");
-            mvc.perform(put(URL + "/{id}/lang/be", city.getId()).header("X-Api-Key", API_KEY)
+            String city = city("city-pilot", "Pilot city");
+            mvc.perform(put(URL + "/{id}/lang/be", city).header("X-Api-Key", API_KEY)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(fixture("request.json")))
                     .andExpect(status().isBadRequest())
-                    .andDo(result -> assertJson(result, "error.json", city.getId()));
-            assertThat(cities.findById(city.getId())).get().satisfies(saved ->
-                    assertThat(saved.getLocalizedInfo()).isEmpty());
+                    .andDo(result -> assertJson(result, "error.json", city));
+            assertThat(api.getEntity(URL, city).path("localizedInfo").isEmpty()).isTrue();
         }
 
         @Test void localizeWhitespaceNamePassesNotEmptyValidation() throws Exception {
-            City city = city("city-pilot", "Pilot city");
-            mvc.perform(put(URL + "/{id}/lang/be", city.getId()).header("X-Api-Key", API_KEY)
+            String city = city("city-pilot", "Pilot city");
+            mvc.perform(put(URL + "/{id}/lang/be", city).header("X-Api-Key", API_KEY)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(fixture("request.json")))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "response.json", city.getId()));
-            mvc.perform(get(URL + "/{id}", city.getId()).header("X-Api-Key", API_KEY))
+                    .andDo(result -> assertJson(result, "response.json", city));
+            mvc.perform(get(URL + "/{id}", city).header("X-Api-Key", API_KEY))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "get-response.json", city.getId()));
+                    .andDo(result -> assertJson(result, "get-response.json", city));
         }
 
         @Test void unavailableLocaleReturns400() throws Exception {
-            City city = city("city-pilot", "Pilot city");
-            mvc.perform(put(URL + "/{id}/lang/zz-ZZ", city.getId()).header("X-Api-Key", API_KEY)
+            String city = city("city-pilot", "Pilot city");
+            mvc.perform(put(URL + "/{id}/lang/zz-ZZ", city).header("X-Api-Key", API_KEY)
                             .contentType(MediaType.APPLICATION_JSON).content(fixture("localize-valid.json")))
                     .andExpect(status().isBadRequest())
-                    .andDo(result -> assertJson(result, "localize-invalid-locale-error.json", city.getId()));
+                    .andDo(result -> assertJson(result, "localize-invalid-locale-error.json", city));
         }
 
         @Test void anonymousCannotLocalize() throws Exception {
@@ -572,23 +575,23 @@ class CityControllerMockMvcIT {
 
     @Nested class Delete {
         @Test void cachedCityReadAfterDeleteReturnsNotFound() throws Exception {
-            City city = city("city-pilot", "Pilot city");
-            mvc.perform(get(URL + "/{id}", city.getId()).header("X-Api-Key", API_KEY))
+            String city = city("city-pilot", "Pilot city");
+            mvc.perform(get(URL + "/{id}", city).header("X-Api-Key", API_KEY))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "get-response.json", city.getId()));
-            mvc.perform(delete(URL + "/{id}", city.getId()).header("X-Api-Key", API_KEY))
+                    .andDo(result -> assertJson(result, "get-response.json", city));
+            mvc.perform(delete(URL + "/{id}", city).header("X-Api-Key", API_KEY))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "deleted-response.json", city.getId()));
-            assertThat(cities.findById(city.getId())).isEmpty();
-            mvc.perform(get(URL + "/{id}", city.getId()).header("X-Api-Key", API_KEY))
+                    .andDo(result -> assertJson(result, "deleted-response.json", city));
+            api.expectMissing(URL, city);
+            mvc.perform(get(URL + "/{id}", city).header("X-Api-Key", API_KEY))
                     .andExpect(status().isNotFound());
         }
         @Test void existingCityIsDeleted() throws Exception {
-            City city = city("city-pilot", "Pilot city");
-            mvc.perform(delete(URL + "/{id}", city.getId()).header("X-Api-Key", API_KEY))
+            String city = city("city-pilot", "Pilot city");
+            mvc.perform(delete(URL + "/{id}", city).header("X-Api-Key", API_KEY))
                     .andExpect(status().isOk())
-                    .andDo(result -> assertJson(result, "deleted-response.json", city.getId()));
-            assertThat(cities.findById(city.getId())).isEmpty();
+                    .andDo(result -> assertJson(result, "deleted-response.json", city));
+            api.expectMissing(URL, city);
         }
 
         @Test void deleteUnknownCityReturns404() throws Exception {

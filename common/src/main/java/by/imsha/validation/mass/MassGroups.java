@@ -23,4 +23,7 @@ public class MassGroups {
     public interface Duplicate {
     }
 
+    public interface StartWeekday {
+    }
+
 }

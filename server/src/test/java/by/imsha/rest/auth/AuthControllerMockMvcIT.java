@@ -1,6 +1,7 @@
 package by.imsha.rest.auth;
 
 import by.imsha.Application;
+import by.imsha.rest.VerificationCodeTestApi;
 import tools.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
@@ -22,6 +23,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -57,14 +59,21 @@ class AuthControllerMockMvcIT {
     @Autowired CacheManager caches;
     @Autowired ObjectMapper json;
     private String directory;
+    private VerificationCodeTestApi verification;
     @BeforeEach void isolate(TestInfo info) {
         directory = "auth-mockmvc/" + info.getTestMethod().orElseThrow().getName() + "/";
         caches.getCacheNames().forEach(name -> caches.getCache(name).clear());
         IDENTITY.resetAll();
+        verification = new VerificationCodeTestApi(mvc, json, IDENTITY);
     }
     private String fixture(String name) throws Exception {
         return new ClassPathResource(directory + name).getContentAsString(StandardCharsets.UTF_8);
     }
+    private ResultActions verifyCode(String apiKey, String code) throws Exception {
+        return mvc.perform(post(VERIFY).header("X-Api-Key", apiKey)
+                .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json").replace("${code}", code)));
+    }
+
     private void assertJson(MvcResult result) throws Exception {
         assertThat(result.getResponse().getContentType()).startsWith(MediaType.APPLICATION_JSON_VALUE);
         assertThat(json.readTree(result.getResponse().getContentAsString(StandardCharsets.UTF_8)))
@@ -80,8 +89,7 @@ class AuthControllerMockMvcIT {
         assertThat(result.getResponse().getContentAsString()).isEmpty();
         IDENTITY.verify(1, postRequestedFor(urlPathMatching("/api/email/send/.*"))
                 .withRequestBody(containing(EMAIL)));
-        String code = caches.getCache("confirmationCodeCache").get(EMAIL, String.class);
-        assertThat(code).isNotBlank();
+        String code = verification.deliveredCode();
         String sentBody = IDENTITY.findAll(postRequestedFor(urlPathMatching("/api/email/send/.*")))
                 .get(0).getBodyAsString();
         assertThat(json.readTree(sentBody)).isEqualTo(json.readTree(fixture("email-request.json")
@@ -109,19 +117,16 @@ class AuthControllerMockMvcIT {
     }
 
     @Test void matchingCodeCanBeVerifiedRepeatedly() throws Exception {
-        caches.getCache("confirmationCodeCache").put(EMAIL, "1234");
+        String code = verification.requestCode(EMAIL);
         for (int attempt = 0; attempt < 2; attempt++) {
-            assertJson(mvc.perform(post(VERIFY).header("X-Api-Key", INTERNAL_KEY)
-                            .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
-                    .andExpect(status().isOk()).andReturn());
+            verifyCode(INTERNAL_KEY, code).andExpect(status().isOk()).andDo(this::assertJson);
         }
     }
 
     @Test void wrongCodeReturnsFalse() throws Exception {
-        caches.getCache("confirmationCodeCache").put(EMAIL, "1234");
-        assertJson(mvc.perform(post(VERIFY).header("X-Api-Key", INTERNAL_KEY)
-                        .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
-                .andExpect(status().isOk()).andReturn());
+        String code = verification.requestCode(EMAIL);
+        String wrongCode = code.equals("9999") ? "0000" : "9999";
+        verifyCode(INTERNAL_KEY, wrongCode).andExpect(status().isOk()).andDo(this::assertJson);
     }
 
     @Test void missingEmailIsRejected() throws Exception {
@@ -154,10 +159,8 @@ class AuthControllerMockMvcIT {
     }
 
     @Test void ordinaryKeyCannotVerifyCode() throws Exception {
-        caches.getCache("confirmationCodeCache").put(EMAIL, "1234");
-        mvc.perform(post(VERIFY).header("X-Api-Key", "TEST_API_KEY")
-                        .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
-                .andExpect(status().isInternalServerError());
+        String code = verification.requestCode(EMAIL);
+        verifyCode("TEST_API_KEY", code).andExpect(status().isInternalServerError());
     }
 
     @Test void emailProviderFailureReturnsServerError() throws Exception {

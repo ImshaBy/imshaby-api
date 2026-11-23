@@ -1,10 +1,7 @@
 package by.imsha.rest;
 
 import by.imsha.Application;
-import by.imsha.domain.Parish;
-import by.imsha.domain.LocalizedParish;
-import by.imsha.domain.Mass;
-import by.imsha.domain.City;
+import by.imsha.utils.DateTimeProvider;
 import by.imsha.repository.CityRepository;
 import by.imsha.repository.MassRepository;
 import by.imsha.repository.ParishRepository;
@@ -26,6 +23,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -36,8 +34,11 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -62,32 +63,34 @@ class ParishControllerMockMvcIT {
     }
 
     @Autowired MockMvc mvc;
+    @MockitoSpyBean DateTimeProvider dateTimeProvider;
     @Autowired ParishRepository parishes;
     @Autowired MassRepository masses;
     @Autowired CityRepository cities;
     @Autowired CacheManager caches;
     @Autowired ObjectMapper json;
+    private V1TestApi api;
     private String directory;
 
     @BeforeEach void isolate(TestInfo info) {
         directory = "parish-mockmvc/" + info.getTestMethod().orElseThrow().getName() + "/";
+        api = new V1TestApi(mvc, json);
         parishes.deleteAll();
         masses.deleteAll();
         cities.deleteAll();
         caches.getCacheNames().forEach(name -> caches.getCache(name).clear());
         IDENTITY.resetAll();
+        when(dateTimeProvider.nowSystemDefaultZone()).thenReturn(LocalDateTime.of(2023, 7, 16, 16, 43, 1));
     }
     private String fixture(String name) throws Exception {
         return new ClassPathResource(directory + name).getContentAsString(StandardCharsets.UTF_8);
     }
-    private Parish saved() {
-        Parish parish = new Parish();
-        parish.setName("St. Mary");
-        parish.setCityId("city-1");
-        parish.setKey("st-mary");
-        parish.setUserId("user-1");
-        parish.setState(Parish.State.INITIAL);
-        return parishes.save(parish);
+    private String saved() throws Exception {
+        return api.parish("INITIAL", Map.of(
+                "name", "St. Mary",
+                "cityId", "city-1",
+                "key", "st-mary",
+                "userId", "user-1"));
     }
     private void assertJson(MvcResult result, String id) throws Exception {
         assertThat(result.getResponse().getContentType()).startsWith(MediaType.APPLICATION_JSON_VALUE);
@@ -103,197 +106,195 @@ class ParishControllerMockMvcIT {
         String id = body.path("id").asText();
         assertThat(id).matches("[0-9a-f]{24}");
         assertThat(body.path("state").asText()).isEqualTo("INITIAL");
-        assertThat(parishes.findById(id).orElseThrow().getState()).isEqualTo(Parish.State.INITIAL);
-        assertThat(parishes.findById(id).orElseThrow().getLastConfirmRelevance()).isNotNull();
+        assertThat(api.getEntity(V1TestApi.PARISHES, id).path("state").asText()).isEqualTo("INITIAL");
+        assertThat(api.getEntity(V1TestApi.PARISHES, id).path("lastConfirmRelevance").asText()).isNotBlank();
     }
 
     @Test void missingNameIsRejected() throws Exception {
         mvc.perform(post(URL).header("X-Api-Key", KEY)
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isBadRequest());
-        assertThat(parishes.count()).isZero();
+        assertThat(api.filtered(V1TestApi.PARISHES).size()).isZero();
     }
 
     @Test void getExistingAndMissingParish() throws Exception {
-        Parish parish = saved();
-        MvcResult found = mvc.perform(get(URL + "/" + parish.getId()).header("X-Api-Key", KEY))
+        String parish = saved();
+        MvcResult found = mvc.perform(get(URL + "/" + parish).header("X-Api-Key", KEY))
                 .andExpect(status().isOk()).andReturn();
         JsonNode body = json.readTree(found.getResponse().getContentAsString());
-        assertThat(body.path("id").asText()).isEqualTo(parish.getId());
+        assertThat(body.path("id").asText()).isEqualTo(parish);
         assertThat(body.path("name").asText()).isEqualTo("St. Mary");
         mvc.perform(get(URL + "/000000000000000000000000").header("X-Api-Key", KEY))
                 .andExpect(status().isNotFound());
     }
 
     @Test void getByUserFindsParish() throws Exception {
-        Parish parish = saved();
+        String parish = saved();
         MvcResult result = mvc.perform(get(URL + "/user/user-1").header("X-Api-Key", KEY))
                 .andExpect(status().isOk()).andReturn();
         assertThat(json.readTree(result.getResponse().getContentAsString()).path("id").asText())
-                .isEqualTo(parish.getId());
+                .isEqualTo(parish);
         mvc.perform(get(URL + "/user/missing").header("X-Api-Key", KEY))
                 .andExpect(status().isNotFound());
     }
 
     @Test void getAndUpdateState() throws Exception {
-        Parish parish = saved();
-        assertJson(mvc.perform(get(URL + "/" + parish.getId() + "/state"))
-                .andExpect(status().isOk()).andReturn(), parish.getId());
-        MvcResult updated = mvc.perform(put(URL + "/" + parish.getId() + "/state")
+        String parish = saved();
+        assertJson(mvc.perform(get(URL + "/" + parish + "/state"))
+                .andExpect(status().isOk()).andReturn(), parish);
+        MvcResult updated = mvc.perform(put(URL + "/" + parish + "/state")
                         .header("X-Api-Key", KEY).contentType(MediaType.APPLICATION_JSON)
                         .content(fixture("request.json")))
                 .andExpect(status().isOk()).andReturn();
         assertThat(json.readTree(updated.getResponse().getContentAsString()).path("status").asText())
                 .isEqualTo("UPDATED");
-        assertThat(parishes.findById(parish.getId()).orElseThrow().getState()).isEqualTo(Parish.State.APPROVED);
+        assertThat(api.getEntity(V1TestApi.PARISHES, parish).path("state").asText()).isEqualTo("APPROVED");
     }
 
     @Test void missingStateIsRejectedWithoutWrite() throws Exception {
-        Parish parish = saved();
-        mvc.perform(put(URL + "/" + parish.getId() + "/state")
+        String parish = saved();
+        mvc.perform(put(URL + "/" + parish + "/state")
                         .header("X-Api-Key", KEY).contentType(MediaType.APPLICATION_JSON)
                         .content(fixture("request.json")))
                 .andExpect(status().isBadRequest());
-        assertThat(parishes.findById(parish.getId()).orElseThrow().getState()).isEqualTo(Parish.State.INITIAL);
+        assertThat(api.getEntity(V1TestApi.PARISHES, parish).path("state").asText()).isEqualTo("INITIAL");
     }
 
     @Test void anonymousCannotCreateOrDelete() throws Exception {
-        Parish parish = saved();
+        String parish = saved();
         mvc.perform(post(URL).contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isUnauthorized());
-        mvc.perform(delete(URL + "/" + parish.getId())).andExpect(status().isUnauthorized());
-        assertThat(parishes.count()).isEqualTo(1);
+        mvc.perform(delete(URL + "/" + parish)).andExpect(status().isUnauthorized());
+        assertThat(api.filtered(V1TestApi.PARISHES).size()).isEqualTo(1);
     }
 
     @Test void stateWriteRequiresAuthentication() throws Exception {
-        Parish parish = saved();
-        mvc.perform(put(URL + "/" + parish.getId() + "/state")
+        String parish = saved();
+        mvc.perform(put(URL + "/" + parish + "/state")
                         .contentType(MediaType.APPLICATION_JSON).content("{\"state\":\"APPROVED\"}"))
                 .andExpect(status().isUnauthorized());
-        assertThat(parishes.findById(parish.getId()).orElseThrow().getState()).isEqualTo(Parish.State.INITIAL);
+        assertThat(api.getEntity(V1TestApi.PARISHES, parish).path("state").asText()).isEqualTo("INITIAL");
     }
 
     @Test void updateChangesProvidedFieldsAndKeepsOthers() throws Exception {
-        Parish parish = saved();
-        MvcResult result = mvc.perform(put(URL + "/" + parish.getId()).header("X-Api-Key", KEY)
+        String parish = saved();
+        MvcResult result = mvc.perform(put(URL + "/" + parish).header("X-Api-Key", KEY)
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isOk()).andReturn();
-        assertJson(result, parish.getId());
-        Parish updated = parishes.findById(parish.getId()).orElseThrow();
-        assertThat(updated.getName()).isEqualTo("St. Joseph");
-        assertThat(updated.getCityId()).isEqualTo("city-1");
-        assertThat(updated.getKey()).isEqualTo("st-mary");
+        assertJson(result, parish);
+        JsonNode updated = api.getEntity(V1TestApi.PARISHES, parish);
+        assertThat(updated.path("name").asText()).isEqualTo("St. Joseph");
+        assertThat(updated.path("cityId").asText()).isEqualTo("city-1");
+        assertThat(updated.path("key").asText()).isEqualTo("st-mary");
     }
 
     @Test void updateMissingParishDoesNotCreateIt() throws Exception {
         mvc.perform(put(URL + "/000000000000000000000000").header("X-Api-Key", KEY)
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isNotFound());
-        assertThat(parishes.count()).isZero();
+        assertThat(api.filtered(V1TestApi.PARISHES).size()).isZero();
     }
 
     @Test void localizeParishPersistsLanguageAndValues() throws Exception {
-        Parish parish = saved();
-        MvcResult result = mvc.perform(put(URL + "/" + parish.getId() + "/lang/be")
+        String parish = saved();
+        MvcResult result = mvc.perform(put(URL + "/" + parish + "/lang/be")
                         .header("X-Api-Key", KEY).contentType(MediaType.APPLICATION_JSON)
                         .content(fixture("request.json")))
                 .andExpect(status().isOk()).andReturn();
-        assertJson(result, parish.getId());
-        assertThat(((LocalizedParish) parishes.findById(parish.getId()).orElseThrow().getLocalizedInfo().get("be")).getName())
+        assertJson(result, parish);
+        assertThat(api.getEntity(V1TestApi.PARISHES, parish).path("localizedInfo").path("be").path("name").asText())
                 .isEqualTo("Святая Марыя");
     }
 
     @Test void emptyLocalizedNameIsRejectedWithoutWrite() throws Exception {
-        Parish parish = saved();
-        mvc.perform(put(URL + "/" + parish.getId() + "/lang/be")
+        String parish = saved();
+        mvc.perform(put(URL + "/" + parish + "/lang/be")
                         .header("X-Api-Key", KEY).contentType(MediaType.APPLICATION_JSON)
                         .content(fixture("request.json")))
                 .andExpect(status().isBadRequest());
-        assertThat(parishes.findById(parish.getId()).orElseThrow().getLocalizedInfo()).isEmpty();
+        assertThat(api.getEntity(URL, parish).path("localizedInfo")).isEqualTo(json.readTree("{}"));
     }
 
     @Test void deleteParishAndRejectUnknownId() throws Exception {
-        Parish parish = saved();
-        assertJson(mvc.perform(delete(URL + "/" + parish.getId()).header("X-Api-Key", KEY))
-                .andExpect(status().isOk()).andReturn(), parish.getId());
-        assertThat(parishes.findById(parish.getId())).isEmpty();
+        String parish = saved();
+        assertJson(mvc.perform(delete(URL + "/" + parish).header("X-Api-Key", KEY))
+                .andExpect(status().isOk()).andReturn(), parish);
+        api.expectMissing(V1TestApi.PARISHES, parish);
         mvc.perform(delete(URL + "/000000000000000000000000").header("X-Api-Key", KEY))
                 .andExpect(status().isNotFound());
     }
 
     @Test void confirmRelevanceUpdatesStoredTimestamp() throws Exception {
-        Parish parish = saved();
-        assertThat(parish.getLastConfirmRelevance()).isNull();
-        MvcResult result = mvc.perform(post(URL + "/" + parish.getId() + "/confirm-relevance")
+        // POST /api/parish initializes this timestamp, so confirm against a known earlier value.
+        String parish = saved();
+        assertThat(api.getEntity(URL, parish).path("lastConfirmRelevance").asText()).isEqualTo("16-07-2023 16:43:01");
+        when(dateTimeProvider.nowSystemDefaultZone()).thenReturn(LocalDateTime.of(2023, 7, 17, 10, 0));
+        MvcResult result = mvc.perform(post(URL + "/" + parish + "/confirm-relevance")
                         .header("X-Api-Key", KEY))
                 .andExpect(status().isOk()).andReturn();
-        assertJson(result, parish.getId());
-        assertThat(parishes.findById(parish.getId()).orElseThrow().getLastConfirmRelevance()).isNotNull();
+        assertJson(result, parish);
+        assertThat(api.getEntity(V1TestApi.PARISHES, parish).path("lastConfirmRelevance").asText()).isEqualTo("17-07-2023 10:00:00");
     }
 
     @Test void confirmRelevanceRejectsUnknownId() throws Exception {
         mvc.perform(post(URL + "/000000000000000000000000/confirm-relevance")
                         .header("X-Api-Key", KEY))
                 .andExpect(status().isNotFound());
-        assertThat(parishes.count()).isZero();
+        assertThat(api.filtered(V1TestApi.PARISHES).size()).isZero();
     }
 
     @Test void cascadeDeleteRemovesRelatedMass() throws Exception {
-        Parish parish = saved();
-        Mass mass = new Mass();
-        mass.setCityId("city-1");
-        mass.setParishId(parish.getId());
-        mass.setLangCode("be");
-        mass.setSingleStartTimestamp(1_700_000_000L);
-        mass = masses.save(mass);
-        MvcResult result = mvc.perform(delete(URL + "/" + parish.getId()).param("cascade", "true")
+        String parish = saved();
+        String mass = api.create(V1TestApi.MASSES, Map.of(
+                "cityId", "city-1",
+                "parishId", parish,
+                "langCode", "be",
+                "singleStartTimestamp", 1_700_000_000L));
+        MvcResult result = mvc.perform(delete(URL + "/" + parish).param("cascade", "true")
                         .header("X-Api-Key", KEY))
                 .andExpect(status().isOk()).andReturn();
         JsonNode body = json.readTree(result.getResponse().getContentAsString());
-        assertThat(body.path("id").asText()).isEqualTo(parish.getId());
+        assertThat(body.path("id").asText()).isEqualTo(parish);
         assertThat(body.path("status").asText()).isEqualTo("DELETED");
         assertThat(body.path("relatedEntities").size()).isEqualTo(1);
-        assertThat(body.path("relatedEntities").get(0).path("id").asText()).isEqualTo(mass.getId());
-        assertThat(masses.findById(mass.getId())).isEmpty();
-        assertThat(parishes.findById(parish.getId())).isEmpty();
+        assertThat(body.path("relatedEntities").get(0).path("id").asText()).isEqualTo(mass);
+        api.expectMissing(V1TestApi.MASSES, mass);
+        api.expectMissing(V1TestApi.PARISHES, parish);
     }
 
     @Test void plainDeleteKeepsRelatedMass() throws Exception {
-        Parish parish = saved();
-        Mass mass = new Mass();
-        mass.setCityId("city-1");
-        mass.setParishId(parish.getId());
-        mass.setLangCode("be");
-        mass.setSingleStartTimestamp(1_700_000_000L);
-        mass = masses.save(mass);
-        mvc.perform(delete(URL + "/" + parish.getId()).header("X-Api-Key", KEY))
+        String parish = saved();
+        String mass = api.create(V1TestApi.MASSES, Map.of(
+                "cityId", "city-1",
+                "parishId", parish,
+                "langCode", "be",
+                "singleStartTimestamp", 1_700_000_000L));
+        mvc.perform(delete(URL + "/" + parish).header("X-Api-Key", KEY))
                 .andExpect(status().isOk());
-        assertThat(masses.findById(mass.getId())).isPresent();
-        assertThat(parishes.findById(parish.getId())).isEmpty();
+        api.getEntity(V1TestApi.MASSES, mass);
+        api.expectMissing(V1TestApi.PARISHES, parish);
     }
 
     @Test void invalidEmailIsRejectedWithoutWrite() throws Exception {
         mvc.perform(post(URL).header("X-Api-Key", KEY)
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isBadRequest());
-        assertThat(parishes.count()).isZero();
+        assertThat(api.filtered(V1TestApi.PARISHES).size()).isZero();
     }
 
     @Test void filterReturnsMatchingParish() throws Exception {
-        Parish expected = saved();
-        Parish other = new Parish();
-        other.setName("St. Peter");
-        other.setCityId("city-1");
-        other.setKey("st-peter");
-        other.setState(Parish.State.APPROVED);
-        parishes.save(other);
+        String expected = saved();
+        String other = api.parish("APPROVED", Map.of(
+                "name", "St. Peter",
+                "cityId", "city-1",
+                "key", "st-peter"));
         MvcResult result = mvc.perform(get(URL).param("filter", "key==st-mary")
                         .param("offset", "0").param("limit", "1")
                         .header("X-Api-Key", KEY))
                 .andExpect(status().isOk()).andReturn();
         JsonNode body = json.readTree(result.getResponse().getContentAsString());
         assertThat(body.size()).isEqualTo(1);
-        assertThat(body.get(0).path("id").asText()).isEqualTo(expected.getId());
+        assertThat(body.get(0).path("id").asText()).isEqualTo(expected);
     }
 
     @Test void filterRequiresExpression() throws Exception {
@@ -307,23 +308,19 @@ class ParishControllerMockMvcIT {
                         .header("X-Api-Key", KEY))
                 .andExpect(status().isBadRequest()).andReturn();
         assertThat(json.readTree(result.getResponse().getContentAsString()).path("errors").isEmpty()).isTrue();
-        assertThat(parishes.count()).isZero();
+        assertThat(api.filtered(V1TestApi.PARISHES).size()).isZero();
     }
 
     @Test void filterPagesContainEachMatchingParishOnce() throws Exception {
-        Parish first = saved();
-        Parish second = new Parish();
-        second.setName("St. Peter");
-        second.setCityId("city-1");
-        second.setKey("st-peter");
-        second.setState(Parish.State.APPROVED);
-        second = parishes.save(second);
-        Parish outsideCity = new Parish();
-        outsideCity.setName("Other city");
-        outsideCity.setCityId("city-2");
-        outsideCity.setKey("other-city");
-        outsideCity.setState(Parish.State.APPROVED);
-        parishes.save(outsideCity);
+        String first = saved();
+        String second = api.parish("APPROVED", Map.of(
+                "name", "St. Peter",
+                "cityId", "city-1",
+                "key", "st-peter"));
+        String outsideCity = api.parish("APPROVED", Map.of(
+                "name", "Other city",
+                "cityId", "city-2",
+                "key", "other-city"));
 
         JsonNode pageOne = json.readTree(mvc.perform(get(URL).param("filter", "cityId==city-1")
                         .param("offset", "0").param("limit", "1").param("sort", "+name")
@@ -340,47 +337,47 @@ class ParishControllerMockMvcIT {
         assertThat(pageOne.size()).isEqualTo(1);
         assertThat(pageTwo.size()).isEqualTo(1);
         assertThat(pageThree.size()).isZero();
-        assertThat(pageOne.get(0).path("id").asText()).isEqualTo(first.getId());
-        assertThat(pageTwo.get(0).path("id").asText()).isEqualTo(second.getId());
+        assertThat(pageOne.get(0).path("id").asText()).isEqualTo(first);
+        assertThat(pageTwo.get(0).path("id").asText()).isEqualTo(second);
     }
 
     @Test void missingStateIsRejectedOnCreate() throws Exception {
         mvc.perform(post(URL).header("X-Api-Key", KEY)
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isBadRequest());
-        assertThat(parishes.count()).isZero();
+        assertThat(api.filtered(V1TestApi.PARISHES).size()).isZero();
     }
 
     @Test void missingCityIsRejectedOnCreate() throws Exception {
         mvc.perform(post(URL).header("X-Api-Key", KEY)
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isBadRequest());
-        assertThat(parishes.count()).isZero();
+        assertThat(api.filtered(V1TestApi.PARISHES).size()).isZero();
     }
 
     @Test void invalidLastModifiedEmailIsRejected() throws Exception {
         mvc.perform(post(URL).header("X-Api-Key", KEY)
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isBadRequest());
-        assertThat(parishes.count()).isZero();
+        assertThat(api.filtered(V1TestApi.PARISHES).size()).isZero();
     }
 
     @Test void invalidLatitudeIsRejected() throws Exception {
         mvc.perform(post(URL).header("X-Api-Key", KEY)
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isBadRequest());
-        assertThat(parishes.count()).isZero();
+        assertThat(api.filtered(V1TestApi.PARISHES).size()).isZero();
     }
 
     @Test void duplicateKeyIsRejectedWithoutReplacingParish() throws Exception {
-        Parish existing = saved();
+        String existing = saved();
         mvc.perform(post(URL).header("X-Api-Key", KEY)
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isInternalServerError());
-        assertThat(parishes.count()).isEqualTo(1);
-        Parish unchanged = parishes.findById(existing.getId()).orElseThrow();
-        assertThat(unchanged.getName()).isEqualTo("St. Mary");
-        assertThat(unchanged.getKey()).isEqualTo("st-mary");
+        assertThat(api.filtered(V1TestApi.PARISHES).size()).isEqualTo(1);
+        JsonNode unchanged = api.getEntity(V1TestApi.PARISHES, existing);
+        assertThat(unchanged.path("name").asText()).isEqualTo("St. Mary");
+        assertThat(unchanged.path("key").asText()).isEqualTo("st-mary");
     }
 
     @Test void expiredReturnsEmptyResultWhenThereAreNoParishes() throws Exception {
@@ -390,25 +387,23 @@ class ParishControllerMockMvcIT {
     }
 
     @Test void expiredGroupsPastAndSoonToExpireParishes() throws Exception {
-        Parish expired = saved();
-        expired.setLastConfirmRelevance(LocalDateTime.now().minusDays(10));
-        expired.setUpdatePeriodInDays(1);
-        expired = parishes.save(expired);
-        Parish almost = new Parish();
-        almost.setName("St. Peter");
-        almost.setCityId("city-1");
-        almost.setKey("st-peter");
-        almost.setState(Parish.State.APPROVED);
-        almost.setLastConfirmRelevance(LocalDateTime.now().minusDays(2));
-        almost.setUpdatePeriodInDays(3);
-        almost = parishes.save(almost);
+        LocalDateTime now = LocalDateTime.now();
+        when(dateTimeProvider.nowSystemDefaultZone()).thenReturn(now.minusDays(10));
+        String expired = api.parish("INITIAL", Map.of("name", "St. Mary", "cityId", "city-1",
+                "key", "st-mary", "updatePeriodInDays", 1));
+        when(dateTimeProvider.nowSystemDefaultZone()).thenReturn(now.minusDays(2));
+        String almost = api.parish("APPROVED", Map.of(
+                "name", "St. Peter",
+                "cityId", "city-1",
+                "key", "st-peter",
+                "updatePeriodInDays", 3));
         MvcResult result = mvc.perform(get(URL + "/expired").header("X-Api-Key", KEY))
                 .andExpect(status().isOk()).andReturn();
         JsonNode body = json.readTree(result.getResponse().getContentAsString(StandardCharsets.UTF_8));
         assertThat(body.path("expiredParishes").size()).isEqualTo(1);
         assertThat(body.path("almostExpiredParishes").size()).isEqualTo(1);
-        assertThat(body.path("expiredParishes").get(0).path("id").asText()).isEqualTo(expired.getId());
-        assertThat(body.path("almostExpiredParishes").get(0).path("id").asText()).isEqualTo(almost.getId());
+        assertThat(body.path("expiredParishes").get(0).path("id").asText()).isEqualTo(expired);
+        assertThat(body.path("almostExpiredParishes").get(0).path("id").asText()).isEqualTo(almost);
         assertThat(body.path("expiredParishes").get(0).path("key").asText()).isEqualTo("st-mary");
         assertThat(body.path("almostExpiredParishes").get(0).path("key").asText()).isEqualTo("st-peter");
     }
@@ -417,14 +412,14 @@ class ParishControllerMockMvcIT {
         mvc.perform(post(URL).header("X-Api-Key", KEY)
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isBadRequest());
-        assertThat(parishes.count()).isZero();
+        assertThat(api.filtered(V1TestApi.PARISHES).size()).isZero();
     }
 
     @Test void malformedDateIsRejected() throws Exception {
         mvc.perform(post(URL).header("X-Api-Key", KEY)
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isBadRequest());
-        assertThat(parishes.count()).isZero();
+        assertThat(api.filtered(V1TestApi.PARISHES).size()).isZero();
     }
 
     @Test void keyIsTrimmedOnCreate() throws Exception {
@@ -432,121 +427,109 @@ class ParishControllerMockMvcIT {
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isCreated()).andReturn();
         String id = json.readTree(result.getResponse().getContentAsString()).path("id").asText();
-        assertThat(parishes.findById(id).orElseThrow().getKey()).isEqualTo("st-mary");
+        assertThat(api.getEntity(V1TestApi.PARISHES, id).path("key").asText()).isEqualTo("st-mary");
     }
 
     @Test void unavailableLocaleIsRejectedWithoutWrite() throws Exception {
-        Parish parish = saved();
-        mvc.perform(put(URL + "/" + parish.getId() + "/lang/zz")
+        String parish = saved();
+        mvc.perform(put(URL + "/" + parish + "/lang/zz")
                         .header("X-Api-Key", KEY).contentType(MediaType.APPLICATION_JSON)
                         .content(fixture("request.json")))
                 .andExpect(status().isBadRequest());
-        assertThat(parishes.findById(parish.getId()).orElseThrow().getLocalizedInfo()).isEmpty();
+        assertThat(api.getEntity(URL, parish).path("localizedInfo")).isEqualTo(json.readTree("{}"));
     }
 
     @Test void weekExpiredReturnsApprovedParishWithStaleMass() throws Exception {
-        City city = cities.save(City.builder().name("Minsk").key("minsk").build());
-        Parish parish = new Parish();
-        parish.setName("St. Mary");
-        parish.setKey("st-mary");
-        parish.setCityId(city.getId());
-        parish.setState(Parish.State.APPROVED);
-        parish.setUpdatePeriodInDays(0);
-        parish.setLastConfirmRelevance(LocalDateTime.of(2018, 6, 20, 0, 0));
-        parish = parishes.save(parish);
-        Mass mass = new Mass();
-        mass.setCityId(city.getId());
-        mass.setParishId(parish.getId());
-        mass.setLangCode("be");
-        mass.setTime("08:00");
-        mass.setDays(new int[]{1});
-        masses.save(mass);
+        String city = api.city("minsk", "Minsk");
+        when(dateTimeProvider.nowSystemDefaultZone()).thenReturn(LocalDateTime.of(2018, 6, 20, 0, 0));
+        String parish = api.parish("APPROVED", Map.of(
+                "name", "St. Mary",
+                "key", "st-mary",
+                "cityId", city,
+                "updatePeriodInDays", 0));
+        String mass = api.create(V1TestApi.MASSES, Map.of(
+                "cityId", city,
+                "parishId", parish,
+                "langCode", "be",
+                "time", "08:00",
+                "days", new int[]{1}));
         MvcResult result = mvc.perform(get(URL + "/week/expired").param("date", "23-06-2018")
                         .header("X-Api-Key", KEY)).andExpect(status().isOk()).andReturn();
         assertThat(json.readTree(result.getResponse().getContentAsString(StandardCharsets.UTF_8)))
-                .isEqualTo(json.readTree(fixture("response.json").replace("${id}", parish.getId())));
+                .isEqualTo(json.readTree(fixture("response.json").replace("${id}", parish)));
     }
 
     @Test void weekExpiredDefaultsToToday() throws Exception {
-        City city = cities.save(City.builder().name("Minsk").key("minsk").build());
-        Parish parish = new Parish();
-        parish.setName("St. Mary");
-        parish.setKey("st-mary");
-        parish.setCityId(city.getId());
-        parish.setState(Parish.State.APPROVED);
-        parish.setUpdatePeriodInDays(0);
-        parish.setLastConfirmRelevance(LocalDateTime.of(2023, 7, 12, 0, 0));
-        parish = parishes.save(parish);
-        Mass mass = new Mass();
-        mass.setCityId(city.getId());
-        mass.setParishId(parish.getId());
-        mass.setLangCode("be");
-        mass.setTime("08:00");
-        mass.setDays(new int[]{7});
-        masses.save(mass);
+        String city = api.city("minsk", "Minsk");
+        when(dateTimeProvider.nowSystemDefaultZone()).thenReturn(LocalDateTime.of(2023, 7, 12, 0, 0));
+        String parish = api.parish("APPROVED", Map.of(
+                "name", "St. Mary",
+                "key", "st-mary",
+                "cityId", city,
+                "updatePeriodInDays", 0));
+        String mass = api.create(V1TestApi.MASSES, Map.of(
+                "cityId", city,
+                "parishId", parish,
+                "langCode", "be",
+                "time", "08:00",
+                "days", new int[]{7}));
         MvcResult result = mvc.perform(get(URL + "/week/expired").header("X-Api-Key", KEY))
                 .andExpect(status().isOk()).andReturn();
         assertThat(json.readTree(result.getResponse().getContentAsString(StandardCharsets.UTF_8)))
-                .isEqualTo(json.readTree(fixture("response.json").replace("${id}", parish.getId())));
+                .isEqualTo(json.readTree(fixture("response.json").replace("${id}", parish)));
     }
 
     @Test void cachedWeekExpiredAfterBulkMassDeleteIsEmpty() throws Exception {
-        City city = cities.save(City.builder().name("Minsk").key("minsk").build());
-        Parish parish = new Parish();
-        parish.setName("St. Mary");
-        parish.setKey("st-mary");
-        parish.setCityId(city.getId());
-        parish.setState(Parish.State.APPROVED);
-        parish.setUpdatePeriodInDays(0);
-        parish.setLastConfirmRelevance(LocalDateTime.of(2018, 6, 20, 0, 0));
-        parish = parishes.save(parish);
-        Mass mass = new Mass();
-        mass.setCityId(city.getId());
-        mass.setParishId(parish.getId());
-        mass.setLangCode("be");
-        mass.setTime("08:00");
-        mass.setDays(new int[]{1});
-        mass = masses.save(mass);
+        String city = api.city("minsk", "Minsk");
+        when(dateTimeProvider.nowSystemDefaultZone()).thenReturn(LocalDateTime.of(2018, 6, 20, 0, 0));
+        String parish = api.parish("APPROVED", Map.of(
+                "name", "St. Mary",
+                "key", "st-mary",
+                "cityId", city,
+                "updatePeriodInDays", 0));
+        String mass = api.create(V1TestApi.MASSES, Map.of(
+                "cityId", city,
+                "parishId", parish,
+                "langCode", "be",
+                "time", "08:00",
+                "days", new int[]{1}));
         MvcResult first = mvc.perform(get(URL + "/week/expired").param("date", "23-06-2018")
                         .header("X-Api-Key", KEY)).andExpect(status().isOk()).andReturn();
-        JsonNode expected = json.readTree(fixture("response.json").replace("${id}", parish.getId()));
+        JsonNode expected = json.readTree(fixture("response.json").replace("${id}", parish));
         assertThat(json.readTree(first.getResponse().getContentAsString(StandardCharsets.UTF_8)))
                 .isEqualTo(expected);
-        MvcResult deletion = mvc.perform(delete("/api/mass").param("parishId", parish.getId())
+        MvcResult deletion = mvc.perform(delete("/api/mass").param("parishId", parish)
                         .header("X-Api-Key", KEY)).andExpect(status().isOk()).andReturn();
         assertThat(json.readTree(deletion.getResponse().getContentAsString(StandardCharsets.UTF_8)))
-                .isEqualTo(json.readTree(fixture("delete-response.json").replace("${massId}", mass.getId())));
-        assertThat(masses.findById(mass.getId())).isEmpty();
+                .isEqualTo(json.readTree(fixture("delete-response.json").replace("${massId}", mass)));
+        api.expectMissing(V1TestApi.MASSES, mass);
         MvcResult after = mvc.perform(get(URL + "/week/expired").param("date", "23-06-2018")
                         .header("X-Api-Key", KEY)).andExpect(status().isOk()).andReturn();
         assertThat(json.readTree(after.getResponse().getContentAsString(StandardCharsets.UTF_8)).isEmpty()).isTrue();
     }
 
     @Test void weekExpiredExcludesPendingAndDisabledParishes() throws Exception {
-        City city = cities.save(City.builder().name("Minsk").key("minsk").build());
-        for (Parish.State state : new Parish.State[]{Parish.State.PENDING, Parish.State.DISABLED}) {
-            Parish parish = new Parish();
-            parish.setName(state.name());
-            parish.setKey(state.name().toLowerCase());
-            parish.setCityId(city.getId());
-            parish.setState(state);
-            parish.setUpdatePeriodInDays(0);
-            parish.setLastConfirmRelevance(LocalDateTime.of(2018, 6, 20, 0, 0));
-            parish = parishes.save(parish);
-            Mass mass = new Mass();
-            mass.setCityId(city.getId());
-            mass.setParishId(parish.getId());
-            mass.setLangCode("be");
-            mass.setTime("08:00");
-            mass.setDays(new int[]{1});
-            masses.save(mass);
+        String city = api.city("minsk", "Minsk");
+        for (String state : List.of("PENDING", "DISABLED")) {
+            when(dateTimeProvider.nowSystemDefaultZone()).thenReturn(LocalDateTime.of(2018, 6, 20, 0, 0));
+            String parish = api.parish(state, Map.of(
+                    "name", state,
+                    "key", state.toLowerCase(),
+                    "cityId", city,
+                    "updatePeriodInDays", 0));
+            String mass = api.create(V1TestApi.MASSES, Map.of(
+                    "cityId", city,
+                    "parishId", parish,
+                    "langCode", "be",
+                    "time", "08:00",
+                    "days", new int[]{1}));
         }
         MvcResult result = mvc.perform(get(URL + "/week/expired").param("date", "23-06-2018")
                         .header("X-Api-Key", KEY)).andExpect(status().isOk()).andReturn();
         assertThat(json.readTree(result.getResponse().getContentAsString(StandardCharsets.UTF_8)))
                 .isEqualTo(json.readTree(fixture("response.json")));
-        assertThat(parishes.count()).isEqualTo(2);
-        assertThat(masses.count()).isEqualTo(2);
+        assertThat(api.filtered(V1TestApi.PARISHES).size()).isEqualTo(2);
+        assertThat(api.filtered(V1TestApi.MASSES).size()).isEqualTo(2);
     }
 
     @Test void weekExpiredRejectsMalformedDate() throws Exception {

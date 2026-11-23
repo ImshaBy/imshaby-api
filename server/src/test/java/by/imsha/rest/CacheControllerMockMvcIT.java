@@ -12,7 +12,6 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ClassPathResource;
@@ -63,39 +62,33 @@ class CacheControllerMockMvcIT {
     @Autowired MockMvc mvc;
     @Autowired CacheManager cacheManager;
     @Autowired ObjectMapper objectMapper;
+    private VerificationCodeTestApi verification;
+    private static final String EMAIL = "person@example.org";
 
     @BeforeEach
     void isolate() {
         cacheManager.getCacheNames().forEach(name -> cacheManager.getCache(name).clear());
         IDENTITY.resetAll();
-    }
-
-    private Cache cityCache() {
-        return cacheManager.getCache("cityCache");
-    }
-
-    private Cache massCache() {
-        return cacheManager.getCache("massCache");
+        verification = new VerificationCodeTestApi(mvc, objectMapper, IDENTITY);
     }
 
     @Test
     void internalKeyClearsCache() throws Exception {
-        cityCache().put("sentinel", "cached");
-        massCache().put("sentinel", "cached mass");
+        String code = verification.requestCode(EMAIL);
+        assertThat(verification.isValid(EMAIL, code)).isTrue();
         mvc.perform(post("/api/cache/clear").header("X-Api-Key", "TEST_INTERNAL_API_KEY"))
                 .andExpect(status().isOk())
                 .andDo(result -> {
                     assertThat(result.getResponse().getContentAsString()).isEmpty();
                     assertThat(result.getResponse().getContentType()).isNull();
                 });
-        assertThat(cityCache().get("sentinel")).isNull();
-        assertThat(massCache().get("sentinel")).isNull();
+        assertThat(verification.isValid(EMAIL, code)).isFalse();
     }
 
     @Test
     void ordinaryKeyCannotClearCache() throws Exception {
-        cityCache().put("sentinel", "cached");
-        massCache().put("sentinel", "cached mass");
+        String code = verification.requestCode(EMAIL);
+        assertThat(verification.isValid(EMAIL, code)).isTrue();
         mvc.perform(post("/api/cache/clear").header("X-Api-Key", "TEST_API_KEY"))
                 .andExpect(status().isInternalServerError())
                 .andDo(result -> {
@@ -105,18 +98,16 @@ class CacheControllerMockMvcIT {
                     assertThat(objectMapper.readTree(result.getResponse().getContentAsString(StandardCharsets.UTF_8)))
                             .isEqualTo(objectMapper.readTree(expected));
                 });
-        assertThat(cityCache().get("sentinel", String.class)).isEqualTo("cached");
-        assertThat(massCache().get("sentinel", String.class)).isEqualTo("cached mass");
+        assertThat(verification.isValid(EMAIL, code)).isTrue();
     }
 
     @Test
     void anonymousCannotClearCache() throws Exception {
-        cityCache().put("sentinel", "cached");
-        massCache().put("sentinel", "cached mass");
+        String code = verification.requestCode(EMAIL);
+        assertThat(verification.isValid(EMAIL, code)).isTrue();
         mvc.perform(post("/api/cache/clear"))
                 .andExpect(status().isUnauthorized())
                 .andDo(result -> assertThat(result.getResponse().getHeader("WWW-Authenticate")).isEqualTo("Bearer"));
-        assertThat(cityCache().get("sentinel", String.class)).isEqualTo("cached");
-        assertThat(massCache().get("sentinel", String.class)).isEqualTo("cached mass");
+        assertThat(verification.isValid(EMAIL, code)).isTrue();
     }
 }

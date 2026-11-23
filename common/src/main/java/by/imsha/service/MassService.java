@@ -10,6 +10,9 @@ import by.imsha.domain.dto.MassNav;
 import by.imsha.domain.dto.MassSchedule;
 import by.imsha.exception.InvalidFilterException;
 import by.imsha.meilisearch.model.SearchRecord;
+import by.imsha.domain.dto.UpdateMassInfo;
+import by.imsha.domain.dto.mapper.MassInfoMapper;
+import by.imsha.exception.ResourceNotFoundException;
 import by.imsha.repository.MassRepository;
 import by.imsha.repository.ParishRepository;
 import by.imsha.utils.ServiceUtils;
@@ -19,6 +22,8 @@ import com.github.rutledgepaulv.qbuilders.visitors.MongoVisitor;
 import com.github.rutledgepaulv.rqe.pipes.QueryConversionPipeline;
 import jakarta.annotation.PostConstruct;
 import jakarta.validation.Valid;
+import jakarta.validation.Validator;
+import jakarta.validation.ConstraintViolationException;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
@@ -87,6 +92,12 @@ public class MassService {
 
     @Autowired
     private MassRepository massRepository;
+
+    @Autowired
+    private MassInfoMapper massInfoMapper;
+
+    @Autowired
+    private Validator validator;
 
     @Autowired
     private CityService cityService;
@@ -219,6 +230,25 @@ public class MassService {
             @CacheEvict(cacheNames = "massCache", key = "'oldestMass:' + #p0.parishId")
     })
     public Mass updateMass(@Valid Mass mass){
+        return massRepository.save(mass);
+    }
+
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "massCache", key = "#p0"),
+            @CacheEvict(cacheNames = "massCache", key = "'massesByCity:' + #result.cityId"),
+            @CacheEvict(cacheNames = "massCache", key = "'massesByParish:' + #result.parishId"),
+            @CacheEvict(cacheNames = "massCache", key = "'oldestMass:' + #result.parishId")
+    })
+    public Mass refreshMass(String id, UpdateMassInfo changes) {
+        Mass mass = massRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("resource not found"));
+        if (changes != null) {
+            massInfoMapper.updateMassFromDTO(changes, mass);
+        }
+        var violations = validator.validate(mass);
+        if (!violations.isEmpty()) {
+            throw new ConstraintViolationException(violations);
+        }
         return massRepository.save(mass);
     }
 

@@ -1,7 +1,6 @@
 package by.imsha.rest;
 
 import by.imsha.Application;
-import by.imsha.domain.Cors;
 import by.imsha.repository.CorsConfigRepository;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -30,6 +29,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,10 +59,12 @@ class CorsControllerMockMvcIT {
     @Autowired CorsConfigRepository cors;
     @Autowired CacheManager caches;
     @Autowired ObjectMapper json;
+    private V1TestApi api;
     private String directory;
 
     @BeforeEach void isolate(TestInfo info) {
         directory = "cors-mockmvc/" + info.getTestMethod().orElseThrow().getName() + "/";
+        api = new V1TestApi(mvc, json);
         cors.deleteAll();
         caches.getCacheNames().forEach(name -> caches.getCache(name).clear());
         IDENTITY.resetAll();
@@ -70,7 +72,9 @@ class CorsControllerMockMvcIT {
     private String fixture(String name) throws Exception {
         return new ClassPathResource(directory + name).getContentAsString(StandardCharsets.UTF_8);
     }
-    private Cors saved(String origin) { return cors.save(Cors.builder().origin(origin).build()); }
+    private String saved(String origin) throws Exception {
+        return api.create(URL, Map.of("origin", origin));
+    }
     private void assertJson(MvcResult result, String id) throws Exception {
         assertThat(result.getResponse().getContentType()).startsWith(MediaType.APPLICATION_JSON_VALUE);
         assertThat(json.readTree(result.getResponse().getContentAsString(StandardCharsets.UTF_8)))
@@ -83,30 +87,30 @@ class CorsControllerMockMvcIT {
         String id = body.path("id").asText();
         assertThat(id).matches("[0-9a-f]{24}");
         assertJson(result, id);
-        assertThat(cors.findById(id).orElseThrow().getOrigin()).isEqualTo("https://example.org");
+        assertThat(api.getEntity(URL, id).path("origin").asText()).isEqualTo("https://example.org");
     }
     @Test void getExistingOrigin() throws Exception {
-        Cors entry = saved("https://example.org");
-        assertJson(mvc.perform(get(URL + "/" + entry.getId()).header("X-Api-Key", KEY)).andExpect(status().isOk()).andReturn(), entry.getId());
+        String entry = saved("https://example.org");
+        assertJson(mvc.perform(get(URL + "/" + entry).header("X-Api-Key", KEY)).andExpect(status().isOk()).andReturn(), entry);
     }
     @Test void getMissingOrigin() throws Exception {
         assertJson(mvc.perform(get(URL + "/000000000000000000000000").header("X-Api-Key", KEY)).andExpect(status().isNotFound()).andReturn(), "");
     }
     @Test void listOrigins() throws Exception {
-        Cors entry = saved("https://example.org");
+        String entry = saved("https://example.org");
         MvcResult result = mvc.perform(get(URL).param("page", "0").param("size", "1").header("X-Api-Key", KEY)).andExpect(status().isOk()).andReturn();
-        assertJson(result, entry.getId());
+        assertJson(result, entry);
     }
     @Test void updateOrigin() throws Exception {
-        Cors entry = saved("https://old.example.org");
-        assertJson(mvc.perform(put(URL + "/" + entry.getId()).header("X-Api-Key", KEY).contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
-                .andExpect(status().isOk()).andReturn(), entry.getId());
-        assertThat(cors.findById(entry.getId()).orElseThrow().getOrigin()).isEqualTo("https://example.org");
+        String entry = saved("https://old.example.org");
+        assertJson(mvc.perform(put(URL + "/" + entry).header("X-Api-Key", KEY).contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
+                .andExpect(status().isOk()).andReturn(), entry);
+        assertThat(api.getEntity(URL, entry).path("origin").asText()).isEqualTo("https://example.org");
     }
     @Test void deleteOrigin() throws Exception {
-        Cors entry = saved("https://example.org");
-        assertJson(mvc.perform(delete(URL + "/" + entry.getId()).header("X-Api-Key", KEY)).andExpect(status().isOk()).andReturn(), entry.getId());
-        assertThat(cors.findById(entry.getId())).isEmpty();
+        String entry = saved("https://example.org");
+        assertJson(mvc.perform(delete(URL + "/" + entry).header("X-Api-Key", KEY)).andExpect(status().isOk()).andReturn(), entry);
+        api.expectMissing(URL, entry);
     }
     @Test void anonymousCannotList() throws Exception {
         mvc.perform(get(URL)).andExpect(status().isUnauthorized()).andDo(result -> {
@@ -120,57 +124,59 @@ class CorsControllerMockMvcIT {
         mvc.perform(put(URL + "/" + id).header("X-Api-Key", KEY)
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isNotFound());
-        assertThat(cors.count()).isZero();
+        assertThat(api.page(URL).path("totalElements").asInt()).isZero();
     }
 
     @Test void deleteMissingOriginDoesNotChangeCollection() throws Exception {
-        Cors existing = saved("https://example.org");
+        String existing = saved("https://example.org");
+        JsonNode original = api.getEntity(URL, existing);
         mvc.perform(delete(URL + "/000000000000000000000000").header("X-Api-Key", KEY))
                 .andExpect(status().isNotFound());
-        assertThat(cors.findAll()).containsExactly(existing);
+        assertThat(api.page(URL).path("content")).containsExactly(original);
     }
 
     @Test void emptyOriginIsRejectedWithoutPersisting() throws Exception {
         mvc.perform(post(URL).header("X-Api-Key", KEY)
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isBadRequest());
-        assertThat(cors.count()).isZero();
+        assertThat(api.page(URL).path("totalElements").asInt()).isZero();
     }
 
     @Test void missingOriginIsRejectedWithoutPersisting() throws Exception {
         mvc.perform(post(URL).header("X-Api-Key", KEY)
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isBadRequest());
-        assertThat(cors.count()).isZero();
+        assertThat(api.page(URL).path("totalElements").asInt()).isZero();
     }
 
     @Test void duplicateOriginIsRejectedWithoutPersistingAnotherEntry() throws Exception {
-        Cors existing = saved("https://example.org");
+        String existing = saved("https://example.org");
+        JsonNode original = api.getEntity(URL, existing);
         mvc.perform(post(URL).header("X-Api-Key", KEY)
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isInternalServerError());
-        assertThat(cors.findAll()).containsExactly(existing);
+        assertThat(api.page(URL).path("content")).containsExactly(original);
     }
 
     @Test void missingOriginOnUpdateKeepsStoredValue() throws Exception {
-        Cors existing = saved("https://example.org");
-        mvc.perform(put(URL + "/" + existing.getId()).header("X-Api-Key", KEY)
+        String existing = saved("https://example.org");
+        mvc.perform(put(URL + "/" + existing).header("X-Api-Key", KEY)
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isOk());
-        assertThat(cors.findById(existing.getId()).orElseThrow().getOrigin()).isEqualTo("https://example.org");
+        assertThat(api.getEntity(URL, existing).path("origin").asText()).isEqualTo("https://example.org");
     }
 
     @Test void emptyOriginOnUpdateIsRejectedWithoutChangingStoredValue() throws Exception {
-        Cors existing = saved("https://example.org");
-        mvc.perform(put(URL + "/" + existing.getId()).header("X-Api-Key", KEY)
+        String existing = saved("https://example.org");
+        mvc.perform(put(URL + "/" + existing).header("X-Api-Key", KEY)
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isBadRequest());
-        assertThat(cors.findById(existing.getId()).orElseThrow().getOrigin()).isEqualTo("https://example.org");
+        assertThat(api.getEntity(URL, existing).path("origin").asText()).isEqualTo("https://example.org");
     }
 
     @Test void listOriginsPaginatesWithoutDuplicates() throws Exception {
-        Cors one = saved("https://one.example.org");
-        Cors two = saved("https://two.example.org");
+        String one = saved("https://one.example.org");
+        String two = saved("https://two.example.org");
         MvcResult first = mvc.perform(get(URL).param("page", "0").param("size", "1")
                         .header("X-Api-Key", KEY)).andExpect(status().isOk()).andReturn();
         MvcResult second = mvc.perform(get(URL).param("page", "1").param("size", "1")
@@ -190,8 +196,8 @@ class CorsControllerMockMvcIT {
         JsonNode completePage = json.readTree(complete.getResponse().getContentAsString());
         assertThat(List.of(completePage.path("content").get(0).path("id").asText(),
                         completePage.path("content").get(1).path("id").asText()))
-                .containsExactlyInAnyOrder(one.getId(), two.getId());
-        assertThat(List.of(one.getId(), two.getId())).contains(firstPage.path("content").get(0).path("id").asText(),
+                .containsExactlyInAnyOrder(one, two);
+        assertThat(List.of(one, two)).contains(firstPage.path("content").get(0).path("id").asText(),
                 secondPage.path("content").get(0).path("id").asText());
     }
 
@@ -215,14 +221,14 @@ class CorsControllerMockMvcIT {
     @Test void updateAndDeleteInvalidateDynamicCorsCache() throws Exception {
         String oldOrigin = "https://old.example.org";
         String newOrigin = "https://new.example.org";
-        Cors entry = saved(oldOrigin);
+        String entry = saved(oldOrigin);
         assertPreflight(oldOrigin, 200);
-        mvc.perform(put(URL + "/" + entry.getId()).header("X-Api-Key", KEY)
+        mvc.perform(put(URL + "/" + entry).header("X-Api-Key", KEY)
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isOk());
         assertPreflight(oldOrigin, 403);
         assertPreflight(newOrigin, 200);
-        mvc.perform(delete(URL + "/" + entry.getId()).header("X-Api-Key", KEY))
+        mvc.perform(delete(URL + "/" + entry).header("X-Api-Key", KEY))
                 .andExpect(status().isOk());
         assertPreflight(newOrigin, 403);
     }

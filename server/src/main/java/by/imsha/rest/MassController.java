@@ -3,7 +3,6 @@ package by.imsha.rest;
 import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
 import by.imsha.domain.dto.*;
-import by.imsha.domain.dto.mapper.MassInfoMapper;
 import by.imsha.exception.InvalidDateIntervalException;
 import by.imsha.exception.ResourceNotFoundException;
 import by.imsha.mapper.MassCoordinatesMapper;
@@ -73,9 +72,6 @@ public class MassController {
     private MeilisearchReader meilisearchReader;
 
     @Autowired
-    private MassInfoMapper massInfoMapper;
-
-    @Autowired
     MassCoordinatesMapper massCoordinatesResponseMapper;
 
     @Autowired
@@ -114,15 +110,7 @@ public class MassController {
 
     @PutMapping("/refresh/{massId}")
     public ResponseEntity<UpdateEntityInfo> refreshMass(@PathVariable("massId") final String id, @RequestBody(required = false) UpdateMassInfo massInfo) {
-        final Mass massToUpdate = this.massService.getMass(id)
-                .orElseThrow(() -> new ResourceNotFoundException("resource not found"));
-
-        if (massInfo == null) {
-            massInfo = new UpdateMassInfo();
-        }
-        //TODO переделать мапперы на componentModel = "spring"
-        massInfoMapper.updateMassFromDTO(massInfo, massToUpdate);
-        final Mass updatedMass = this.massService.updateMass(massToUpdate);
+        final Mass updatedMass = massService.refreshMass(id, massInfo);
 
         return ResponseEntity.ok(
                 new UpdateEntityInfo(updatedMass.getId(), UpdateEntityInfo.STATUS.UPDATED)

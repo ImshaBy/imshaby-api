@@ -6,10 +6,12 @@ import by.imsha.serializers.LocalDateSerializer;
 import by.imsha.utils.ServiceUtils;
 import by.imsha.validation.common.ComparableFieldsValid;
 import by.imsha.validation.mass.MassDaysValid;
+import by.imsha.validation.mass.MassStartWeekdayValid;
 import by.imsha.validation.mass.MassGroupSequenceProvider;
 import by.imsha.validation.mass.MassGroups.Duplicate;
 import by.imsha.validation.mass.MassGroups.Periodic;
 import by.imsha.validation.mass.MassGroups.Single;
+import by.imsha.validation.mass.MassGroups.StartWeekday;
 import by.imsha.validation.mass.UniqueMass;
 import tools.jackson.databind.annotation.JsonDeserialize;
 import tools.jackson.databind.annotation.JsonSerialize;
@@ -50,6 +52,7 @@ import static by.imsha.validation.common.ComparableFieldsValid.Condition.LESS_OR
 @ComparableFieldsValid(fields = {"startDate", "endDate"}, condition = LESS_OR_EQUALS, groups = Periodic.class, message = "MASS.001")
 @MassDaysValid(groups = Periodic.class, message = "MASS.002")
 @UniqueMass(groups = Duplicate.class, message = "MASS.011")
+@MassStartWeekdayValid(groups = StartWeekday.class, message = "MASS.013")
 public class Mass {
 
     @Id
