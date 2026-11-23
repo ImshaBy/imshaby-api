@@ -30,6 +30,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -92,6 +93,9 @@ public class MassService {
 
     @Autowired
     private MassRepository massRepository;
+
+    @Autowired
+    private CacheManager cacheManager;
 
     @Autowired
     private MassInfoMapper massInfoMapper;
@@ -177,6 +181,10 @@ public class MassService {
 
     @Cacheable(cacheNames = "massCache")
     public Optional<Mass> getMass(String id){
+        return getMassForUpdate(id);
+    }
+
+    public Optional<Mass> getMassForUpdate(String id) {
         return massRepository.findById(id);
     }
 
@@ -262,13 +270,22 @@ public class MassService {
         massRepository.delete(mass);
     }
 
-    @Caching(evict = {
-            @CacheEvict(cacheNames = "massCache", key = "#p0.id"),
-            @CacheEvict(cacheNames = "massCache", key = "'massesByCity:' + #p0.cityId"),
-            @CacheEvict(cacheNames = "massCache", key = "'massesByParish:' + #p0.parishId"),
-            @CacheEvict(cacheNames = "massCache", key = "'oldestMass:' + #p0.parishId")
-    })
-    public Triple<String, String, String> removeMass(Mass baseMass, LocalDate fromDate, LocalDate toDate){
+    public Triple<String, String, String> removeMass(Mass baseMass, LocalDate fromDate, LocalDate toDate) {
+        try {
+            return removeMassInterval(baseMass, fromDate, toDate);
+        } finally {
+            // A split can persist the first remainder before the second write fails.
+            var cache = cacheManager.getCache("massCache");
+            if (cache != null) {
+                cache.evictIfPresent(baseMass.getId());
+                cache.evictIfPresent("massesByCity:" + baseMass.getCityId());
+                cache.evictIfPresent("massesByParish:" + baseMass.getParishId());
+                cache.evictIfPresent("oldestMass:" + baseMass.getParishId());
+            }
+        }
+    }
+
+    private Triple<String, String, String> removeMassInterval(Mass baseMass, LocalDate fromDate, LocalDate toDate) {
         LocalDate baseStartDate = baseMass.getStartDate();
         LocalDate baseEndDate = baseMass.getEndDate();
         boolean updated = false, remove = false;

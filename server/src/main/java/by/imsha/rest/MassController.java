@@ -151,7 +151,7 @@ public class MassController {
                                                                            @RequestParam("from") LocalDate fromDate,
                                                                            @DateTimeFormat(pattern = "dd-MM-yyyy")
                                                                            @RequestParam(name = "to", required = false) LocalDate toDate) {
-        Mass mass = this.massService.getMass(id)
+        Mass mass = this.massService.getMassForUpdate(id)
                 .orElseThrow(() -> new ResourceNotFoundException("resource not found"));
 
         if (toDate != null && fromDate.isAfter(toDate)) {

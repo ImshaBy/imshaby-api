@@ -52,6 +52,10 @@ public class CityService {
 
     @Cacheable(cacheNames = "cityCache")
     public Optional<City> retrieveCity(String id) {
+        return retrieveCityForUpdate(id);
+    }
+
+    public Optional<City> retrieveCityForUpdate(String id) {
         return cityRepository.findById(id);
     }
 

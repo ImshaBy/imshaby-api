@@ -71,7 +71,7 @@ public class CityController {
                                                                 final @PathVariable("cityId") String id,
                                                                 final @AvailableLocale(field = "locale", message = "CITY.002")
                                                                 @PathVariable("locale") Locale locale) {
-        final City city = this.cityService.retrieveCity(id)
+        final City city = this.cityService.retrieveCityForUpdate(id)
                 .orElseThrow(ResourceNotFoundException::new);
 
         final LocalizedCity localizedCity = new LocalizedCity(locale.getLanguage(), id, cityInfo.getName());
@@ -111,7 +111,7 @@ public class CityController {
 
     @PutMapping("/{id}")
     public ResponseEntity<UpdateEntityInfo> updateCity(final @PathVariable("id") String id, final @RequestBody CityInfo cityInfo) {
-        final City city = this.cityService.retrieveCity(id)
+        final City city = this.cityService.retrieveCityForUpdate(id)
                 .orElseThrow(ResourceNotFoundException::new);
 
         cityMapper.updateCityFromDTO(cityInfo, city);

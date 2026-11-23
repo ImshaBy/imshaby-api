@@ -511,6 +511,10 @@ class MassControllerMockMvcIT {
                 "langCode", "be",
                 "time", "08:00",
                 "days", new int[]{1}));
+        assertThat(api.getEntity(URL, original).path("endDate").asText()).isEqualTo("01/31/2025");
+        var stored = masses.findById(original).orElseThrow();
+        stored.setEndDate(LocalDate.of(2025, 2, 3));
+        masses.save(stored);
         MvcResult result = mvc.perform(delete(URL + "/" + original)
                         .param("from", "08-01-2025").param("to", "14-01-2025")
                         .header("X-Api-Key", KEY))
@@ -531,7 +535,7 @@ class MassControllerMockMvcIT {
         assertThat(before.path("startDate").asText()).isEqualTo("01/06/2025");
         assertThat(before.path("endDate").asText()).isEqualTo("01/07/2025");
         assertThat(after.path("startDate").asText()).isEqualTo("01/15/2025");
-        assertThat(after.path("endDate").asText()).isEqualTo("01/31/2025");
+        assertThat(after.path("endDate").asText()).isEqualTo("02/03/2025");
         assertThat(before.path("days")).isEqualTo(json.readTree("[1]"));
         assertThat(after.path("days")).isEqualTo(json.readTree("[1]"));
         mvc.perform(put(URL + "/refresh/" + createdId).header("X-Api-Key", KEY)

@@ -382,11 +382,12 @@ class CityControllerMockMvcIT {
             String source = city("source-key", "Source city");
             city("occupied-key", "Occupied city");
             var before = api.page(URL).path("content").values();
+            JsonNode beforeById = api.getEntity(URL, source);
             mvc.perform(put(URL + "/{id}", source).header("X-Api-Key", API_KEY)
                             .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                     .andExpect(status().isInternalServerError())
                     .andDo(result -> assertJson(result, "error.json", source));
-            // A rejected PUT can leave the by-ID cache mutated. The list reads persisted values.
+            assertThat(api.getEntity(URL, source)).isEqualTo(beforeById);
             JsonNode after = api.page(URL);
             assertThat(after.path("totalElements").asInt()).isEqualTo(2);
             assertThat(after.path("content")).containsExactlyInAnyOrderElementsOf(before);
@@ -396,11 +397,12 @@ class CityControllerMockMvcIT {
             String source = city("source-key", "Source city");
             city("occupied-key", "Occupied city");
             var before = api.page(URL).path("content").values();
+            JsonNode beforeById = api.getEntity(URL, source);
             mvc.perform(put(URL + "/{id}", source).header("X-Api-Key", API_KEY)
                             .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                     .andExpect(status().isInternalServerError())
                     .andDo(result -> assertJson(result, "error.json", source));
-            // A rejected PUT can leave the by-ID cache mutated. The list reads persisted values.
+            assertThat(api.getEntity(URL, source)).isEqualTo(beforeById);
             JsonNode after = api.page(URL);
             assertThat(after.path("totalElements").asInt()).isEqualTo(2);
             assertThat(after.path("content")).containsExactlyInAnyOrderElementsOf(before);
@@ -504,7 +506,11 @@ class CityControllerMockMvcIT {
         }
 
         @Test void validLocaleUpdatesCity() throws Exception {
-            String city = city("city-pilot", "Pilot city");
+            String city = city("city-pilot", "Original city");
+            assertThat(api.getEntity(URL, city).path("name").asText()).isEqualTo("Original city");
+            var stored = cities.findById(city).orElseThrow();
+            stored.setName("Pilot city");
+            cities.save(stored);
             mvc.perform(put(URL + "/{id}/lang/be", city).header("X-Api-Key", API_KEY)
                             .contentType(MediaType.APPLICATION_JSON).content(fixture("localize-valid.json")))
                     .andExpect(status().isOk())
