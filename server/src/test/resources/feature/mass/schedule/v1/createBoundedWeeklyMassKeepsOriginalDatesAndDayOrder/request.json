@@ -1,0 +1,10 @@
+{
+  "cityId": "city-1",
+  "langCode": "be",
+  "duration": 2700,
+  "parishId": "parish-1",
+  "time": "08:00",
+  "days": [5, 1],
+  "startDate": "01/03/2025",
+  "endDate": "01/10/2025"
+}

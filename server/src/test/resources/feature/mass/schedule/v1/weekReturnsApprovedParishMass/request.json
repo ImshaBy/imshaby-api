@@ -1,0 +1,7 @@
+{
+  "cityId": "city-1",
+  "langCode": "be",
+  "parishId": "${parishId}",
+  "time": "08:00",
+  "days": [1]
+}

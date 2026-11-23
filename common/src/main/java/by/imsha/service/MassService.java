@@ -9,6 +9,8 @@ import by.imsha.domain.dto.MassInfo;
 import by.imsha.domain.dto.MassNav;
 import by.imsha.domain.dto.MassSchedule;
 import by.imsha.exception.InvalidFilterException;
+import by.imsha.mass.scheduling.application.DescribeSchedule;
+import by.imsha.mass.scheduling.domain.CalendarSchedule;
 import by.imsha.meilisearch.model.SearchRecord;
 import by.imsha.domain.dto.UpdateMassInfo;
 import by.imsha.domain.dto.mapper.MassInfoMapper;
@@ -40,6 +42,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
 
 import java.text.Collator;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -115,6 +118,15 @@ public class MassService {
             @CacheEvict(cacheNames = "massCache", key = "'oldestMass:' + #p0.parishId")
     })
     public Mass createMass(@Valid Mass mass){
+        return saveWithCalendar(mass);
+    }
+
+    private Mass saveWithCalendar(Mass mass) {
+        CalendarSchedule calendar = mass.isPeriodic()
+                ? DescribeSchedule.weekly(mass.getStartDate(), mass.getEndDate(),
+                        LocalTime.parse(mass.getTime()), mass.getDays(), ServiceUtils.BEL_ZONE_ID)
+                : DescribeSchedule.once(Instant.ofEpochSecond(mass.getSingleStartTimestamp()));
+        mass.setCalendar(new Mass.CalendarDescription(calendar.dtstart(), calendar.rrule()));
         return massRepository.save(mass);
     }
 
@@ -188,6 +200,10 @@ public class MassService {
         return massRepository.findById(id);
     }
 
+    public Mass readView(Mass mass) {
+        return MassCalendar.readView(mass);
+    }
+
     public List<Mass> search(String filter){
         // TODO can be added default sorting
         return search(filter, PAGE, LIMIT, null);
@@ -196,8 +212,7 @@ public class MassService {
     public List<Mass> search(String filter, int offset, int limit, String sort){
         Query query = prepareQuery(filter, offset, limit, sort);
         if (query == null) return null;
-        List<Mass> masses = this.massRepository.search(query, Mass.class);
-        return masses;
+        return this.massRepository.search(query, Mass.class).stream().map(this::readView).toList();
     }
 
     public Query prepareQuery(String filter, int offset, int limit, String sort) {
@@ -238,7 +253,7 @@ public class MassService {
             @CacheEvict(cacheNames = "massCache", key = "'oldestMass:' + #p0.parishId")
     })
     public Mass updateMass(@Valid Mass mass){
-        return massRepository.save(mass);
+        return saveWithCalendar(mass);
     }
 
     @Caching(evict = {
@@ -257,7 +272,7 @@ public class MassService {
         if (!violations.isEmpty()) {
             throw new ConstraintViolationException(violations);
         }
-        return massRepository.save(mass);
+        return saveWithCalendar(mass);
     }
 
     @Caching(evict = {
@@ -298,7 +313,7 @@ public class MassService {
             validWeekDays = buildValidWeekDaysInDatePeriod(massToSave);
             if (validWeekDays.length > 0) {
                 massToSave.setDays(validWeekDays);
-                massRepository.save(massToSave);
+                saveWithCalendar(massToSave);
                 updatedMassId = massToSave.getId();
                 updated = true;
             } else {
@@ -318,7 +333,7 @@ public class MassService {
             validWeekDays = buildValidWeekDaysInDatePeriod(massToSave);
             if (validWeekDays.length > 0) {
                 massToSave.setDays(validWeekDays);
-                massToSave = massRepository.save(massToSave);
+                massToSave = saveWithCalendar(massToSave);
                 if (updated) {
                     createdMassId = massToSave.getId();
                 } else {

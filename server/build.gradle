@@ -60,6 +60,35 @@ dependencies {
 
 sourceSets.main.java.srcDir(layout.buildDirectory.dir('openapi/generated'))
 
+def checkMassHttpDependencies = tasks.register('checkMassHttpDependencies') {
+    dependsOn tasks.named('classes')
+    def adapters = sourceSets.main.output.classesDirs.asFileTree.matching {
+        include 'by/imsha/rest/MassController.class', 'by/imsha/rest/MassController$*.class'
+        include 'by/imsha/feature/mass/schedule/v*/**/*.class'
+    }
+    inputs.files(adapters)
+    doLast {
+        if (adapters.isEmpty()) {
+            throw new GradleException('No compiled mass HTTP adapters found')
+        }
+        def dependencies = providers.exec {
+            def bin = new File(System.getProperty('java.home'), 'bin')
+            def windowsExecutable = new File(bin, 'jdeps.exe')
+            commandLine windowsExecutable.isFile() ? windowsExecutable : new File(bin, 'jdeps'),
+                    '-verbose:class', '-filter:none'
+            args adapters.files
+        }.standardOutput.asText.get()
+        def forbidden = dependencies.readLines().findAll { line ->
+            line ==~ /\s*\S+\s+->\s+(by\.imsha\.repository\.|org\.springframework\.data\.(mongodb\.|repository\.)|com\.mongodb\.).*/
+        }
+        if (forbidden) {
+            throw new GradleException("Mass HTTP adapters must access MongoDB through the application layer:\n" +
+                    forbidden.join('\n'))
+        }
+    }
+}
+tasks.named('check') { dependsOn checkMassHttpDependencies }
+
 tasks.register('generate passwordless api adapter server', GenerateTask) {
     group = 'generation'
     generatorName.set("spring")

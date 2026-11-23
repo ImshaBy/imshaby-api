@@ -24,6 +24,7 @@ dependencyManagement {
 }
 
 dependencies {
+    implementation project(':mass-scheduling')
     api libs.spring.data.mongodb
     api libs.jakarta.validation
     api libs.jakarta.annotation

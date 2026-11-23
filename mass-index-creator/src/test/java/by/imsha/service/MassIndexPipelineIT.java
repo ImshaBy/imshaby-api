@@ -25,6 +25,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -54,6 +55,11 @@ class MassIndexPipelineIT {
     @Autowired ObjectMapper json;
 
     @Test void indexesOnlyApprovedMassAndReaderFindsIt() {
+        LocalDate today = dates.today();
+        LocalTime calendarTime = LocalTime.of(11, 45);
+        String day = today.getDayOfWeek().name().substring(0, 2);
+        String date = today.format(DateTimeFormatter.BASIC_ISO_DATE);
+        String lastDate = today.plusDays(7).format(DateTimeFormatter.BASIC_ISO_DATE);
         City city = cities.save(City.builder().name("Pipeline city").key("pipeline-city").build());
         Parish parish = new Parish();
         parish.setName("Pipeline parish");
@@ -67,6 +73,8 @@ class MassIndexPipelineIT {
         mass.setLangCode("be");
         mass.setTime("08:00");
         mass.setDays(new int[]{1, 2, 3, 4, 5, 6, 7});
+        mass.setCalendar(new Mass.CalendarDescription("DTSTART;TZID=Europe/Minsk:" + date + "T114500",
+                "FREQ=WEEKLY;BYDAY=" + day + ";UNTIL=" + lastDate + "T084500Z"));
         mass = masses.save(mass);
         Parish pending = new Parish();
         pending.setName("Pipeline pending parish");
@@ -87,14 +95,14 @@ class MassIndexPipelineIT {
         var reader = new DefaultMeilisearchReader(new Client(new Config(
                 "http://" + MEILI.getHost() + ":" + MEILI.getMappedPort(7700), MEILI_KEY)),
                 "mass-index-pipeline", json);
-        LocalDate today = dates.today();
         var hits = reader.searchAllMasses(MassSearchFilter.builder()
                 .cityId(city.getId())
-                .dateTimeFrom(today.atStartOfDay().atOffset(ZoneOffset.ofHours(3)))
-                .dateTimeTo(today.atTime(LocalTime.MAX).atOffset(ZoneOffset.ofHours(3)))
+                .dateTimeFrom(today.minusDays(1).atStartOfDay().atOffset(ZoneOffset.ofHours(3)))
+                .dateTimeTo(today.plusDays(7).atTime(LocalTime.MAX).atOffset(ZoneOffset.ofHours(3)))
                 .build()).hits();
-        assertThat(hits).extracting(item -> item.massId()).contains(mass.getId())
-                .doesNotContain(pendingMass.getId());
+        assertThat(hits).extracting(item -> item.massId()).containsExactly(mass.getId(), mass.getId());
+        assertThat(hits).extracting(item -> item.dateTime())
+                .containsExactlyInAnyOrder(today.atTime(calendarTime), today.plusDays(7).atTime(calendarTime));
         assertThat(hits).extracting(item -> item.parish().id()).contains(parish.getId())
                 .doesNotContain(pending.getId());
         assertThat(hits).extracting(item -> item.parish().state()).containsOnly("APPROVED");

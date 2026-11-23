@@ -44,6 +44,7 @@ public abstract class MassInfoMapper {
     @Mapping(source = "mass", target = "city")
     public abstract MassInfo toMassInfo(Mass mass);
 
+    @Mapping(target = "calendar", ignore = true)
     public abstract Mass updateMassFromDTO(UpdateMassInfo massInfo, @MappingTarget Mass mass);
 
     protected String convertNotesToInfo(final Mass mass) {

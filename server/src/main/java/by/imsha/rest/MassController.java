@@ -88,6 +88,7 @@ public class MassController {
     @GetMapping("/{massId}")
     public ResponseEntity<Mass> retrieveMass(@PathVariable("massId") final String id) {
         return massService.getMass(id)
+                .map(massService::readView)
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> new ResourceNotFoundException("resource not found"));
     }

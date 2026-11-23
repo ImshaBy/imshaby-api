@@ -46,11 +46,6 @@ public class ScheduleFactory {
     public MassSchedule build(List<Mass> masses, LocalDate startDate, LocalDate endDate) {
         MassSchedule schedule =  new MassSchedule(startDate, massInfoMapper);
         for (Mass mass : masses) {
-            long singleStartTimestamp = mass.getSingleStartTimestamp();
-            // TODO get ZONE from parish : to support
-            LocalDateTime singleStartTime = singleStartTimestamp > 0 ? ServiceUtils.timestampToLocalDate(singleStartTimestamp, ServiceUtils.BEL_ZONE_ID) : null;
-
-
             if (mass.getParishId() == null) {
                 log.error(String.format("Mass with ID: %s is configured incorrectly - parish ID can not be null!", mass.getId()));
                 continue;
@@ -58,6 +53,18 @@ public class ScheduleFactory {
                 log.error(String.format("Mass with ID: %s is configured incorrectly - not existing parish is configured : %s!", mass.getId(), mass.getParishId()));
                 continue;
             }
+            if (mass.getCalendar() != null) {
+                var rule = MassCalendar.ruleOf(mass);
+                var occurrences = rule.occurrences(startDate, endDate, ServiceUtils.BEL_ZONE_ID).toList();
+                if (!occurrences.isEmpty()) {
+                    MassInfo info = massInfoMapper.toMassInfo(MassCalendar.readView(mass, rule));
+                    occurrences.forEach(occurrence -> schedule.populateOccurrence(info, occurrence));
+                }
+                continue;
+            }
+            long singleStartTimestamp = mass.getSingleStartTimestamp();
+            LocalDateTime singleStartTime = singleStartTimestamp > 0
+                    ? ServiceUtils.timestampToLocalDate(singleStartTimestamp, ServiceUtils.BEL_ZONE_ID) : null;
             if (singleStartTime != null) {
                 if (mass.getTime() != null) {
                     log.error(String.format("Mass with ID: %s is configured incorrectly - time and singleStartTime cannot be not null at the same time!", mass.getId()));
