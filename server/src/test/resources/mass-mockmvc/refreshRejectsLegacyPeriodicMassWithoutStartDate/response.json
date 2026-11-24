@@ -1,0 +1,1 @@
+{"timestamp":"${timestamp}","requestInfo":{"method":"${method}","uri":"${path}","pathInfo":"${path}","query":null},"errors":[{"field":"startDate","code":"MASS.014","payload":null,"message":"should not be null for periodic mass"}]}

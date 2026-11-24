@@ -452,7 +452,8 @@ class ParishControllerMockMvcIT {
                 "parishId", parish,
                 "langCode", "be",
                 "time", "08:00",
-                "days", new int[]{1}));
+                "days", new int[]{1},
+                "startDate", "06/18/2018"));
         MvcResult result = mvc.perform(get(URL + "/week/expired").param("date", "23-06-2018")
                         .header("X-Api-Key", KEY)).andExpect(status().isOk()).andReturn();
         assertThat(json.readTree(result.getResponse().getContentAsString(StandardCharsets.UTF_8)))
@@ -472,7 +473,8 @@ class ParishControllerMockMvcIT {
                 "parishId", parish,
                 "langCode", "be",
                 "time", "08:00",
-                "days", new int[]{7}));
+                "days", new int[]{7},
+                "startDate", "07/09/2023"));
         MvcResult result = mvc.perform(get(URL + "/week/expired").header("X-Api-Key", KEY))
                 .andExpect(status().isOk()).andReturn();
         assertThat(json.readTree(result.getResponse().getContentAsString(StandardCharsets.UTF_8)))
@@ -492,7 +494,8 @@ class ParishControllerMockMvcIT {
                 "parishId", parish,
                 "langCode", "be",
                 "time", "08:00",
-                "days", new int[]{1}));
+                "days", new int[]{1},
+                "startDate", "06/18/2018"));
         MvcResult first = mvc.perform(get(URL + "/week/expired").param("date", "23-06-2018")
                         .header("X-Api-Key", KEY)).andExpect(status().isOk()).andReturn();
         JsonNode expected = json.readTree(fixture("response.json").replace("${id}", parish));
@@ -522,7 +525,8 @@ class ParishControllerMockMvcIT {
                     "parishId", parish,
                     "langCode", "be",
                     "time", "08:00",
-                    "days", new int[]{1}));
+                    "days", new int[]{1},
+                    "startDate", "06/18/2018"));
         }
         MvcResult result = mvc.perform(get(URL + "/week/expired").param("date", "23-06-2018")
                         .header("X-Api-Key", KEY)).andExpect(status().isOk()).andReturn();

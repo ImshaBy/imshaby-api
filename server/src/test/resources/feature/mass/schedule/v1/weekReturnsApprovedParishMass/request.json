@@ -3,5 +3,6 @@
   "langCode": "be",
   "parishId": "${parishId}",
   "time": "08:00",
-  "days": [1]
+  "days": [1],
+  "startDate": "06/24/2024"
 }

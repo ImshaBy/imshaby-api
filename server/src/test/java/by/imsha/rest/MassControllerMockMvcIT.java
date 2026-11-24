@@ -103,13 +103,14 @@ class MassControllerMockMvcIT {
     private String fixture(String name) throws Exception {
         return new ClassPathResource(directory + name).getContentAsString(StandardCharsets.UTF_8);
     }
-    private String saved(String parishId) throws Exception {
+    private String saved(String parishId, String startDate) throws Exception {
         return api.create(URL, Map.of(
                 "cityId", "city-1",
                 "parishId", parishId,
                 "langCode", "be",
                 "time", "08:00",
-                "days", new int[]{1}));
+                "days", new int[]{1},
+                "startDate", startDate));
     }
 
     private Document storedMass(String id) {
@@ -141,7 +142,7 @@ class MassControllerMockMvcIT {
     private void createFilteredMass(String parishId, String time, String language, boolean online, boolean rorate)
             throws Exception {
         api.create(URL, Map.of("cityId", "city-1", "parishId", parishId, "langCode", language,
-                "time", time, "days", List.of(1), "online", online, "rorate", rorate));
+                "time", time, "days", List.of(1), "startDate", "06/24/2024", "online", online, "rorate", rorate));
     }
 
     private SearchResultItem indexedMass(String cityId, String parishId) {
@@ -189,7 +190,7 @@ class MassControllerMockMvcIT {
                 .replace("${lastModifiedDate}", checkedModified(body))));
         assertThat(api.getEntity(V1TestApi.MASSES, id).path("days")).isEqualTo(json.readTree("[1]"));
         assertThat(masses.findById(id).orElseThrow().getDays()).containsExactly(1);
-        assertCalendar(id, "DTSTART;TZID=Europe/Minsk:00010101T080000", "FREQ=WEEKLY;BYDAY=MO");
+        assertCalendar(id, "DTSTART;TZID=Europe/Minsk:20250106T080000", "FREQ=WEEKLY;BYDAY=MO");
         assertReadMatchesCreation(id, body);
     }
 
@@ -197,6 +198,21 @@ class MassControllerMockMvcIT {
     @Test void createRejectsStartDateOutsideSelectedWeekdays() throws Exception {
         assertStartDateError(post(URL), URL, "POST");
         assertThat(api.filtered(URL).size()).isZero();
+    }
+
+    @Test void createRejectsPeriodicMassWithoutStartDate() throws Exception {
+        assertStartDateError(post(URL), URL, "POST");
+        assertThat(masses.count()).isZero();
+    }
+
+    @Test void refreshRejectsLegacyPeriodicMassWithoutStartDate() throws Exception {
+        String id = savedLegacy("parish-1").getId();
+        var before = storedMass(id);
+        String path = URL + "/refresh/" + id;
+
+        assertStartDateError(put(path), path, "PUT");
+
+        assertThat(storedMass(id)).isEqualTo(before);
     }
 
     @Test void createAcceptsStartDateOnAnySelectedWeekday() throws Exception {
@@ -212,7 +228,7 @@ class MassControllerMockMvcIT {
     }
 
     @Test void replaceRejectsStartDateOutsideSelectedWeekdaysWithoutUpdating() throws Exception {
-        String id = saved("parish-1");
+        String id = saved("parish-1", "01/06/2025");
         JsonNode before = api.getEntity(URL, id);
         assertStartDateError(put(URL + "/" + id), URL + "/" + id, "PUT");
         assertThat(api.filtered(URL)).containsExactly(before);
@@ -220,17 +236,17 @@ class MassControllerMockMvcIT {
     }
 
     @Test void replaceAcceptsAlignedStartDate() throws Exception {
-        String id = saved("parish-1");
+        String id = saved("parish-1", "01/06/2025");
         replaceOrRefreshWithAlignedStart(URL + "/" + id, id);
     }
 
     @Test void refreshAcceptsAlignedStartDateAndNewWeekdaysTogether() throws Exception {
-        String id = saved("parish-1");
+        String id = saved("parish-1", "01/06/2025");
         replaceOrRefreshWithAlignedStart(URL + "/refresh/" + id, id);
     }
 
     @Test void refreshRejectsExplicitStartDateWithoutUpdating() throws Exception {
-        String id = saved("parish-1");
+        String id = saved("parish-1", "01/06/2025");
         JsonNode before = api.getEntity(URL, id);
         String path = URL + "/refresh/" + id;
         assertStartDateError(put(path), path, "PUT");
@@ -382,16 +398,16 @@ class MassControllerMockMvcIT {
     }
 
     @Test void replaceMassUpdatesStoredTime() throws Exception {
-        String mass = saved("parish-1");
+        String mass = saved("parish-1", "01/06/2025");
         assertJson(mvc.perform(put(URL + "/" + mass).header("X-Api-Key", KEY)
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isOk()).andReturn(), mass);
         assertThat(api.getEntity(V1TestApi.MASSES, mass).path("time").asText()).isEqualTo("09:00");
-        assertCalendar(mass, "DTSTART;TZID=Europe/Minsk:00010101T090000", "FREQ=WEEKLY;BYDAY=MO");
+        assertCalendar(mass, "DTSTART;TZID=Europe/Minsk:20250106T090000", "FREQ=WEEKLY;BYDAY=MO");
     }
 
     @Test void refreshMassChangesOnlyProvidedField() throws Exception {
-        String mass = saved("parish-1");
+        String mass = saved("parish-1", "01/06/2025");
         assertJson(mvc.perform(put(URL + "/refresh/" + mass).header("X-Api-Key", KEY)
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isOk()).andReturn(), mass);
@@ -399,11 +415,11 @@ class MassControllerMockMvcIT {
         assertThat(updated.path("time").asText()).isEqualTo("09:00");
         assertThat(updated.path("cityId").asText()).isEqualTo("city-1");
         assertThat(updated.path("parishId").asText()).isEqualTo("parish-1");
-        assertCalendar(mass, "DTSTART;TZID=Europe/Minsk:00010101T090000", "FREQ=WEEKLY;BYDAY=MO");
+        assertCalendar(mass, "DTSTART;TZID=Europe/Minsk:20250106T090000", "FREQ=WEEKLY;BYDAY=MO");
     }
 
     @Test void deleteMassRemovesIt() throws Exception {
-        String mass = saved("parish-1");
+        String mass = saved("parish-1", "01/06/2025");
         assertJson(mvc.perform(delete(URL + "/" + mass).header("X-Api-Key", KEY))
                 .andExpect(status().isOk()).andReturn(), mass);
         api.expectMissing(V1TestApi.MASSES, mass);
@@ -420,7 +436,7 @@ class MassControllerMockMvcIT {
     }
 
     @Test void invalidRemovalIntervalPreservesMass() throws Exception {
-        String mass = saved("parish-1");
+        String mass = saved("parish-1", "01/06/2025");
         mvc.perform(delete(URL + "/" + mass).param("from", "02-01-2025")
                         .param("to", "01-01-2025").header("X-Api-Key", KEY))
                 .andExpect(status().isBadRequest());
@@ -453,7 +469,7 @@ class MassControllerMockMvcIT {
                 "name", "St. Mary",
                 "cityId", "city-1",
                 "key", "fixture-parish"));
-        String first = saved(parish);
+        String first = saved(parish, "06/24/2024");
         MvcResult result = mvc.perform(delete(URL).param("parishId", parish)
                         .header("X-Api-Key", KEY)).andExpect(status().isOk()).andReturn();
         JsonNode body = json.readTree(result.getResponse().getContentAsString());
@@ -467,7 +483,7 @@ class MassControllerMockMvcIT {
                 "name", "St. Mary",
                 "cityId", "city-1",
                 "key", "fixture-parish"));
-        String mass = saved(parish);
+        String mass = saved(parish, "06/24/2024");
         JsonNode first = json.readTree(mvc.perform(get(URL + "/" + mass).header("X-Api-Key", KEY))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8));
         assertThat(first.path("id").asText()).isEqualTo(mass);
@@ -490,7 +506,7 @@ class MassControllerMockMvcIT {
     }
 
     @Test void anonymousCannotDeleteMass() throws Exception {
-        String mass = saved("parish-1");
+        String mass = saved("parish-1", "01/06/2025");
         mvc.perform(delete(URL + "/" + mass)).andExpect(status().isUnauthorized());
         api.getEntity(V1TestApi.MASSES, mass);
     }
@@ -586,7 +602,7 @@ class MassControllerMockMvcIT {
     }
 
     @Test void refreshWithoutBodyKeepsMass() throws Exception {
-        String mass = saved("parish-1");
+        String mass = saved("parish-1", "01/06/2025");
         mvc.perform(put(URL + "/refresh/" + mass).header("X-Api-Key", KEY))
                 .andExpect(status().isOk());
         JsonNode updated = api.getEntity(V1TestApi.MASSES, mass);
@@ -708,11 +724,11 @@ class MassControllerMockMvcIT {
         assertThat(after.path("days")).isEqualTo(json.readTree("[5,1]"));
     }
 
-    @Test void removeMiddlePreservesOpenStartAndActualOccurrences() throws Exception {
+    @Test void removeMiddlePreservesStartAndActualOccurrences() throws Exception {
         String city = api.city("minsk", "Minsk");
         String parish = api.parish("APPROVED", Map.of("cityId", city, "name", "St. Mary", "key", "st-mary"));
         String id = api.create(URL, Map.of("cityId", city, "parishId", parish, "langCode", "be",
-                "time", "08:00", "days", List.of(5, 1)));
+                "time", "08:00", "days", List.of(5, 1), "startDate", "01/03/2053"));
         MvcResult deletion = mvc.perform(delete(URL + "/" + id).header("X-Api-Key", KEY)
                         .param("from", "08-01-2053").param("to", "14-01-2053"))
                 .andExpect(status().isOk()).andReturn();
@@ -725,7 +741,7 @@ class MassControllerMockMvcIT {
 
         JsonNode left = api.getEntity(URL, id);
         JsonNode right = api.getEntity(URL, rightId);
-        assertThat(left.path("startDate").isNull()).isTrue();
+        assertThat(left.path("startDate").asText()).isEqualTo("01/03/2053");
         assertThat(left.path("endDate").asText()).isEqualTo("01/07/2053");
         assertThat(right.path("startDate").asText()).isEqualTo("01/15/2053");
         assertThat(right.path("endDate").isNull()).isTrue();
@@ -839,7 +855,7 @@ class MassControllerMockMvcIT {
     }
 
     @Test void duplicatePeriodicMassIsRejected() throws Exception {
-        String existing = saved("parish-1");
+        String existing = saved("parish-1", "01/06/2025");
         mvc.perform(post(URL).header("X-Api-Key", KEY)
                         .contentType(MediaType.APPLICATION_JSON).content(fixture("request.json")))
                 .andExpect(status().isBadRequest());
@@ -855,13 +871,14 @@ class MassControllerMockMvcIT {
     }
 
     @Test void filterReturnsMatchingMass() throws Exception {
-        String expected = saved("parish-1");
+        String expected = saved("parish-1", "01/06/2025");
         api.create(URL, Map.of(
                 "cityId", "city-1",
                 "parishId", "parish-2",
                 "langCode", "be",
                 "time", "09:00",
-                "days", new int[]{1}));
+                "days", new int[]{1},
+                "startDate", "01/06/2025"));
         MvcResult result = mvc.perform(get(URL).param("filter", "parishId==parish-1")
                         .param("offset", "0").param("limit", "1")
                         .header("X-Api-Key", KEY)).andExpect(status().isOk()).andReturn();
@@ -1038,6 +1055,7 @@ class MassControllerMockMvcIT {
                 "cityId", city));
         String mass = api.create(URL, Map.of(
                 "days", new int[]{7},
+                "startDate", "07/09/2023",
                 "cityId", city,
                 "parishId", parish,
                 "langCode", "be",
@@ -1061,6 +1079,7 @@ class MassControllerMockMvcIT {
                 "cityId", city));
         String mass = api.create(URL, Map.of(
                 "days", new int[]{7},
+                "startDate", "07/09/2023",
                 "cityId", city,
                 "parishId", parish,
                 "langCode", "be",
@@ -1093,6 +1112,7 @@ class MassControllerMockMvcIT {
                 "cityId", city));
         String mass = api.create(URL, Map.of(
                 "days", new int[]{7},
+                "startDate", "07/09/2023",
                 "cityId", city,
                 "parishId", parish,
                 "langCode", "be",
@@ -1129,6 +1149,7 @@ class MassControllerMockMvcIT {
                 "cityId", city));
         String mass = api.create(URL, Map.of(
                 "days", new int[]{7},
+                "startDate", "07/09/2023",
                 "cityId", city,
                 "parishId", parish,
                 "langCode", "be",
@@ -1188,19 +1209,22 @@ class MassControllerMockMvcIT {
                 "parishId", approved,
                 "langCode", "be",
                 "time", "08:00",
-                "days", new int[]{1}));
+                "days", new int[]{1},
+                "startDate", "06/24/2024"));
         api.create(URL, Map.of(
                 "cityId", selected,
                 "parishId", pending,
                 "langCode", "be",
                 "time", "08:00",
-                "days", new int[]{1}));
+                "days", new int[]{1},
+                "startDate", "06/24/2024"));
         api.create(URL, Map.of(
                 "cityId", otherCity,
                 "parishId", elsewhere,
                 "langCode", "be",
                 "time", "08:00",
-                "days", new int[]{1}));
+                "days", new int[]{1},
+                "startDate", "06/24/2024"));
         JsonNode result = json.readTree(mvc.perform(get(URL + "/week")
                         .cookie(new Cookie("cityId", selected)).param("date", "24-06-2024"))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8));
@@ -1214,7 +1238,7 @@ class MassControllerMockMvcIT {
                 "name", "St. Mary",
                 "cityId", "city-1",
                 "key", "fixture-parish"));
-        String mass = saved(parish);
+        String mass = saved(parish, "06/24/2024");
         MvcResult result = mvc.perform(get(URL + "/week")
                         .param("parishId", parish).param("date", "24-06-2024"))
                 .andExpect(status().isOk()).andReturn();
@@ -1238,7 +1262,8 @@ class MassControllerMockMvcIT {
                 "parishId", parish,
                 "langCode", "be",
                 "time", "08:00",
-                "days", new int[]{1}));
+                "days", new int[]{1},
+                "startDate", "06/24/2024"));
         createFilteredMass(parish, "09:00", "be", false, true);
         createFilteredMass(parish, "10:00", "pl", true, true);
         createFilteredMass(parish, "11:00", "be", true, false);
@@ -1260,7 +1285,7 @@ class MassControllerMockMvcIT {
                 "name", "Pending parish",
                 "cityId", "city-1",
                 "key", "fixture-parish"));
-        String mass = saved(parish);
+        String mass = saved(parish, "06/24/2024");
         JsonNode hidden = json.readTree(mvc.perform(get(URL + "/week")
                         .param("parishId", parish).param("date", "24-06-2024"))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8));
@@ -1331,7 +1356,7 @@ class MassControllerMockMvcIT {
                 "name", "Mapped parish",
                 "key", "123",
                 "cityId", "city-1"));
-        String mass = saved(parish);
+        String mass = saved(parish, "07/10/2023");
         MvcResult result = mvc.perform(get(URL + "/parish-week").param("apiKey", "123"))
                 .andExpect(status().isOk()).andReturn();
         JsonNode body = json.readTree(result.getResponse().getContentAsString(StandardCharsets.UTF_8));
@@ -1348,7 +1373,7 @@ class MassControllerMockMvcIT {
                 "name", "Mapped parish",
                 "key", "123",
                 "cityId", "city-1"));
-        String mass = saved(parish);
+        String mass = saved(parish, "07/10/2023");
         MvcResult result = mvc.perform(get(URL + "/parish-week").header("parish-week-api-key", "123"))
                 .andExpect(status().isOk()).andReturn();
         JsonNode body = json.readTree(result.getResponse().getContentAsString(StandardCharsets.UTF_8));

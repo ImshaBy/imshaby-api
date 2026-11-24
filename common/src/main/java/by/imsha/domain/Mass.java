@@ -100,6 +100,7 @@ public class Mass {
 
     @JsonDeserialize(using = LocalDateDeserializer.class)
     @JsonSerialize(using = LocalDateSerializer.class)
+    @NotNull(groups = Periodic.class, message = "MASS.014")
     private LocalDate startDate;
 
 
