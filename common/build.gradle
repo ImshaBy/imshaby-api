@@ -26,6 +26,7 @@ dependencyManagement {
 dependencies {
     implementation project(':mass-scheduling')
     api libs.spring.data.mongodb
+    implementation "org.mongodb:mongodb-driver-sync"
     api libs.jakarta.validation
     api libs.jakarta.annotation
     api libs.hibernate.validator

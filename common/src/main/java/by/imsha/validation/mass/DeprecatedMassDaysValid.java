@@ -10,8 +10,8 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-@Constraint(validatedBy = MassStartWeekdayValidator.class)
-public @interface MassStartWeekdayValid {
+@Constraint(validatedBy = DeprecatedMassDaysValidator.class)
+public @interface DeprecatedMassDaysValid {
 
     String message();
 

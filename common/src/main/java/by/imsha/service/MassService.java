@@ -3,18 +3,18 @@ package by.imsha.service;
 import by.imsha.domain.City;
 import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
+import by.imsha.domain.dto.MassDay;
 import by.imsha.domain.dto.MassFilterType;
 import by.imsha.domain.dto.MassFilterValue;
 import by.imsha.domain.dto.MassInfo;
 import by.imsha.domain.dto.MassNav;
 import by.imsha.domain.dto.MassSchedule;
 import by.imsha.exception.InvalidFilterException;
-import by.imsha.mass.scheduling.application.DescribeSchedule;
-import by.imsha.mass.scheduling.domain.CalendarSchedule;
-import by.imsha.meilisearch.model.SearchRecord;
-import by.imsha.domain.dto.UpdateMassInfo;
-import by.imsha.domain.dto.mapper.MassInfoMapper;
 import by.imsha.exception.ResourceNotFoundException;
+import by.imsha.mass.scheduling.domain.CalendarSchedule;
+import by.imsha.mass.scheduling.application.ScheduleConflict;
+import by.imsha.mass.scheduling.domain.ScheduleRule;
+import by.imsha.meilisearch.model.SearchRecord;
 import by.imsha.repository.MassRepository;
 import by.imsha.repository.ParishRepository;
 import by.imsha.utils.ServiceUtils;
@@ -22,10 +22,7 @@ import com.github.rutledgepaulv.qbuilders.builders.GeneralQueryBuilder;
 import com.github.rutledgepaulv.qbuilders.conditions.Condition;
 import com.github.rutledgepaulv.qbuilders.visitors.MongoVisitor;
 import com.github.rutledgepaulv.rqe.pipes.QueryConversionPipeline;
-import jakarta.annotation.PostConstruct;
 import jakarta.validation.Valid;
-import jakarta.validation.Validator;
-import jakarta.validation.ConstraintViolationException;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
@@ -36,7 +33,10 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
@@ -46,7 +46,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -56,15 +55,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import static by.imsha.utils.Constants.LIMIT;
-import static by.imsha.utils.Constants.PAGE;
-import static by.imsha.utils.Constants.WEEK_DAYS_COUNT;
 import static by.imsha.utils.LocalizedUtils.getLocalizedCityName;
 import static by.imsha.utils.LocalizedUtils.getLocalizedParishName;
 import static by.imsha.utils.LocalizedUtils.getLocalizedParishShortName;
@@ -77,34 +74,15 @@ import static by.imsha.utils.UserLocaleHolder.getUserLocale;
 @Service
 @Validated
 public class MassService {
+    @Autowired
+    private MassCalendarMapper massCalendarMapper;
+
     private static Logger logger = LoggerFactory.getLogger(MassService.class);
+
     /**
      * Мап, для кэширования компараторов для различных локалей
      */
     private static final Map<String, Comparator<MassFilterValue>> COMPARATOR_CACHE = new HashMap<>();
-
-    private QueryConversionPipeline pipeline = QueryConversionPipeline.defaultPipeline();
-
-    private MongoVisitor mongoVisitor = new MongoVisitor();
-
-    private static MassService INSTANCE;
-
-    @PostConstruct
-    public void initInstance(){
-        INSTANCE = this;
-    }
-
-    @Autowired
-    private MassRepository massRepository;
-
-    @Autowired
-    private CacheManager cacheManager;
-
-    @Autowired
-    private MassInfoMapper massInfoMapper;
-
-    @Autowired
-    private Validator validator;
 
     @Autowired
     private CityService cityService;
@@ -112,60 +90,75 @@ public class MassService {
     @Autowired
     private ParishRepository parishRepository;
 
+    @Autowired
+    private ParishService parishService;
+
+    @Autowired
+    private DeprecatedScheduleFactory scheduleFactory;
+
+    private QueryConversionPipeline pipeline = QueryConversionPipeline.defaultPipeline();
+
+    private MongoVisitor mongoVisitor = new MongoVisitor();
+
+    @Autowired
+    private MassRepository massRepository;
+
+    @Autowired
+    private MongoTemplate mongoTemplate;
+
+    @Autowired
+    private CacheManager cacheManager;
+
     @Caching(evict = {
             @CacheEvict(cacheNames = "massCache", key = "'massesByCity:' + #p0.cityId"),
-            @CacheEvict(cacheNames = "massCache", key = "'massesByParish:' + #p0.parishId"),
-            @CacheEvict(cacheNames = "massCache", key = "'oldestMass:' + #p0.parishId")
+            @CacheEvict(cacheNames = "massCache", key = "'massesByParish:' + #p0.parishId")
     })
-    public Mass createMass(@Valid Mass mass){
-        return saveWithCalendar(mass);
+    public Mass createMass(@Valid Mass mass) {
+        return massRepository.insert(mass);
     }
 
-    private Mass saveWithCalendar(Mass mass) {
-        CalendarSchedule calendar = mass.isPeriodic()
-                ? DescribeSchedule.weekly(mass.getStartDate(), mass.getEndDate(),
-                        LocalTime.parse(mass.getTime()), mass.getDays(), ServiceUtils.BEL_ZONE_ID)
-                : DescribeSchedule.once(Instant.ofEpochSecond(mass.getSingleStartTimestamp()));
-        mass.setCalendar(new Mass.CalendarDescription(calendar.dtstart(), calendar.rrule()));
-        return massRepository.save(mass);
+    public Mass getScheduledMass(String id) {
+        return requireActiveMass(id);
     }
 
-    private static int[] buildValidWeekDaysInDatePeriod(Mass mass) {
-        LocalDate startDate = mass.getStartDate();
-        LocalDate endDate = mass.getEndDate();
-        int[] baseDays = mass.getDays();
-        if(startDate == null && endDate != null){
-            startDate = LocalDate.now();
-        }
-        if (startDate == null || endDate == null) {
-            return baseDays;
+    @CacheEvict(cacheNames = "massCache", allEntries = true)
+    public void cancelOccurrence(String id, Instant start) {
+        cancelStoredOccurrence(requireActiveMass(id), start);
+    }
+
+    private void cancelStoredOccurrence(Mass mass, Instant start) {
+        String id = mass.getId();
+        var stored = mass.getCalendar();
+        ScheduleRule rule = massCalendarMapper.toScheduleRule(mass.getCalendar());
+        if (!rule.contains(start)) {
+            throw new ResourceNotFoundException("mass occurrence not found");
         }
 
-        if (ChronoUnit.WEEKS.between(startDate, endDate) >= 1) {
-            return baseDays;
+        Query query = activeMass(id);
+        Update update = new Update().set("lastModifiedDate", LocalDateTime.now());
+        query.addCriteria(Criteria.where("calendar.dtstart").is(stored.dtstart())
+                .and("calendar.rrule").is(stored.rrule()));
+        update.addToSet("calendar.exdates", start);
+        if (mongoTemplate.updateFirst(query, update, Mass.class).getMatchedCount() == 0) {
+            throw new ResourceNotFoundException("mass occurrence not found");
         }
-        int startDay = startDate.getDayOfWeek().getValue();
-        int endDay = endDate.getDayOfWeek().getValue();
-        boolean[] invalidWeekDays = new boolean[WEEK_DAYS_COUNT];
-        int invalidDaysCount = 0;
-        for (int day : baseDays) {
-            if (startDay <= endDay && (day < startDay || day > endDay)
-                || day > endDay && day < startDay) {
-                invalidWeekDays[day - 1] = true;
-                invalidDaysCount++;
-            }
+    }
+
+    @CacheEvict(cacheNames = "massCache", allEntries = true)
+    public synchronized void cancelSeries(String id) {
+        var update = new Update().set("deleted", true).set("lastModifiedDate", LocalDateTime.now());
+        if (mongoTemplate.updateFirst(activeMass(id), update, Mass.class).getMatchedCount() == 0) {
+            throw new ResourceNotFoundException("resource not found");
         }
-        if (invalidDaysCount == 0) {
-            return baseDays;
-        }
-        int[] validWeekDays = new int[baseDays.length - invalidDaysCount];
-        int i = 0;
-        for (int day : baseDays) {
-            if (!invalidWeekDays[day - 1]) {
-                validWeekDays[i++] = day;
-            }
-        }
-        return validWeekDays;
+    }
+
+    private static Query activeMass(String id) {
+        return Query.query(Criteria.where("_id").is(id).and("deleted").ne(true));
+    }
+
+    private Mass requireActiveMass(String id) {
+        return massRepository.findById(id).filter(mass -> !mass.isDeleted())
+                .orElseThrow(() -> new ResourceNotFoundException("resource not found"));
     }
 
     @Cacheable(cacheNames = "massCache", key = "'massesByParish:' + #parishId")
@@ -196,26 +189,22 @@ public class MassService {
         return getMassForUpdate(id);
     }
 
-    public Optional<Mass> getMassForUpdate(String id) {
+    private Optional<Mass> getMassForUpdate(String id) {
         return massRepository.findById(id);
     }
 
-    public Mass readView(Mass mass) {
-        return MassCalendar.readView(mass);
-    }
-
-    public List<Mass> search(String filter){
-        // TODO can be added default sorting
-        return search(filter, PAGE, LIMIT, null);
+    public Mass requireMassForUpdate(String id) {
+        return getMassForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException("resource not found"));
     }
 
     public List<Mass> search(String filter, int offset, int limit, String sort){
         Query query = prepareQuery(filter, offset, limit, sort);
         if (query == null) return null;
-        return this.massRepository.search(query, Mass.class).stream().map(this::readView).toList();
+        return mongoTemplate.find(query, Mass.class);
     }
 
-    public Query prepareQuery(String filter, int offset, int limit, String sort) {
+    private Query prepareQuery(String filter, int offset, int limit, String sort) {
         if(StringUtils.isBlank(filter)){
             if(logger.isInfoEnabled()){
                 logger.info("No searching masses: query is blank");
@@ -231,63 +220,68 @@ public class MassService {
         }
     }
 
-    public List<Mass> filterOutOnlyOnline(List<Mass> masses){
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "massCache", key = "#p0.id"),
+            @CacheEvict(cacheNames = "massCache", key = "'massesByCity:' + #p0.cityId"),
+            @CacheEvict(cacheNames = "massCache", key = "'massesByParish:' + #p0.parishId")
+    })
+    public synchronized Mass updateMass(@Valid Mass mass) {
+        if (!massRepository.existsById(mass.getId())) {
+            throw new ResourceNotFoundException("resource not found");
+        }
+        return massRepository.save(mass);
+    }
+
+    private List<Mass> filterOutOnlyOnline(List<Mass> masses) {
         return masses.stream().filter(mass -> BooleanUtils.toBoolean(mass.getOnline()))
                 .collect(Collectors.toList());
     }
 
-    public List<Mass> filterByMassLang(List<Mass> masses, String massLang){
+    private List<Mass> filterByMassLang(List<Mass> masses, String massLang) {
         return masses.stream().filter(mass -> StringUtils.equals(mass.getLangCode(), massLang))
-            .collect(Collectors.toList());
+                .collect(Collectors.toList());
     }
 
-    public List<Mass> filterOutRorateOnly(List<Mass> masses){
+    private List<Mass> filterOutRorateOnly(List<Mass> masses) {
         return masses.stream().filter(mass -> BooleanUtils.isTrue(mass.getRorate()))
                 .collect(Collectors.toList());
+    }
+
+    public Optional<Mass> findScheduleConflict(Mass mass) {
+        if (mass.isDeleted()) {
+            return Optional.empty();
+        }
+        var rule = massCalendarMapper.toScheduleRule(mass.getCalendar());
+        return massRepository.findByParishId(mass.getParishId()).stream()
+                .filter(other -> !other.isDeleted() && !Objects.equals(mass.getId(), other.getId()))
+                .filter(other -> ScheduleConflict.intersects(rule, massCalendarMapper.toScheduleRule(other.getCalendar())))
+                .findFirst();
     }
 
     @Caching(evict = {
             @CacheEvict(cacheNames = "massCache", key = "#p0.id"),
             @CacheEvict(cacheNames = "massCache", key = "'massesByCity:' + #p0.cityId"),
-            @CacheEvict(cacheNames = "massCache", key = "'massesByParish:' + #p0.parishId"),
-            @CacheEvict(cacheNames = "massCache", key = "'oldestMass:' + #p0.parishId")
+            @CacheEvict(cacheNames = "massCache", key = "'massesByParish:' + #p0.parishId")
     })
-    public Mass updateMass(@Valid Mass mass){
-        return saveWithCalendar(mass);
+    public synchronized void removeMass(Mass mass){
+        massRepository.delete(mass);
     }
 
     @Caching(evict = {
             @CacheEvict(cacheNames = "massCache", key = "#p0"),
             @CacheEvict(cacheNames = "massCache", key = "'massesByCity:' + #result.cityId"),
-            @CacheEvict(cacheNames = "massCache", key = "'massesByParish:' + #result.parishId"),
-            @CacheEvict(cacheNames = "massCache", key = "'oldestMass:' + #result.parishId")
+            @CacheEvict(cacheNames = "massCache", key = "'massesByParish:' + #result.parishId")
     })
-    public Mass refreshMass(String id, UpdateMassInfo changes) {
-        Mass mass = massRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("resource not found"));
-        if (changes != null) {
-            massInfoMapper.updateMassFromDTO(changes, mass);
-        }
-        var violations = validator.validate(mass);
-        if (!violations.isEmpty()) {
-            throw new ConstraintViolationException(violations);
-        }
-        return saveWithCalendar(mass);
-    }
-
-    @Caching(evict = {
-            @CacheEvict(cacheNames = "massCache", key = "#p0.id"),
-            @CacheEvict(cacheNames = "massCache", key = "'massesByCity:' + #p0.cityId"),
-            @CacheEvict(cacheNames = "massCache", key = "'massesByParish:' + #p0.parishId"),
-            @CacheEvict(cacheNames = "massCache", key = "'oldestMass:' + #p0.parishId")
-    })
-    public void removeMass(Mass mass){
+    public synchronized Mass removeMass(String id) {
+        Mass mass = requireMassForUpdate(id);
         massRepository.delete(mass);
+        return mass;
     }
 
-    public Triple<String, String, String> removeMass(Mass baseMass, LocalDate fromDate, LocalDate toDate) {
+    public synchronized Triple<String, String, String> removeMass(String id, Instant from, Instant toExclusive) {
+        Mass baseMass = requireMassForUpdate(id);
         try {
-            return removeMassInterval(baseMass, fromDate, toDate);
+            return removeMassInterval(baseMass, from, toExclusive);
         } finally {
             // A split can persist the first remainder before the second write fails.
             var cache = cacheManager.getCache("massCache");
@@ -295,80 +289,88 @@ public class MassService {
                 cache.evictIfPresent(baseMass.getId());
                 cache.evictIfPresent("massesByCity:" + baseMass.getCityId());
                 cache.evictIfPresent("massesByParish:" + baseMass.getParishId());
-                cache.evictIfPresent("oldestMass:" + baseMass.getParishId());
             }
         }
     }
 
-    private Triple<String, String, String> removeMassInterval(Mass baseMass, LocalDate fromDate, LocalDate toDate) {
-        LocalDate baseStartDate = baseMass.getStartDate();
-        LocalDate baseEndDate = baseMass.getEndDate();
-        boolean updated = false, remove = false;
-        Mass massToSave = baseMass;
-        int[] validWeekDays, baseDays = baseMass.getDays();
-        String updatedMassId = null, createdMassId = null, removedMassId = null;
-        if ((baseStartDate == null || fromDate.isAfter(baseStartDate))
-                && (baseEndDate == null || !baseEndDate.isBefore(fromDate))) {
-            massToSave.setEndDate(fromDate.minusDays(1));
-            validWeekDays = buildValidWeekDaysInDatePeriod(massToSave);
-            if (validWeekDays.length > 0) {
-                massToSave.setDays(validWeekDays);
-                saveWithCalendar(massToSave);
-                updatedMassId = massToSave.getId();
-                updated = true;
-            } else {
-                remove = true;
-            }
+    private Triple<String, String, String> removeMassInterval(Mass baseMass, Instant from, Instant toExclusive) {
+        var rule = massCalendarMapper.toScheduleRule(baseMass.getCalendar());
+        Instant start = rule.start().toInstant();
+        Instant end = rule.until();
+        if ((end != null && end.isBefore(from)) || (toExclusive != null && !start.isBefore(toExclusive))) {
+            return Triple.of(null, null, null);
         }
-        if (toDate != null && (baseEndDate == null || baseEndDate.isAfter(toDate))
-                && (baseStartDate == null || !baseStartDate.isAfter(toDate))) {
-            if (updated) {
-                massToSave = new Mass(baseMass);
-                massToSave.setDays(baseDays);
-            } else {
-                remove = false;
-            }
-            massToSave.setStartDate(toDate.plusDays(1));
-            massToSave.setEndDate(baseEndDate);
-            validWeekDays = buildValidWeekDaysInDatePeriod(massToSave);
-            if (validWeekDays.length > 0) {
-                massToSave.setDays(validWeekDays);
-                massToSave = saveWithCalendar(massToSave);
-                if (updated) {
-                    createdMassId = massToSave.getId();
-                } else {
-                    updatedMassId = massToSave.getId();
-                }
-            } else if (massToSave.getId() != null) {
-                remove = true;
-            }
+
+        Instant nextStart = toExclusive == null ? null : rule.starts(toExclusive,
+                toExclusive.plus(7, java.time.temporal.ChronoUnit.DAYS)).findFirst().orElse(null);
+        var calendar = baseMass.getCalendar();
+        String updatedId = null;
+        if (start.isBefore(from)) {
+            Instant cutoff = from.minusSeconds(1);
+            var truncated = new CalendarSchedule(start, calendar.rrule(), calendar.exdates()).withUntil(cutoff);
+            baseMass.setCalendar(new Mass.CalendarDescription(truncated.dtstart(), truncated.rrule(), truncated.exdates()));
+            updatedId = massRepository.save(baseMass).getId();
         }
-        if (remove || baseStartDate != null && !fromDate.isAfter(baseStartDate)
-                && (toDate == null || baseEndDate != null && !toDate.isBefore(baseEndDate))) {
-            removeMass(baseMass);
-            removedMassId = baseMass.getId();
+
+        if (nextStart != null) {
+            Mass remainder = updatedId == null ? baseMass : new Mass(baseMass);
+            remainder.setCalendar(new Mass.CalendarDescription(nextStart, calendar.rrule()));
+            String remainderId = massRepository.save(remainder).getId();
+            return updatedId == null ? Triple.of(remainderId, null, null) : Triple.of(updatedId, remainderId, null);
         }
-        return Triple.of(updatedMassId, createdMassId, removedMassId);
+        if (updatedId == null) {
+            massRepository.delete(baseMass);
+            return Triple.of(null, null, baseMass.getId());
+        }
+        return Triple.of(updatedId, null, null);
     }
 
 
     @CacheEvict(cacheNames = "massCache", allEntries = true)
-    public List<Mass> removeMasses(String parishId){
+    public synchronized List<Mass> removeMasses(String parishId){
         return massRepository.deleteByParishId(parishId);
     }
 
-    @Cacheable(cacheNames = "massCache", key = "'oldestMass:' +#p0")
-    public Mass findOldestModifiedMass(String parishId){
-        List<Mass> parishMasses = getMassByParish(parishId);
-        Mass oldestMass = null;
-        for (Mass parishMass : parishMasses) {
-            if(oldestMass == null){
-                oldestMass = parishMass;
-            } else if (parishMass.getLastModifiedDate().isBefore(oldestMass.getLastModifiedDate())){
-                oldestMass = parishMass;
+    public List<MassDay> parishWeek(String parishId, LocalDate startDate) {
+        MassSchedule schedule = scheduleFactory.build(getMassByParish(parishId), startDate);
+        schedule.createSchedule();
+        return schedule.getSchedule();
+    }
+
+    public MassSchedule weekMasses(String cityId, String parishId, LocalDate startDate,
+                                   boolean online, boolean rorate, String massLang, boolean showPending) {
+        List<Mass> masses;
+        if (StringUtils.isNotEmpty(parishId)) {
+            var parish = parishService.getParish(parishId)
+                    .filter(value -> showPending || value.getState() == Parish.State.APPROVED);
+            if (parish.isPresent()) {
+                cityId = parish.get().getCityId();
+                masses = getMassByParish(parishId);
+            } else {
+                masses = List.of();
+            }
+        } else {
+            masses = getMassByCity(cityId);
+            if (!showPending) {
+                var notApproved = parishService.getNotApprovedParishIds(cityId);
+                masses = masses.stream().filter(mass -> !notApproved.contains(mass.getParishId())).toList();
             }
         }
-        return oldestMass;
+        if (online) {
+            masses = filterOutOnlyOnline(masses);
+        }
+        if (StringUtils.isNotEmpty(massLang)) {
+            masses = filterByMassLang(masses, massLang);
+        }
+        if (rorate) {
+            masses = filterOutRorateOnly(masses);
+        }
+
+        MassSchedule schedule = scheduleFactory.build(masses, startDate);
+        schedule.createSchedule();
+        schedule.setNav(buildMassNavigation(schedule, cityId, parishId,
+                Boolean.toString(online), massLang, rorate));
+        return schedule;
     }
 
     public MassNav buildMassNavigationByFacetDistribution(final String cityId, final String parishId,
@@ -583,10 +585,5 @@ public class MassService {
                         .value(parish.getId())
                         .build())
                 .collect(Collectors.toList());
-    }
-
-    public static LocalDateTime getOldestModifiedMassTimeForParish(String parishId){
-        Mass oldestModifiedMass = INSTANCE.findOldestModifiedMass(parishId);
-        return oldestModifiedMass != null ? oldestModifiedMass.getLastModifiedDate() : null;
     }
 }

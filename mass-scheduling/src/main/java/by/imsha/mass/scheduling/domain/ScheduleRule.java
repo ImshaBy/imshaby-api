@@ -1,5 +1,9 @@
 package by.imsha.mass.scheduling.domain;
 
+import net.fortuna.ical4j.model.Recur;
+import net.fortuna.ical4j.model.WeekDay;
+import net.fortuna.ical4j.transform.recurrence.Frequency;
+
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -7,77 +11,92 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.List;
+import java.time.temporal.Temporal;
+import java.util.Comparator;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public record ScheduleRule(ZonedDateTime start, Set<DayOfWeek> weekdays, Instant until) {
-    private static final DateTimeFormatter LOCAL = DateTimeFormatter.ofPattern("uuuuMMdd'T'HHmmss");
-    private static final DateTimeFormatter UTC = DateTimeFormatter.ofPattern("uuuuMMdd'T'HHmmss'Z'");
-    private static final List<String> WEEKDAYS = List.of("MO", "TU", "WE", "TH", "FR", "SA", "SU");
+public final class ScheduleRule {
+    private final ZonedDateTime start;
+    private final Recur<Temporal> recurrence;
+    private final Instant until;
+    private final Set<Instant> exclusions;
 
-    public ScheduleRule {
-        weekdays = Set.copyOf(weekdays);
+    private ScheduleRule(ZonedDateTime start, Recur<Temporal> recurrence, Instant until,
+                         Set<Instant> exclusions) {
+        this.start = start;
+        this.recurrence = recurrence;
+        this.until = until;
+        this.exclusions = exclusions;
     }
 
     public static ScheduleRule parse(CalendarSchedule calendar) {
-        String[] startParts = calendar.dtstart().split(":", 2);
-        ZonedDateTime start = startParts[0].equals("DTSTART")
-                ? parseUtc(startParts[1]).atZone(ZoneOffset.UTC)
-                : LocalDateTime.parse(startParts[1], LOCAL)
-                        .atZone(ZoneId.of(startParts[0].substring("DTSTART;TZID=".length())));
-        var parts = Arrays.stream(calendar.rrule().split(";"))
-                .map(part -> part.split("=", 2))
-                .collect(Collectors.toMap(part -> part[0], part -> part[1]));
-        Instant until = parts.containsKey("UNTIL") ? parseUtc(parts.remove("UNTIL")) : null;
-        String frequency = parts.remove("FREQ");
-        if ("DAILY".equals(frequency) && start.toInstant().equals(until) && parts.isEmpty()) {
-            return new ScheduleRule(start, Set.of(), until);
-        }
-        if ("WEEKLY".equals(frequency) && parts.size() == 1 && parts.containsKey("BYDAY")) {
-            Set<DayOfWeek> weekdays = Arrays.stream(parts.get("BYDAY").split(","))
-                    .map(day -> DayOfWeek.of(WEEKDAYS.indexOf(day) + 1))
-                    .collect(Collectors.toSet());
-            return new ScheduleRule(start, weekdays, until);
-        }
-        throw new IllegalArgumentException("Unsupported mass recurrence: " + calendar.rrule());
+        ZonedDateTime start = calendar.dtstart().atZone(ZoneOffset.UTC);
+
+        var recurrence = new Recur<Temporal>(calendar.rrule(), false);
+        Instant until = recurrence.getUntil() == null ? null : Instant.from(recurrence.getUntil());
+        return new ScheduleRule(start, recurrence, until, Set.copyOf(calendar.exdates()));
+    }
+
+    public ZonedDateTime start() {
+        return start;
+    }
+
+    public Instant until() {
+        return until;
+    }
+
+    public Set<Instant> exclusions() {
+        return exclusions;
+    }
+
+    public Set<DayOfWeek> weekdays() {
+        return recurrence.getDayList().stream().map(WeekDay::getDayOfWeek).collect(Collectors.toUnmodifiableSet());
+    }
+
+    public boolean monthly() {
+        return recurrence.getFrequency() == Frequency.MONTHLY;
     }
 
     public boolean single() {
-        return weekdays.isEmpty();
+        return recurrence.getFrequency() == Frequency.DAILY && start.toInstant().equals(until);
+    }
+
+    public String byDay() {
+        return recurrence.getDayList().stream().distinct().sorted(Comparator.comparing(WeekDay::getDayOfWeek))
+                .map(WeekDay::toString).collect(Collectors.joining(","));
+    }
+
+    public boolean contains(Instant instant) {
+        // Membership includes cancelled dates so repeated cancellation is idempotent.
+        return starts(instant, instant.plusSeconds(1)).anyMatch(instant::equals);
     }
 
     public Stream<LocalDateTime> occurrences(LocalDate from, LocalDate toExclusive, ZoneId outputZone) {
-        Instant lowerBound = from.atStartOfDay(outputZone).toInstant();
-        Instant upperBound = toExclusive.atStartOfDay(outputZone).toInstant();
-        Stream<ZonedDateTime> starts;
-        if (single()) {
-            starts = Stream.of(start);
-        } else {
-            ZoneId zone = start.getZone();
-            LocalDate firstDate = lowerBound.atZone(zone).toLocalDate();
-            if (firstDate.isBefore(start.toLocalDate())) {
-                firstDate = start.toLocalDate();
-            }
-            LocalDate lastDate = upperBound.atZone(zone).toLocalDate();
-            if (firstDate.isAfter(lastDate)) {
-                return Stream.empty();
-            }
-            starts = firstDate.datesUntil(lastDate.plusDays(1))
-                    .filter(date -> weekdays.contains(date.getDayOfWeek()))
-                    .map(date -> date.atTime(start.toLocalTime()).atZone(zone));
-        }
-        return starts.filter(value -> {
-            Instant instant = value.toInstant();
-            return !instant.isBefore(start.toInstant()) && !instant.isBefore(lowerBound)
-                    && instant.isBefore(upperBound) && (until == null || !instant.isAfter(until));
-        }).map(value -> value.withZoneSameInstant(outputZone).toLocalDateTime());
+        return occurrences(from.atStartOfDay(outputZone).toInstant(), toExclusive.atStartOfDay(outputZone).toInstant())
+                .map(instant -> LocalDateTime.ofInstant(instant, outputZone));
     }
 
-    private static Instant parseUtc(String value) {
-        return LocalDateTime.parse(value, UTC).toInstant(ZoneOffset.UTC);
+    public Stream<Instant> occurrences(Instant from, Instant toExclusive) {
+        return starts(from, toExclusive).filter(instant -> !exclusions.contains(instant));
+    }
+
+    /**
+     * Returns RRULE starts in [lowerBound, upperBound), before applying EXDATE.
+     */
+    public Stream<Instant> starts(Instant lowerBound, Instant upperBound) {
+        if (!lowerBound.isBefore(upperBound) || !start.toInstant().isBefore(upperBound)
+                || until != null && (until.isBefore(lowerBound) || until.isBefore(start.toInstant()))) {
+            return Stream.empty();
+        }
+        ZoneId zone = start.getZone();
+        Instant last = until != null && until.isBefore(upperBound) ? until : upperBound;
+        LocalDateTime from = LocalDate.ofInstant(lowerBound, zone).minusDays(1).atStartOfDay();
+        LocalDateTime through = LocalDate.ofInstant(last, zone).plusDays(1).atStartOfDay();
+        return recurrence.getDates(start, from.atZone(zone), through.atZone(zone)).stream()
+                .map(Instant::from)
+                .filter(instant -> !instant.isBefore(lowerBound) && instant.isBefore(upperBound)
+                        && !instant.isBefore(start.toInstant()) && (until == null || !instant.isAfter(until)));
     }
 }

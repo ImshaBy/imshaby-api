@@ -1,0 +1,149 @@
+openapi: 3.0.3
+info:
+  title: Mass schedules API v2
+  version: '2'
+paths:
+  /api/v2/masses:
+    post:
+      tags: [MassSchedule]
+      operationId: createMassSchedule
+      summary: Create a Mass schedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MassScheduleInput'
+      responses:
+        '201':
+          description: Created schedule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MassScheduleDetails'
+        '400':
+          description: >
+            Invalid request, invalid recurrence, or a conflicting occurrence in the same parish.
+            For a conflict, the errors array contains an entry with code MASS.011 and
+            the conflicting Mass in payload.duplicateMass.
+  /api/v2/masses/{id}:
+    parameters:
+      - $ref: '#/components/parameters/MassId'
+    get:
+      tags: [MassSchedule]
+      operationId: getMassSchedule
+      summary: Get an active Mass schedule
+      responses:
+        '200':
+          description: Schedule and cancelled occurrence starts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MassScheduleDetails'
+        '404':
+          description: Schedule does not exist or has been cancelled
+    delete:
+      tags: [MassSchedule]
+      operationId: cancelMassSeries
+      summary: Cancel the entire schedule
+      responses:
+        '204':
+          description: Series cancelled
+        '404':
+          description: Schedule does not exist or has already been cancelled
+  /api/v2/masses/{id}/occurrences/{start}:
+    parameters:
+      - $ref: '#/components/parameters/MassId'
+    delete:
+      tags: [MassSchedule]
+      operationId: cancelMassOccurrence
+      summary: Cancel an individual occurrence
+      parameters:
+        - in: path
+          name: start
+          required: true
+          description: Original occurrence start as an RFC 3339 timestamp in UTC (Z)
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '204':
+          description: Occurrence cancelled, including if already cancelled
+        '404':
+          description: Active schedule or matching occurrence was not found
+components:
+  parameters:
+    MassId:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+  schemas:
+    MassScheduleFields:
+      type: object
+      required: [cityId, parishId, langCode, rrule, duration]
+      properties:
+        cityId:
+          type: string
+          minLength: 1
+          pattern: '.*\S.*'
+        parishId:
+          type: string
+          minLength: 1
+          pattern: '.*\S.*'
+        langCode:
+          type: string
+          minLength: 1
+          pattern: '.*\S.*'
+        rrule:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: >
+            RRULE value without the RRULE prefix. Supported forms are FREQ=DAILY;UNTIL=<DTSTART in UTC>
+            for a single Mass, FREQ=WEEKLY;BYDAY=<comma-separated two-letter weekdays>,
+            and FREQ=MONTHLY;BYDAY=<ordinal weekday> (e.g. 2FR or -1SU). Weekly and monthly rules
+            accept an optional inclusive UNTIL. BYDAY uses UTC weekdays. UNTIL uses yyyyMMddTHHmmssZ.
+        duration:
+          type: integer
+          format: int32
+          minimum: 1
+          description: Duration of each occurrence in seconds
+        notes:
+          type: string
+        online:
+          type: boolean
+        rorate:
+          type: boolean
+    MassScheduleInput:
+      allOf:
+        - $ref: '#/components/schemas/MassScheduleFields'
+        - type: object
+          required: [dtstart]
+          properties:
+            dtstart:
+              type: string
+              format: date-time
+              x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING)'
+              description: First occurrence in UTC (Z) with whole seconds.
+    MassScheduleDetails:
+      allOf:
+        - $ref: '#/components/schemas/MassScheduleFields'
+        - type: object
+          required: [id, dtstart, exdates]
+          properties:
+            id:
+              type: string
+            dtstart:
+              type: string
+              format: date-time
+              x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING)'
+              description: First occurrence in UTC (Z).
+            exdates:
+              type: array
+              x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING)'
+              description: Cancelled occurrence starts in UTC (Z)
+              items:
+                type: string
+                format: date-time

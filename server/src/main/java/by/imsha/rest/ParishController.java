@@ -19,7 +19,7 @@ import by.imsha.repository.projection.ParishExpirationInfo;
 import by.imsha.service.CityService;
 import by.imsha.service.MassService;
 import by.imsha.service.ParishService;
-import by.imsha.service.ScheduleFactory;
+import by.imsha.service.DeprecatedScheduleFactory;
 import by.imsha.utils.DateTimeProvider;
 import by.imsha.validation.common.AvailableLocale;
 import jakarta.validation.Valid;
@@ -68,7 +68,7 @@ public class ParishController {
     private CityService cityService;
 
     @Autowired
-    private ScheduleFactory scheduleFactory;
+    private DeprecatedScheduleFactory scheduleFactory;
 
     @Autowired
     private DateTimeProvider dateTimeProvider;

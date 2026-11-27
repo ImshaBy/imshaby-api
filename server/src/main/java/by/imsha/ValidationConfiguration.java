@@ -1,7 +1,6 @@
 package by.imsha;
 
 import by.imsha.validation.ConstraintViolationPayloadBase64Coder;
-import by.imsha.validation.mass.UniqueMassValidatorHelper;
 import tools.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,10 +11,5 @@ public class ValidationConfiguration {
     @Bean
     public ConstraintViolationPayloadBase64Coder constraintViolationPayloadBase64Coder(final ObjectMapper objectMapper) {
         return new ConstraintViolationPayloadBase64Coder(objectMapper);
-    }
-
-    @Bean
-    public UniqueMassValidatorHelper uniqueMassValidatorHelper() {
-        return new UniqueMassValidatorHelper();
     }
 }

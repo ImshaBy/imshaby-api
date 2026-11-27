@@ -1,6 +1,6 @@
 package by.imsha.rest;
 
-import by.imsha.domain.Mass;
+import by.imsha.domain.DeprecatedMass;
 import by.imsha.domain.Parish;
 import by.imsha.domain.dto.*;
 import by.imsha.exception.InvalidDateIntervalException;
@@ -14,12 +14,12 @@ import by.imsha.properties.ImshaProperties;
 import by.imsha.rest.dto.MassCoordinatesResponse;
 import by.imsha.rest.dto.MassCoordinatesResponse.UnapprovedParish;
 import by.imsha.service.DefaultCityService;
-import by.imsha.service.MassService;
+import by.imsha.service.DeprecatedMassService;
 import by.imsha.service.ParishService;
-import by.imsha.service.ScheduleFactory;
+import by.imsha.service.DeprecatedScheduleFactory;
 import by.imsha.utils.DateTimeProvider;
 import by.imsha.utils.UserLocaleHolder;
-import lombok.extern.slf4j.Slf4j;
+import jakarta.validation.Valid;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,9 +32,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
-import static java.util.Objects.isNull;
 
 
 /**
@@ -43,15 +41,13 @@ import static java.util.Objects.isNull;
 
 @RestController
 @RequestMapping(value = "/api/mass")
-@Slf4j
 public class MassController {
 
     //TODO всюду используется зона +3 (нужно хорошо всё обдумать и отрефакторить)
     private static final ZoneOffset BEL_ZONE_OFFSET = ZoneOffset.ofHours(3);
 
     @Autowired
-    private MassService massService;
-
+    private DeprecatedMassService deprecatedMassService;
 
     @Autowired
     private ParishService parishService;
@@ -60,7 +56,7 @@ public class MassController {
     private DefaultCityService defaultCityService;
 
     @Autowired
-    private ScheduleFactory scheduleFactory;
+    private DeprecatedScheduleFactory scheduleFactory;
 
     @Autowired
     private DateTimeProvider dateTimeProvider;
@@ -79,29 +75,24 @@ public class MassController {
     MassController self;
 
     @PostMapping
-    public ResponseEntity<Mass> createMass(@RequestBody final Mass mass) {
+    public ResponseEntity<DeprecatedMass> createMass(@Valid @RequestBody final DeprecatedMass mass) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(massService.createMass(mass));
+                .body(deprecatedMassService.createMass(mass));
     }
 
     @GetMapping("/{massId}")
-    public ResponseEntity<Mass> retrieveMass(@PathVariable("massId") final String id) {
-        return massService.getMass(id)
-                .map(massService::readView)
+    public ResponseEntity<DeprecatedMass> retrieveMass(@PathVariable("massId") final String id) {
+        return deprecatedMassService.getMass(id)
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> new ResourceNotFoundException("resource not found"));
     }
 
     @PutMapping("/{massId}")
-    public ResponseEntity<UpdateEntityInfo> updateMass(@PathVariable("massId") String id, @RequestBody Mass mass) {
-        //из-за кэша не переделывал проверку на existsById
-        if (!this.massService.getMass(id).isPresent()) {
-            throw new ResourceNotFoundException("resource not found");
-        }
-
+    public ResponseEntity<UpdateEntityInfo> updateMass(@PathVariable("massId") String id,
+                                                       @Valid @RequestBody DeprecatedMass mass) {
         mass.setId(id);
-        final Mass updatedMass = this.massService.updateMass(mass);
+        final DeprecatedMass updatedMass = deprecatedMassService.updateMass(mass);
 
         return ResponseEntity.ok(
                 new UpdateEntityInfo(updatedMass.getId(), UpdateEntityInfo.STATUS.UPDATED)
@@ -111,7 +102,7 @@ public class MassController {
 
     @PutMapping("/refresh/{massId}")
     public ResponseEntity<UpdateEntityInfo> refreshMass(@PathVariable("massId") final String id, @RequestBody(required = false) UpdateMassInfo massInfo) {
-        final Mass updatedMass = massService.refreshMass(id, massInfo);
+        final DeprecatedMass updatedMass = deprecatedMassService.refreshMass(id, massInfo);
 
         return ResponseEntity.ok(
                 new UpdateEntityInfo(updatedMass.getId(), UpdateEntityInfo.STATUS.UPDATED)
@@ -136,10 +127,7 @@ public class MassController {
 
     @DeleteMapping("/{massId}")
     public ResponseEntity<UpdateEntityInfo> removeMass(@PathVariable("massId") String id) {
-        final Mass mass = this.massService.getMass(id)
-                .orElseThrow(() -> new ResourceNotFoundException("resource not found"));
-
-        this.massService.removeMass(mass);
+        deprecatedMassService.removeMass(id);
 
         return ResponseEntity.ok(
                 new UpdateEntityInfo(id, UpdateEntityInfo.STATUS.DELETED)
@@ -152,14 +140,11 @@ public class MassController {
                                                                            @RequestParam("from") LocalDate fromDate,
                                                                            @DateTimeFormat(pattern = "dd-MM-yyyy")
                                                                            @RequestParam(name = "to", required = false) LocalDate toDate) {
-        Mass mass = this.massService.getMassForUpdate(id)
-                .orElseThrow(() -> new ResourceNotFoundException("resource not found"));
-
         if (toDate != null && fromDate.isAfter(toDate)) {
             throw new InvalidDateIntervalException("Invalid dates", "from", "MASS.012");
         }
 
-        Triple<String, String, String> removalResult = this.massService.removeMass(mass, fromDate, toDate);
+        Triple<String, String, String> removalResult = deprecatedMassService.removeMassInterval(id, fromDate, toDate);
         List<UpdateEntityInfo> updateEntityInfos = new ArrayList<>();
         String infoId = removalResult.getLeft();
         if (infoId != null) {
@@ -182,10 +167,10 @@ public class MassController {
             throw new ResourceNotFoundException("resource not found");
         }
 
-        final List<Mass> deletedMasses = this.massService.removeMasses(parishId);
+        final List<String> deletedIds = deprecatedMassService.removeMasses(parishId);
 
         return ResponseEntity.ok(
-                new UpdateEntitiesInfo(deletedMasses.stream().map(Mass::getId).collect(Collectors.toList()),
+                new UpdateEntitiesInfo(deletedIds,
                         UpdateEntitiesInfo.STATUS.DELETED)
         );
     }
@@ -259,7 +244,7 @@ public class MassController {
 
         massSchedule.createSchedule();
 
-        final MassNav massNav = massService.buildMassNavigationByFacetDistribution(cityId, parishId, onlineOnly,
+        final MassNav massNav = deprecatedMassService.buildMassNavigationByFacetDistribution(cityId, parishId, onlineOnly,
                 massLang, rorateOnly, facetDistribution);
 
         massSchedule.setNav(massNav);
@@ -277,69 +262,22 @@ public class MassController {
                                                    @RequestParam(value = "massLang", required = false) String massLang,
                                                    @RequestHeader(name = "x-show-pending", required = false, defaultValue = "false") boolean showPending) {
 
-        List<Mass> masses;
-        if (StringUtils.isNotEmpty(parishId)) {
-            Optional<Parish> parishOptional = parishService.getParish(parishId);
-
-            if (!showPending) {
-                //только APPROVED
-                parishOptional = parishOptional.filter(parish -> Parish.State.APPROVED == parish.getState());
-            }
-
-            if (parishOptional.isPresent()) {
-                cityId = parishOptional.get().getCityId();
-                masses = this.massService.getMassByParish(parishId);
-            } else {
-                masses = Collections.emptyList();
-            }
-        } else {
+        LocalDate startDate = day == null ? dateTimeProvider.today() : day;
+        if (StringUtils.isEmpty(parishId)) {
             cityId = defaultCityService.getCityIdOrDefault(cityId);
-            masses = this.massService.getMassByCity(cityId); // TODO filter by date as well
-
-            if (!showPending) {
-                final Set<String> notApprovedParishIds = parishService.getNotApprovedParishIds(cityId);
-                masses = masses.stream().filter(mass -> !notApprovedParishIds.contains(mass.getParishId()))
-                        .collect(Collectors.toList());
-            }
         }
-
-        if (online) {
-            masses = massService.filterOutOnlyOnline(masses);
-        }
-
-        if (StringUtils.isNotEmpty(massLang)) {
-            masses = massService.filterByMassLang(masses, massLang);
-        }
-
-        if (rorate) {
-            masses = massService.filterOutRorateOnly(masses);
-        }
-
-        final LocalDate startDate = isNull(day) ? dateTimeProvider.today() : day;
-
-        final MassSchedule massHolder = scheduleFactory.build(masses, startDate);
-
-        massHolder.createSchedule();
-
-        final MassNav massFilters = massService.buildMassNavigation(massHolder, cityId, parishId, Boolean.toString(online), massLang,
-                rorate);
-
-        massHolder.setNav(massFilters);
-
-        log.debug("{} masses found: {}. Scheduler is built.", masses.size(), masses);
-
-        return ResponseEntity.ok(
-                massHolder
-        );
+        return ResponseEntity.ok(deprecatedMassService.weekMasses(
+                cityId, parishId, startDate, online, rorate, massLang, showPending));
     }
 
     @GetMapping
-    public ResponseEntity<List<Mass>> filterMasses(@RequestParam("filter") String filter,
-                                                   @RequestParam(value = "offset", required = false, defaultValue = "0") Integer page,
-                                                   @RequestParam(value = "limit", required = false, defaultValue = "10") Integer perPage,
-                                                   @RequestParam(value = "sort", required = false, defaultValue = "+name") String sorting) {
+    public ResponseEntity<List<DeprecatedMass>> filterMasses(
+            @RequestParam("filter") String filter,
+            @RequestParam(value = "offset", required = false, defaultValue = "0") Integer page,
+            @RequestParam(value = "limit", required = false, defaultValue = "10") Integer perPage,
+            @RequestParam(value = "sort", required = false, defaultValue = "+name") String sorting) {
         return ResponseEntity.ok(
-                massService.search(filter, page, perPage, sorting)
+                deprecatedMassService.search(filter, page, perPage, sorting)
         );
     }
 
@@ -377,14 +315,6 @@ public class MassController {
                 .orElseThrow(ResourceNotFoundException::new);
         final Parish parish = parishService.findParishByKey(parishKey)
                 .orElseThrow(ResourceNotFoundException::new);
-        final List<Mass> masses = this.massService.getMassByParish(parish.getId());
-        final LocalDate startDate = dateTimeProvider.today();
-
-        final MassSchedule massHolder = scheduleFactory.build(masses, startDate);
-        massHolder.createSchedule();
-
-        return ResponseEntity.ok(
-                massHolder.getSchedule()
-        );
+        return ResponseEntity.ok(deprecatedMassService.parishWeek(parish.getId(), dateTimeProvider.today()));
     }
 }

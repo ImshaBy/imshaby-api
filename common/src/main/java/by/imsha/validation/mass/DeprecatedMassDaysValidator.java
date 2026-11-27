@@ -1,6 +1,6 @@
 package by.imsha.validation.mass;
 
-import by.imsha.domain.Mass;
+import by.imsha.domain.DeprecatedMass;
 import by.imsha.utils.Constants;
 import by.imsha.utils.DateTimeProvider;
 import by.imsha.validation.ConstraintViolationPayloadBase64Coder;
@@ -36,7 +36,7 @@ import static by.imsha.utils.Constants.WEEK_DAYS_COUNT;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class MassDaysValidator implements ConstraintValidator<MassDaysValid, Mass> {
+public class DeprecatedMassDaysValidator implements ConstraintValidator<DeprecatedMassDaysValid, DeprecatedMass> {
 
     //для закрепления ошибки за полем, используем поле days
     public static final String DAYS_FIELD_NAME = "days";
@@ -45,7 +45,7 @@ public class MassDaysValidator implements ConstraintValidator<MassDaysValid, Mas
     private final ConstraintViolationPayloadBase64Coder constraintViolationPayloadBase64Coder;
 
     @Override
-    public boolean isValid(final Mass mass, final ConstraintValidatorContext context) {
+    public boolean isValid(final DeprecatedMass mass, final ConstraintValidatorContext context) {
         //не проверяем пустые массивы
         if (ArrayUtils.isEmpty(mass.getDays())) {
             return true;
@@ -86,7 +86,7 @@ public class MassDaysValidator implements ConstraintValidator<MassDaysValid, Mas
     /**
      * Проверить, что в случае, если период меньше недели, то указаны дни, входящие в этот период
      */
-    private boolean isValid1WeekPeriod(final Mass mass, final ConstraintValidatorContext context) {
+    private boolean isValid1WeekPeriod(final DeprecatedMass mass, final ConstraintValidatorContext context) {
         final LocalDate endDate = mass.getEndDate();
 
         if (endDate == null) {
@@ -132,7 +132,7 @@ public class MassDaysValidator implements ConstraintValidator<MassDaysValid, Mas
     /**
      * Проверить, что среди значений нет дубликатов
      */
-    private boolean isNumberUnique(final Mass mass, final ConstraintValidatorContext context) {
+    private boolean isNumberUnique(final DeprecatedMass mass, final ConstraintValidatorContext context) {
         final Set<Integer> distinctDays = toSet(mass.getDays());
 
         if (distinctDays.size() != mass.getDays().length) {
@@ -158,7 +158,7 @@ public class MassDaysValidator implements ConstraintValidator<MassDaysValid, Mas
     /**
      * Проверить, что содержатся допустимые значения
      */
-    private boolean isNumbersValid(final Mass mass, final ConstraintValidatorContext context) {
+    private boolean isNumbersValid(final DeprecatedMass mass, final ConstraintValidatorContext context) {
         //значения в массиве должны быть в диапазоне от 1 до количества дней в неделе
         final List<Integer> wrongDayNumbers = new ArrayList<>();
 

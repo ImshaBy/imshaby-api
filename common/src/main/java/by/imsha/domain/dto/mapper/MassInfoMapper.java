@@ -1,5 +1,6 @@
 package by.imsha.domain.dto.mapper;
 
+import by.imsha.domain.DeprecatedMass;
 import by.imsha.domain.Mass;
 import by.imsha.domain.Parish;
 import by.imsha.domain.dto.CityName;
@@ -44,8 +45,7 @@ public abstract class MassInfoMapper {
     @Mapping(source = "mass", target = "city")
     public abstract MassInfo toMassInfo(Mass mass);
 
-    @Mapping(target = "calendar", ignore = true)
-    public abstract Mass updateMassFromDTO(UpdateMassInfo massInfo, @MappingTarget Mass mass);
+    public abstract void updateMassFromDTO(UpdateMassInfo massInfo, @MappingTarget DeprecatedMass mass);
 
     protected String convertNotesToInfo(final Mass mass) {
         return getLocalizedMassNotes(mass, UserLocaleHolder.getUserLocale().orElse(null));

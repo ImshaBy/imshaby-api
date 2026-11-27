@@ -1,15 +1,15 @@
 package by.imsha.validation.mass;
 
-import by.imsha.domain.Mass;
+import by.imsha.domain.DeprecatedMass;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
 import java.util.Arrays;
 
-public class MassStartWeekdayValidator implements ConstraintValidator<MassStartWeekdayValid, Mass> {
+public class DeprecatedMassStartWeekdayValidator implements ConstraintValidator<DeprecatedMassStartWeekdayValid, DeprecatedMass> {
 
     @Override
-    public boolean isValid(Mass mass, ConstraintValidatorContext context) {
+    public boolean isValid(DeprecatedMass mass, ConstraintValidatorContext context) {
         if (mass == null || !mass.isPeriodic() || mass.getStartDate() == null || mass.getDays() == null) {
             return true;
         }

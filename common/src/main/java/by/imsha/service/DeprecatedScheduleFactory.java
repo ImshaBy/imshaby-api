@@ -6,6 +6,7 @@ import by.imsha.domain.dto.MassInfo;
 import by.imsha.domain.dto.MassParishInfo;
 import by.imsha.domain.dto.MassSchedule;
 import by.imsha.domain.dto.mapper.CityNameMapper;
+import by.imsha.domain.dto.mapper.DeprecatedMassMapper;
 import by.imsha.domain.dto.mapper.MassInfoMapper;
 import by.imsha.domain.dto.mapper.MassParishInfoMapper;
 import by.imsha.meilisearch.model.SearchResultItem;
@@ -17,8 +18,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +27,10 @@ import java.util.Map;
  * TODO refactor process of schedule initialization
  */
 @Service
-public class ScheduleFactory {
+public class DeprecatedScheduleFactory {
+    @Autowired
+    private MassCalendarMapper massCalendarMapper;
+
 
     protected final Logger log = LoggerFactory.getLogger(this.getClass());
 
@@ -36,6 +38,8 @@ public class ScheduleFactory {
     private MassParishInfoMapper massParishInfoMapper;
     @Autowired
     private MassInfoMapper massInfoMapper;
+    @Autowired
+    private DeprecatedMassMapper deprecatedMassMapper;
     @Autowired
     private ParishService parishService;
     @Autowired
@@ -46,6 +50,9 @@ public class ScheduleFactory {
     public MassSchedule build(List<Mass> masses, LocalDate startDate, LocalDate endDate) {
         MassSchedule schedule =  new MassSchedule(startDate, massInfoMapper);
         for (Mass mass : masses) {
+            if (mass.isDeleted()) {
+                continue;
+            }
             if (mass.getParishId() == null) {
                 log.error(String.format("Mass with ID: %s is configured incorrectly - parish ID can not be null!", mass.getId()));
                 continue;
@@ -53,37 +60,17 @@ public class ScheduleFactory {
                 log.error(String.format("Mass with ID: %s is configured incorrectly - not existing parish is configured : %s!", mass.getId(), mass.getParishId()));
                 continue;
             }
-            if (mass.getCalendar() != null) {
-                var rule = MassCalendar.ruleOf(mass);
-                var occurrences = rule.occurrences(startDate, endDate, ServiceUtils.BEL_ZONE_ID).toList();
-                if (!occurrences.isEmpty()) {
-                    MassInfo info = massInfoMapper.toMassInfo(MassCalendar.readView(mass, rule));
-                    occurrences.forEach(occurrence -> schedule.populateOccurrence(info, occurrence));
+            var rule = massCalendarMapper.toScheduleRule(mass.getCalendar());
+            var occurrences = rule.occurrences(startDate, endDate, ServiceUtils.BEL_ZONE_ID).toList();
+            if (!occurrences.isEmpty()) {
+                MassInfo info = massInfoMapper.toMassInfo(mass);
+                if (!rule.monthly()) {
+                    var legacy = deprecatedMassMapper.toDeprecatedMass(mass);
+                    info.setDays(legacy.getDays());
+                    info.setStartDate(legacy.getStartDate());
+                    info.setEndDate(legacy.getEndDate());
                 }
-                continue;
-            }
-            long singleStartTimestamp = mass.getSingleStartTimestamp();
-            LocalDateTime singleStartTime = singleStartTimestamp > 0
-                    ? ServiceUtils.timestampToLocalDate(singleStartTimestamp, ServiceUtils.BEL_ZONE_ID) : null;
-            if (singleStartTime != null) {
-                if (mass.getTime() != null) {
-                    log.error(String.format("Mass with ID: %s is configured incorrectly - time and singleStartTime cannot be not null at the same time!", mass.getId()));
-                    continue;
-                }
-                LocalDate singleStartDate = singleStartTime.toLocalDate();
-
-                if (singleStartDate.isAfter(LocalDate.of(startDate.getYear(), startDate.getMonth(), startDate.getDayOfMonth()).minusDays(1)) && singleStartDate.isBefore(endDate)) {
-                    schedule.populateContainers(mass, singleStartTime.getDayOfWeek(), singleStartTime.toLocalTime());
-                }
-            } else {
-                if (mass.getTime() == null) {
-                    log.error(String.format("Mass with ID: %s is configured incorrectly - time and singleStartTime cannot be null at the same time!", mass.getId()));
-                    continue;
-                }
-                int[] days = mass.getDays();
-                for (int day : days) {
-                    schedule.populateContainers(mass, DayOfWeek.of(day), LocalTime.parse(mass.getTime()));
-                }
+                occurrences.forEach(occurrence -> schedule.populateOccurrence(info, occurrence));
             }
         }
         return schedule;

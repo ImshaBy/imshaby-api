@@ -4,9 +4,6 @@ import by.imsha.domain.Mass;
 import by.imsha.service.MassService;
 import by.imsha.utils.Constants;
 import by.imsha.validation.ConstraintViolationPayloadBase64Coder;
-import by.imsha.validation.mass.UniqueMassValidatorHelper.CommonPeriodCalculator;
-import by.imsha.validation.mass.UniqueMassValidatorHelper.MassPeriodType;
-import by.imsha.validation.mass.UniqueMassValidatorHelper.Period;
 import tools.jackson.core.JacksonException;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
@@ -15,14 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
-import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
-import static by.imsha.utils.Constants.WEEK_DAYS_COUNT;
-import static by.imsha.validation.mass.UniqueMassValidatorHelper.min;
 
 /**
  * Валидатор уникальности мессы, проверяющий, что среди действующих (не удаленных) месс нет
@@ -40,7 +31,6 @@ public class UniqueMassValidator implements ConstraintValidator<UniqueMass, Mass
 
     private final MassService massService;
     private final ConstraintViolationPayloadBase64Coder constraintViolationPayloadBase64Coder;
-    private final UniqueMassValidatorHelper uniqueMassValidatorHelper;
 
     @Override
     public boolean isValid(final Mass mass, final ConstraintValidatorContext context) {
@@ -58,79 +48,9 @@ public class UniqueMassValidator implements ConstraintValidator<UniqueMass, Mass
         return true;
     }
 
-    private Optional<ErrorPayload> checkMassUnique(final Mass currentMass) {
-        //после перехода мессы в Periodic - идентификатор теряется, поэтому заранее сохраняем и используем дальше,
-        //чтобы не возникло путаницы
-        final String currentMassId = currentMass.getId();
-        //для проверок нужна периодическая месса
-        final Mass currentPeriodicMass = currentMass.asPeriodic();
-        //для каждого дня текущей периодической мессы составляем битовую карту, в которой дни мессы отмечены true
-        final boolean[] currentPeriodicMassDaysBitmap = new boolean[WEEK_DAYS_COUNT];
-        Arrays.stream(currentPeriodicMass.getDays())
-                .forEach(day -> currentPeriodicMassDaysBitmap[day - 1] = true);
-        //вычисляем тип периода текущей периодической мессы
-        final MassPeriodType currentPeriodicMassPeriodType = uniqueMassValidatorHelper.getMassPeriodType(currentPeriodicMass);
-        //получаем мап, содержащий все калькуляторы общего периода, описанные для типа текущей мессы
-        final Map<MassPeriodType, CommonPeriodCalculator> currentPeriodicMassCommonPeriodCalculatorMap = uniqueMassValidatorHelper
-                .getCalculatorMapForPeriodType(currentPeriodicMassPeriodType);
-
-        final List<Mass> allMasses = massService.getMassByParish(currentMass.getParishId());
-
-        for (Mass anotherMass : allMasses) {
-            //пропускаем текущую мессу (с таким же id) и удаленные
-            if (anotherMass.getId().equals(currentMassId) || anotherMass.isDeleted()) {
-                continue;
-            }
-            //трансформируем сравниваемую мессу в периодическую
-            final Mass anotherPeriodicMass = anotherMass.asPeriodic();
-            //пропускаем и те, время которых отличается от времени проверяемой мессы
-            if (!anotherPeriodicMass.getTime().equals(currentPeriodicMass.getTime())) {
-                continue;
-            }
-            //вычисляем тип периода сравниваемой периодической мессы
-            final MassPeriodType anotherPeriodicMassType = uniqueMassValidatorHelper.getMassPeriodType(anotherPeriodicMass);
-            //получаем необходимый для типов месс калькулятор общего периода
-            final Period commonPeriod = currentPeriodicMassCommonPeriodCalculatorMap
-                    .get(anotherPeriodicMassType)
-                    .getCommonPeriod(currentPeriodicMass.getStartDate(), currentPeriodicMass.getEndDate(),
-                            anotherPeriodicMass.getStartDate(), anotherPeriodicMass.getEndDate());
-            //проверяем, есть ли пересечение между периодами действия
-            // если общий период невалидный - пересечения нет, а значит это не дубликаты
-            if (commonPeriod.isInvalid()) {
-                continue;
-            }
-            //массив булевых значений, где для каждого дня сравниваемой мессы устанавливается соответствующее значение
-            // из массива, заполненного для текущей мессы
-            final boolean[] commonMassDaysBitmap = new boolean[WEEK_DAYS_COUNT];
-            Arrays.stream(anotherPeriodicMass.getDays())
-                    .forEach(day -> commonMassDaysBitmap[day - 1] = currentPeriodicMassDaysBitmap[day - 1]);
-
-            if (hasCommonDays(commonPeriod, commonMassDaysBitmap)) {
-                return Optional.of(
-                        ErrorPayload.builder()
-                                .duplicateMass(anotherMass)
-                                .build()
-                );
-            }
-
-        }
-        return Optional.empty();
-    }
-
-    /**
-     * Проверить, во время общего периода действия месс есть пересечения
-     */
-    private boolean hasCommonDays(final Period commonPeriod, final boolean[] commonMassDaysBitmap) {
-        final LocalDate fromDate = commonPeriod.getStartDate();
-        final LocalDate toDate = min(fromDate.plusWeeks(1), commonPeriod.getEndDate());
-
-        for (LocalDate temp = fromDate; !temp.isAfter(toDate); temp = temp.plusDays(1)) {
-            if (commonMassDaysBitmap[temp.getDayOfWeek().getValue() - 1]) {
-                return true;
-            }
-        }
-
-        return false;
+    private Optional<ErrorPayload> checkMassUnique(Mass mass) {
+        return massService.findScheduleConflict(mass)
+                .map(duplicate -> ErrorPayload.builder().duplicateMass(duplicate).build());
     }
 
     /**

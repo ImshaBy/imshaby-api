@@ -9,13 +9,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-@Constraint(validatedBy = MassDaysValidator.class)
-public @interface MassDaysValid {
-
+@Target(ElementType.FIELD)
+@Constraint(validatedBy = MassCalendarValidator.class)
+public @interface ValidMassCalendar {
     String message();
-
     Class<?>[] groups() default {};
-
     Class<? extends Payload>[] payload() default {};
 }

@@ -1,6 +1,6 @@
 package by.imsha.validation.mass;
 
-import by.imsha.domain.Mass;
+import by.imsha.domain.DeprecatedMass;
 import org.hibernate.validator.spi.group.DefaultGroupSequenceProvider;
 
 import java.util.ArrayList;
@@ -13,7 +13,7 @@ import java.util.List;
  * <p>
  * Важно!!! Если при валидации группы была обнаружена ошибка, валидация следующей группы не происходит.
  */
-public class MassGroupSequenceProvider implements DefaultGroupSequenceProvider<Mass> {
+public class DeprecatedMassGroupSequenceProvider implements DefaultGroupSequenceProvider<DeprecatedMass> {
 
     /**
      * Получить группы валидаций для проверки мессы
@@ -21,11 +21,11 @@ public class MassGroupSequenceProvider implements DefaultGroupSequenceProvider<M
      * @param mass проверяемая месса
      * @return группы валидаций
      */
-    public List<Class<?>> getValidationGroups(final Mass mass) {
+    public List<Class<?>> getValidationGroups(final DeprecatedMass mass) {
 
         final List<Class<?>> defaultGroupSequence = new ArrayList<>();
         //вместо Default группы должен быть сам класс
-        defaultGroupSequence.add(Mass.class);
+        defaultGroupSequence.add(DeprecatedMass.class);
         if (mass == null) {
             return defaultGroupSequence;
         }
@@ -35,8 +35,6 @@ public class MassGroupSequenceProvider implements DefaultGroupSequenceProvider<M
                         ? MassGroups.Periodic.class
                         : MassGroups.Single.class
         );
-        // Сохраняем приоритет существующих ошибок, включая ошибки дублирования.
-        defaultGroupSequence.add(MassGroups.Duplicate.class);
         if (mass.isPeriodic()) {
             defaultGroupSequence.add(MassGroups.StartWeekday.class);
         }
