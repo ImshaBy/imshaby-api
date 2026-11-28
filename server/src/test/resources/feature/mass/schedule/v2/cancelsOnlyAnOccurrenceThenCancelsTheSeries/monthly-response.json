@@ -1,0 +1,1 @@
+{"cityId":"city-1","parishId":"monthly-test-parish","langCode":"be","dtstart":"${serializedStart}","rrule":"FREQ=MONTHLY;BYDAY=2FR","duration":4500,"notes":"Monthly Mass","online":false,"rorate":true,"id":"${id}","exdates":[]}

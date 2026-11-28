@@ -1,0 +1,1 @@
+{"cityId":"city-1","parishId":"monthly-test-parish","langCode":"pl","dtstart":"${serializedStart}","rrule":"FREQ=WEEKLY;BYDAY=TH,TU;UNTIL=20260910T050000Z","duration":3600,"notes":"Weekly Mass","online":false,"rorate":false,"id":"${id}","exdates":[]}

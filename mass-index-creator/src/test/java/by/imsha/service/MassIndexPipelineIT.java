@@ -28,6 +28,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static by.imsha.utils.ServiceUtils.BEL_ZONE_ID;
 
 @Testcontainers
 @SpringBootTest(classes = Application.class)
@@ -58,7 +59,6 @@ class MassIndexPipelineIT {
         LocalDate today = dates.today();
         LocalTime calendarTime = LocalTime.of(11, 45);
         String day = today.getDayOfWeek().name().substring(0, 2);
-        String date = today.format(DateTimeFormatter.BASIC_ISO_DATE);
         String lastDate = today.plusDays(7).format(DateTimeFormatter.BASIC_ISO_DATE);
         City city = cities.save(City.builder().name("Pipeline city").key("pipeline-city").build());
         Parish parish = new Parish();
@@ -71,9 +71,7 @@ class MassIndexPipelineIT {
         mass.setCityId(city.getId());
         mass.setParishId(parish.getId());
         mass.setLangCode("be");
-        mass.setTime("08:00");
-        mass.setDays(new int[]{1, 2, 3, 4, 5, 6, 7});
-        mass.setCalendar(new Mass.CalendarDescription("DTSTART;TZID=Europe/Minsk:" + date + "T114500",
+        mass.setCalendar(new Mass.CalendarDescription(today.atTime(calendarTime).atZone(BEL_ZONE_ID).toInstant(),
                 "FREQ=WEEKLY;BYDAY=" + day + ";UNTIL=" + lastDate + "T084500Z"));
         mass = masses.save(mass);
         Parish pending = new Parish();
@@ -86,8 +84,8 @@ class MassIndexPipelineIT {
         pendingMass.setCityId(city.getId());
         pendingMass.setParishId(pending.getId());
         pendingMass.setLangCode("be");
-        pendingMass.setTime("09:00");
-        pendingMass.setDays(new int[]{1, 2, 3, 4, 5, 6, 7});
+        pendingMass.setCalendar(new Mass.CalendarDescription(today.atTime(9, 0).atZone(BEL_ZONE_ID).toInstant(),
+                "FREQ=WEEKLY;BYDAY=" + day));
         pendingMass = masses.save(pendingMass);
 
         indexService.updateIndex();

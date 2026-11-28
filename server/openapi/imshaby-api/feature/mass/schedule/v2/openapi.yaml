@@ -99,12 +99,9 @@ components:
         rrule:
           type: string
           minLength: 1
-          maxLength: 100
           description: >
-            RRULE value without the RRULE prefix. Supported forms are FREQ=DAILY;UNTIL=<DTSTART in UTC>
-            for a single Mass, FREQ=WEEKLY;BYDAY=<comma-separated two-letter weekdays>,
-            and FREQ=MONTHLY;BYDAY=<ordinal weekday> (e.g. 2FR or -1SU). Weekly and monthly rules
-            accept an optional inclusive UNTIL. BYDAY uses UTC weekdays. UNTIL uses yyyyMMddTHHmmssZ.
+            iCalendar recurrence rule without the RRULE prefix, evaluated in UTC.
+            DTSTART must match the recurrence rule.
         duration:
           type: integer
           format: int32
